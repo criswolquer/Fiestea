@@ -354,11 +354,52 @@ class Geocoder:
 # 4) Supabase
 # ---------------------------------------------------------------------------
 
+def normalize_supabase_url(raw: str) -> str | None:
+    """Acepta la dirección aunque se haya pegado con errores típicos:
+    comillas, espacios, 'supabase.url=...', sin https://, con barra final
+    o solo el código del proyecto. Devuelve https://xxxx.supabase.co o None."""
+    s = (raw or "").strip().strip('"').strip("'").strip()
+    m = re.search(r"https?://[A-Za-z0-9.-]+", s)
+    if m:
+        return m.group(0).replace("http://", "https://", 1)
+    m = re.search(r"([a-z0-9]{15,30})\.supabase\.co", s)
+    if m:
+        return f"https://{m.group(1)}.supabase.co"
+    m = re.fullmatch(r"[a-z0-9]{15,30}", s)
+    if m:
+        return f"https://{s}.supabase.co"
+    return None
+
+
+def clean_key(raw: str) -> str:
+    """Quita comillas, espacios y saltos de línea que se cuelan al pegar la llave."""
+    s = (raw or "").strip().strip('"').strip("'").strip()
+    if "=" in s and s.split("=", 1)[0].lower().startswith(("supabase", "service")):
+        s = s.split("=", 1)[1].strip()
+    return re.sub(r"\s+", "", s)
+
+
 class Supabase:
     def __init__(self, url: str, service_key: str):
         self.base = url.rstrip("/") + "/rest/v1"
         self.h = {"apikey": service_key, "Authorization": f"Bearer {service_key}",
                   "Content-Type": "application/json"}
+
+    def check(self) -> str | None:
+        """Prueba la conexión antes de gastar saldo en la IA. Devuelve un mensaje de error o None."""
+        try:
+            r = requests.get(f"{self.base}/events", params={"select": "id", "limit": "1"},
+                             headers=self.h, timeout=20)
+        except Exception as e:  # noqa: BLE001
+            return f"No se puede conectar con Supabase ({type(e).__name__}). Revisa el secreto SUPABASE_URL."
+        if r.status_code in (401, 403):
+            return ("Supabase rechaza la llave. Revisa que SUPABASE_SERVICE_KEY sea la clave "
+                    "'service_role' (pestaña Legacy API keys), completa y sin espacios.")
+        if r.status_code == 404:
+            return ("No existe la tabla 'events'. Ejecuta supabase/schema.sql en el SQL Editor de Supabase.")
+        if r.status_code >= 300:
+            return f"Supabase respondió {r.status_code}: {r.text[:200]}"
+        return None
 
     def upsert(self, rows: list[dict]) -> None:
         for i in range(0, len(rows), 200):
@@ -406,11 +447,23 @@ def main() -> int:
         return 2
     sb = None
     if not args.dry_run:
-        url, key = env("SUPABASE_URL"), env("SUPABASE_SERVICE_KEY")
-        if not url or not key:
-            log("Faltan SUPABASE_URL / SUPABASE_SERVICE_KEY (o usa --dry-run)")
+        raw_url, raw_key = env("SUPABASE_URL"), env("SUPABASE_SERVICE_KEY")
+        if not raw_url or not raw_key:
+            log("Faltan los secretos SUPABASE_URL / SUPABASE_SERVICE_KEY en GitHub (o usa --dry-run)")
             return 2
-        sb = Supabase(url, key)
+        url = normalize_supabase_url(raw_url)
+        if not url:
+            log("El secreto SUPABASE_URL no parece una dirección de Supabase. "
+                "Debe ser como https://abcdefghijklmnopqrst.supabase.co "
+                f"(el valor guardado tiene {len(raw_url)} caracteres"
+                f"{', empieza por https' if raw_url.strip().startswith('https') else ', NO empieza por https://'}).")
+            return 2
+        sb = Supabase(url, clean_key(raw_key))
+        problem = sb.check()
+        if problem:
+            log("✗ " + problem)
+            return 2
+        log("Conexión con Supabase OK ✔")
 
     import anthropic  # importado aquí para que --help funcione sin la librería
     client = anthropic.Anthropic(api_key=api_key)
