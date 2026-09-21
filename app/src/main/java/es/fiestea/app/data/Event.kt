@@ -8,16 +8,16 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 enum class Category(val label: String, val emoji: String, val color: Long) {
-    FIESTA_PUEBLO("Fiesta de pueblo", "🎉", 0xFFF59E0B),
-    FERIA("Feria", "🎡", 0xFFEF4444),
+    CLUB("Discoteca", "🪩", 0xFF8B5CF6),
     CONCIERTO("Concierto", "🎸", 0xFFEC4899),
-    CLUB("Club", "🪩", 0xFF8B5CF6),
     FESTIVAL("Festival", "🎪", 0xFF3B82F6),
-    QUEDADA("Quedada", "🍻", 0xFF10B981);
+    QUEDADA("Quedada", "🍻", 0xFF10B981),
+    FIESTA_PUEBLO("Fiesta de pueblo", "🎉", 0xFFF59E0B),
+    FERIA("Feria", "🎡", 0xFFEF4444);
 
     companion object {
         fun fromCode(code: String?): Category =
-            entries.firstOrNull { it.name.equals(code, ignoreCase = true) } ?: FIESTA_PUEBLO
+            entries.firstOrNull { it.name.equals(code, ignoreCase = true) } ?: CLUB
     }
 }
 
@@ -68,6 +68,8 @@ data class Event(
     val discoveredAt: java.time.Instant? = null,
     /** Usuario que lo publicó (si lo publicó alguien desde la app). */
     val createdBy: String? = null,
+    /** Foto o cartel de la fiesta (sacado de la web de origen). */
+    val imageUrl: String? = null,
 ) {
     val isFree: Boolean get() = priceEuros <= 0.0
 

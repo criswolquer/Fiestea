@@ -47,6 +47,9 @@ class EventRepository private constructor(context: Context) {
     private val _mine = MutableStateFlow<Set<String>>(emptySet())
     private val _vibes = MutableStateFlow<Map<String, VibeSummary>>(emptyMap())
     private val _myVibes = MutableStateFlow<Map<String, VibeVote>>(emptyMap())
+    private val _farAway = MutableStateFlow(false)
+    /** true si no había fiestas cerca y se muestran las de otras zonas. */
+    val showingFarAway: StateFlow<Boolean> = _farAway.asStateFlow()
     private val _loading = MutableStateFlow(false)
     private val _error = MutableStateFlow<String?>(null)
 
@@ -75,7 +78,11 @@ class EventRepository private constructor(context: Context) {
         _loading.value = true
         _error.value = null
         try {
-            _remote.value = api.fetchUpcoming(near)
+            var list = api.fetchUpcoming(near)
+            // Nunca dejamos la app vacía: si no hay nada cerca, enseñamos lo de otras zonas
+            _farAway.value = list.isEmpty() && near != null
+            if (_farAway.value) list = api.fetchUpcoming(null)
+            _remote.value = list
             // Lo publicado por este usuario desde otro móvil también cuenta como "suyo"
             val uid = auth?.session?.value?.userId
             if (uid != null) {

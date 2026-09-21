@@ -138,6 +138,7 @@ class SupabaseApi(baseUrl: String, private val anonKey: String, private val auth
         origin = Origin.fromCode(o.str("origin")),
         discoveredAt = o.str("created_at")?.let { parseInstant(it) },
         createdBy = o.str("created_by"),
+        imageUrl = o.str("image_url")?.takeIf { it.startsWith("http") },
     )
 
     /** PostgREST devuelve timestamptz como "2026-09-21T03:10:22.123456+00:00". */

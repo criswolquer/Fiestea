@@ -1,18 +1,25 @@
-# Busca fiestas con IA cada noche y las guarda en Supabase.
-# Configura los secretos en GitHub: Settings → Secrets and variables → Actions
+# Busca fiestas con IA y las guarda en Supabase.
+#   - Una vez al día, a las 03:00 UTC (05:00 en España en verano).
+#     Para una segunda pasada a las 17:00 (más fiestas de última hora, pero el doble de coste),
+#     quita el "#" de la línea "- cron: "0 15 * * *"" de abajo.
+#   - Por defecto busca ocio nocturno (discotecas + noche). Para añadir fiestas de pueblo,
+#     crea la variable SEARCH_FOCUSES = discotecas,noche,fiestas,pueblos
+# Secretos (Settings → Secrets and variables → Actions → Secrets):
 #   ANTHROPIC_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_KEY
-# (opcional, en "Variables"): PROVINCES, PROVINCES_PER_RUN, DAYS_AHEAD, CLAUDE_MODEL, CONTACT_EMAIL
+# Variables opcionales (pestaña "Variables"):
+#   PROVINCES, PROVINCES_PER_RUN, DAYS_AHEAD, CLAUDE_MODEL, CONTACT_EMAIL, SEARCH_FOCUSES
 name: Importar fiestas con IA
 
 on:
   schedule:
-    - cron: "0 3 * * *"   # todos los días a las 03:00 UTC (05:00 en España en verano)
+    - cron: "0 3 * * *"
+    # - cron: "0 15 * * *"
   workflow_dispatch:       # botón "Run workflow" para lanzarlo a mano
 
 jobs:
   importar:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

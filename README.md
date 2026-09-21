@@ -1,6 +1,6 @@
 # Fiestea 🎉
 
-App Android para descubrir fiestas cerca de ti: fiestas de pueblo, ferias, verbenas, fiestas de discoteca, sesiones de DJ, conciertos y festivales.
+App Android para descubrir **fiestas de discoteca, sesiones de DJ, fiestas temáticas y ocio nocturno** cerca de ti (y, si quieres, también fiestas de pueblo y ferias).
 **Las fiestas se buscan en internet de forma automática cada noche con IA**; no hay que cargarlas a mano.
 
 ```
@@ -16,12 +16,13 @@ App Android para descubrir fiestas cerca de ti: fiestas de pueblo, ferias, verbe
 | Carpeta | Qué es |
 |---|---|
 | `app/` | App Android (Kotlin + Jetpack Compose). Mapa con OpenStreetMap (sin API key). |
-| `importer/` | Script en Python: busca con Claude y búsqueda web, en dos pasadas por provincia (fiestas populares y ocio nocturno), las sitúa en el mapa, quita duplicados y las guarda en Supabase. |
+| `importer/` | Script en Python: busca con Claude y búsqueda web (por defecto, discotecas y ocio nocturno), saca el cartel de cada fiesta, las sitúa en el mapa, quita duplicados y las guarda en Supabase. |
 | `supabase/schema.sql` | Tabla de eventos y reglas de seguridad. |
-| `.github/workflows/` | Ejecuta el importador automáticamente todos los días a las 03:00 UTC. |
+| `.github/workflows/` | Ejecuta el importador automáticamente una vez al día (03:00 UTC). |
 
 ### Funciones de la app
-- **Explorar**: lista "Esta noche cerca de ti" y "Próximamente", o vista de mapa.
+- **Explorar**: lista "Esta noche cerca de ti" y "Próximamente", o vista de mapa. Con **fotos/carteles** de cada fiesta.
+- **Zona 📍**: "Cerca de mí" (GPS) o cualquier provincia. Si no hay nada cerca, enseña otras zonas en vez de quedarse vacía.
 - **Filtros**: hoy, este finde, 7 días, gratis, tipo de fiesta y distancia. También hay buscador.
 - **Ficha**: fecha, lugar, distancia, precio, botón **Voy**, **Cómo llegar**, compartir y guardar.
 - **Etiqueta ✨ "Detectado automáticamente"** con enlace a la fuente original.
@@ -74,7 +75,12 @@ Vuelve a ejecutar la app. Ahora lee las fiestas reales de tu base de datos.
 ## Paso 3 · Clave de la IA
 
 1. Entra en https://console.anthropic.com, añade saldo y crea una **API key**.
-2. Coste orientativo: cada provincia supone dos consultas (fiestas y noche), cada una con unas pocas búsquedas web, del orden de céntimos. Con 10 provincias por noche, se queda en pocos euros al mes. Revisa los precios actuales en la consola.
+2. **Coste**: cada provincia supone una consulta a la IA por cada enfoque (por defecto 2), con hasta 10–14 búsquedas web cada una, y el robot se ejecuta 2 veces al día. Tras la primera ejecución, mira en la consola de Anthropic (**Usage**) cuánto ha costado y ajusta:
+   - Menos provincias (`PROVINCES`) o menos enfoques (`SEARCH_FOCUSES`).
+   - Al final de cada ejecución, el registro del robot muestra una **estimación del coste** ("Consumo IA… coste aproximado").
+   - Si se acaba el saldo, el robot se para, guarda lo que haya encontrado y marca la ejecución en rojo.
+   - Por defecto usa el modelo **Haiku**, el más barato. Si quieres más precisión (y más coste), crea la variable `CLAUDE_MODEL` = `claude-sonnet-5`.
+   - `MAX_SEARCHES` limita las búsquedas web por consulta (por ejemplo `3` para gastar menos).
 
 ## Paso 4 · Automatizarlo cada noche (GitHub, gratis)
 
@@ -90,10 +96,11 @@ Vuelve a ejecutar la app. Ahora lee las fiestas reales de tu base de datos.
 | Variable | Para qué | Por defecto |
 |---|---|---|
 | `PROVINCES` | Limitarlo a ciertas provincias, p. ej. `Zamora,León,Salamanca` (se buscan todas cada noche) | Toda España en rotación |
-| `PROVINCES_PER_RUN` | Provincias por noche en modo rotación | 10 (España completa cada ~5 días) |
+| `PROVINCES_PER_RUN` | Provincias por ejecución en modo rotación (si no pones `PROVINCES`) | 3 |
 | `DAYS_AHEAD` | Cuántos días hacia delante buscar | 21 |
-| `CLAUDE_MODEL` | Modelo de IA | `claude-sonnet-5` |
-| `SEARCH_FOCUSES` | Qué buscar: `fiestas` (patronales, ferias, verbenas…), `noche` (discotecas, DJs, fiestas temáticas, salas) o ambas | `fiestas,noche` |
+| `CLAUDE_MODEL` | Modelo de IA | `claude-haiku-4-5-20251001` |
+| `MAX_SEARCHES` | Máximo de búsquedas web por consulta | 4–6 según el tipo |
+| `SEARCH_FOCUSES` | Qué buscar, separado por comas: `discotecas` (programación de cada discoteca/club y webs de entradas), `noche` (fiestas temáticas, universitarias, salas, conciertos), `fiestas` (agendas oficiales, ferias, fiestas de ciudades), `pueblos` (fiestas de pueblos, comarca por comarca) | `discotecas,noche` |
 | `CONTACT_EMAIL` | Contacto para el servicio de mapas Nominatim (lo piden sus normas) | — |
 
 ## Probar el importador en tu ordenador

@@ -40,6 +40,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallFloatingActionButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -77,8 +78,12 @@ fun ExploreScreen(vm: EventsViewModel, onOpenEvent: (String) -> Unit, onAskLocat
     val loading by vm.loading.collectAsState()
     val error by vm.error.collectAsState()
     val vibes by vm.vibes.collectAsState()
+    val zone by vm.zone.collectAsState()
+    val center by vm.searchCenter.collectAsState()
+    val farAway by vm.showingFarAway.collectAsState()
 
     var showMap by rememberSaveable { mutableStateOf(false) }
+    var showZones by remember { mutableStateOf(false) }
 
     // El ambiente en directo cambia rápido: lo refrescamos cada 2 minutos mientras miras la lista
     androidx.compose.runtime.LaunchedEffect(Unit) {
@@ -94,7 +99,7 @@ fun ExploreScreen(vm: EventsViewModel, onOpenEvent: (String) -> Unit, onAskLocat
             TopAppBar(
                 title = { Text("Fiestea", fontWeight = FontWeight.Black) },
                 actions = {
-                    IconButton(onClick = { vm.refresh() }) { Icon(Icons.Filled.Refresh, "Actualizar") }
+                    IconButton(onClick = { vm.locateAndRefresh() }) { Icon(Icons.Filled.Refresh, "Actualizar") }
                     IconButton(onClick = { showMap = !showMap }) {
                         Icon(
                             if (showMap) Icons.AutoMirrored.Filled.List else Icons.Filled.Map,
@@ -113,7 +118,23 @@ fun ExploreScreen(vm: EventsViewModel, onOpenEvent: (String) -> Unit, onAskLocat
                 onDate = { d -> vm.updateFilters { it.copy(date = if (it.date == d) DateFilter.TODAS else d) } },
                 onFree = { vm.updateFilters { it.copy(price = if (it.price == PriceFilter.GRATIS) PriceFilter.TODOS else PriceFilter.GRATIS) } },
                 onOpenFilters = { showFilters = true },
+                zoneLabel = zone?.name ?: if (location != null) "Cerca de mí" else "Elegir zona",
+                onOpenZones = { showZones = true },
             )
+            if (farAway && !loading) {
+                Surface(
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp).fillMaxWidth(),
+                    onClick = { showZones = true },
+                ) {
+                    Text(
+                        "No hay fiestas cerca de ${zone?.name ?: "ti"} todavía. Te enseñamos las de otras zonas. Toca para elegir zona.",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(12.dp),
+                    )
+                }
+            }
             if (loading) LinearProgressIndicator(Modifier.fillMaxWidth())
             error?.let {
                 Text(
@@ -123,10 +144,10 @@ fun ExploreScreen(vm: EventsViewModel, onOpenEvent: (String) -> Unit, onAskLocat
             }
 
             if (showMap) {
-                val center = mapCenter(items, location)
+                val mapCenterPos = mapCenter(items, center)
                 Box(Modifier.fillMaxSize()) {
                     EventsMap(
-                        items = items, center = center, userLocation = location,
+                        items = items, center = mapCenterPos, userLocation = location,
                         onEventClick = onOpenEvent, modifier = Modifier.fillMaxSize(),
                     )
                     SmallFloatingActionButton(
@@ -143,7 +164,8 @@ fun ExploreScreen(vm: EventsViewModel, onOpenEvent: (String) -> Unit, onAskLocat
                 }
             } else {
                 EventList(
-                    events = items, saved = saved, vibes = vibes, hasLocation = location != null, loading = loading,
+                    events = items, saved = saved, vibes = vibes, hasLocation = center != null, loading = loading,
+                    placeName = if (farAway) null else zone?.name,
                     filtersActive = filters.activeCount > 0 || filters.query.isNotBlank(),
                     onOpenEvent = onOpenEvent, onToggleSaved = vm::toggleSaved,
                     onAskLocation = onAskLocation, onReset = { vm.resetFilters(); vm.updateFilters { it.copy(query = "") } },
@@ -155,11 +177,69 @@ fun ExploreScreen(vm: EventsViewModel, onOpenEvent: (String) -> Unit, onAskLocat
     if (showFilters) {
         FiltersSheet(
             filters = filters,
-            hasLocation = location != null,
+            hasLocation = center != null,
             onChange = { f -> vm.updateFilters { f } },
             onReset = vm::resetFilters,
             onDismiss = { showFilters = false },
         )
+    }
+
+    if (showZones) {
+        ZonesSheet(
+            current = zone,
+            hasGps = location != null,
+            onPick = { z ->
+                showZones = false
+                if (z == null && location == null) onAskLocation()
+                vm.setZone(z)
+            },
+            onDismiss = { showZones = false },
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ZonesSheet(
+    current: es.fiestea.app.data.Zone?,
+    hasGps: Boolean,
+    onPick: (es.fiestea.app.data.Zone?) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Text(
+            "¿Dónde buscas fiestas?", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+        )
+        LazyColumn(Modifier.navigationBarsPadding()) {
+            item {
+                ZoneRow(
+                    "📍 Cerca de mí",
+                    if (hasGps) "Usa tu ubicación actual" else "Necesita permiso de ubicación",
+                    selected = current == null,
+                ) { onPick(null) }
+            }
+            items(es.fiestea.app.data.Zones.all, key = { it.name }) { z ->
+                ZoneRow(z.name, null, selected = current?.name == z.name) { onPick(z) }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ZoneRow(title: String, subtitle: String?, selected: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
+            Text(title, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal)
+            if (subtitle != null) {
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
     }
 }
 
@@ -178,6 +258,8 @@ private fun SearchAndQuickFilters(
     onDate: (DateFilter) -> Unit,
     onFree: () -> Unit,
     onOpenFilters: () -> Unit,
+    zoneLabel: String,
+    onOpenZones: () -> Unit,
 ) {
     Column(Modifier.padding(horizontal = 16.dp)) {
         OutlinedTextField(
@@ -197,6 +279,10 @@ private fun SearchAndQuickFilters(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            FilterChip(
+                selected = true, onClick = onOpenZones,
+                label = { Text("📍 $zoneLabel ▾") },
+            )
             BadgedBox(badge = { if (filters.activeCount > 0) Badge { Text("${filters.activeCount}") } }) {
                 FilterChip(
                     selected = filters.activeCount > 0, onClick = onOpenFilters,
@@ -218,6 +304,7 @@ private fun EventList(
     vibes: Map<String, es.fiestea.app.data.VibeSummary>,
     hasLocation: Boolean,
     loading: Boolean,
+    placeName: String? = null,
     filtersActive: Boolean,
     onOpenEvent: (String) -> Unit,
     onToggleSaved: (String) -> Unit,
@@ -260,7 +347,15 @@ private fun EventList(
             }
         }
         if (tonight.isNotEmpty()) {
-            item { SectionTitle(if (hasLocation) "Esta noche cerca de ti" else "Esta noche") }
+            item {
+                SectionTitle(
+                    when {
+                        placeName != null -> "Esta noche en $placeName"
+                        hasLocation -> "Esta noche cerca de ti"
+                        else -> "Esta noche"
+                    },
+                )
+            }
             items(tonight, key = { "t-" + it.event.id }) { item ->
                 EventCard(
                     item, item.event.id in saved, { onOpenEvent(item.event.id) }, { onToggleSaved(item.event.id) },

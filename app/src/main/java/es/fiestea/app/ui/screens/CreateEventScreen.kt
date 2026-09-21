@@ -109,7 +109,7 @@ private fun CreateEventForm(vm: EventsViewModel, onCreated: (String) -> Unit) {
 
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
-    var category by remember { mutableStateOf(Category.FIESTA_PUEBLO) }
+    var category by remember { mutableStateOf(Category.CLUB) }
     var date by remember { mutableStateOf(LocalDate.now()) }
     var startTime by remember { mutableStateOf(LocalTime.of(22, 0)) }
     var hasEnd by remember { mutableStateOf(true) }
@@ -118,7 +118,8 @@ private fun CreateEventForm(vm: EventsViewModel, onCreated: (String) -> Unit) {
     var town by remember { mutableStateOf("") }
     var price by remember { mutableStateOf("") }
     var organizer by remember { mutableStateOf("") }
-    val initialPos = remember { userLocation ?: SeedEvents.DEFAULT_CENTER }
+    val zone by vm.zone.collectAsState()
+    val initialPos = remember { userLocation ?: zone?.position ?: SeedEvents.DEFAULT_CENTER }
     var position by remember { mutableStateOf(initialPos) }
 
     var showDate by remember { mutableStateOf(false) }

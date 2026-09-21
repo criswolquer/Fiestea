@@ -65,6 +65,9 @@ dependencies {
     // Avisos programados (recordatorios y fiestas nuevas cerca)
     implementation("androidx.work:work-runtime-ktx:2.10.0")
 
+    // Fotos / carteles de las fiestas
+    implementation("io.coil-kt:coil-compose:2.7.0")
+
     // Mapa OpenStreetMap: no necesita API key
     implementation("org.osmdroid:osmdroid-android:6.1.20")
 }

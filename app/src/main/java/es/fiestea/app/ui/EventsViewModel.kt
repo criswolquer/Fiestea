@@ -22,6 +22,8 @@ import es.fiestea.app.data.Session
 import es.fiestea.app.data.SignUpResult
 import es.fiestea.app.data.VibeSummary
 import es.fiestea.app.data.VibeVote
+import es.fiestea.app.data.Zone
+import es.fiestea.app.data.Zones
 import es.fiestea.app.notify.AlertScheduler
 import es.fiestea.app.notify.Notifications
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -60,8 +62,22 @@ class EventsViewModel(app: Application) : AndroidViewModel(app) {
     private val _filters = MutableStateFlow(Filters())
     val filters: StateFlow<Filters> = _filters.asStateFlow()
 
+    /** Ubicación real del GPS (null si no hay permiso o aún no se sabe). */
     private val _userLocation = MutableStateFlow<GeoPos?>(null)
     val userLocation: StateFlow<GeoPos?> = _userLocation.asStateFlow()
+
+    /** Zona elegida a mano (null = usar la ubicación del GPS). Se recuerda entre sesiones. */
+    private val prefs = app.getSharedPreferences("fiestea_prefs", android.content.Context.MODE_PRIVATE)
+    private val _zone = MutableStateFlow(Zones.byName(prefs.getString("zone", null)))
+    val zone: StateFlow<Zone?> = _zone.asStateFlow()
+
+    /** Punto desde el que buscamos fiestas y medimos distancias: la zona elegida o el GPS. */
+    val searchCenter: StateFlow<GeoPos?> =
+        combine(_zone, _userLocation) { z, loc -> z?.position ?: loc }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, _zone.value?.position)
+
+    /** true si no había fiestas cerca y estamos enseñando las de otras zonas. */
+    val showingFarAway: StateFlow<Boolean> get() = repo.showingFarAway
 
     private val alertStore = AlertSettingsStore.get(app)
 
@@ -84,7 +100,7 @@ class EventsViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Todos los eventos con su distancia (sin filtrar). */
     val allItems: StateFlow<List<EventItem>> =
-        combine(repo.events, _userLocation) { events, loc ->
+        combine(repo.events, searchCenter) { events, loc ->
             events.map { EventItem(it, loc?.distanceKmTo(it.position)) }.sortedBy { it.event.start }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
@@ -100,7 +116,14 @@ class EventsViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun refresh() {
-        viewModelScope.launch { repo.refresh(_userLocation.value) }
+        viewModelScope.launch { repo.refresh(_zone.value?.position ?: _userLocation.value) }
+    }
+
+    /** Cambia la zona (null = "Cerca de mí" con el GPS) y recarga las fiestas. */
+    fun setZone(zone: Zone?) {
+        _zone.value = zone
+        prefs.edit().putString("zone", zone?.name).apply()
+        if (zone == null) locateAndRefresh() else refresh()
     }
 
     fun updateFilters(transform: (Filters) -> Filters) = _filters.update(transform)
@@ -139,7 +162,7 @@ class EventsViewModel(app: Application) : AndroidViewModel(app) {
         alertStore.update {
             it.copy(
                 nearbyEnabled = enabled,
-                center = it.center ?: _userLocation.value,
+                center = it.center ?: _userLocation.value ?: _zone.value?.position,
                 // Solo avisamos de lo que llegue a partir de ahora
                 lastCheckEpochSec = if (enabled) java.time.Instant.now().epochSecond else it.lastCheckEpochSec,
             )

@@ -37,6 +37,10 @@ create table if not exists public.events (
 alter table public.events
     add column if not exists created_by uuid references auth.users(id) on delete set null;
 
+-- v3: foto o cartel del evento
+alter table public.events
+    add column if not exists image_url text;
+
 create index if not exists events_start_idx   on public.events (start_at);
 create index if not exists events_end_idx     on public.events (end_at);
 create index if not exists events_geo_idx     on public.events (lat, lon);

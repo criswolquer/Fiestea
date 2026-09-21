@@ -60,7 +60,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -159,17 +162,27 @@ fun EventDetailScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp),
         ) {
-            // Cabecera con degradado de la categoría
+            // Cabecera: el cartel de la fiesta si lo hay; si no, degradado con el emoji de la categoría
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .height(150.dp)
+                    .height(if (e.imageUrl != null) 240.dp else 150.dp)
+                    .clip(RoundedCornerShape(28.dp))
                     .background(
                         Brush.linearGradient(listOf(catColor, catColor.copy(alpha = 0.25f), MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))),
-                        RoundedCornerShape(28.dp),
                     ),
                 contentAlignment = Alignment.Center,
-            ) { Text(e.category.emoji, fontSize = 72.sp) }
+            ) {
+                Text(e.category.emoji, fontSize = 72.sp)
+                if (e.imageUrl != null) {
+                    AsyncImage(
+                        model = e.imageUrl,
+                        contentDescription = "Cartel de ${e.title}",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.matchParentSize(),
+                    )
+                }
+            }
 
             Spacer(Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -225,7 +238,8 @@ fun EventDetailScreen(
                 VibeSection(
                     vibe = vibes[eventId],
                     onReport = {
-                        val distance = item.distanceKm
+                        // Para contar el ambiente hay que estar allí de verdad: usamos el GPS, no la zona elegida
+                        val distance = vm.userLocation.value?.distanceKmTo(e.position)
                         when {
                             vm.needsLogin() -> onNeedLogin()
                             // En modo demo no exigimos estar allí, para poder probarlo

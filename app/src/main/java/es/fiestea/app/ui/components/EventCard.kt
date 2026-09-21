@@ -27,7 +27,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
+import es.fiestea.app.data.Event
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -53,6 +57,25 @@ fun CategoryEmojiBox(category: Category, size: Int = 64, modifier: Modifier = Mo
         contentAlignment = Alignment.Center,
     ) {
         Text(category.emoji, fontSize = (size * 0.45).sp)
+    }
+}
+
+/**
+ * Foto de la fiesta. Debajo va el recuadro con el emoji de la categoría, así que si no hay
+ * foto o no carga, se ve el emoji.
+ */
+@Composable
+fun EventThumb(event: Event, size: Int = 64, modifier: Modifier = Modifier) {
+    Box(modifier.size(size.dp)) {
+        CategoryEmojiBox(event.category, size)
+        if (event.imageUrl != null) {
+            AsyncImage(
+                model = event.imageUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.matchParentSize().clip(RoundedCornerShape((size / 4).dp)),
+            )
+        }
     }
 }
 
@@ -84,7 +107,7 @@ fun EventCard(
         shape = RoundedCornerShape(20.dp),
     ) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            CategoryEmojiBox(e.category)
+            EventThumb(e)
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(
