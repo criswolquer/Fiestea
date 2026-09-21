@@ -1,0 +1,34 @@
+# Busca fiestas con IA cada noche y las guarda en Supabase.
+# Configura los secretos en GitHub: Settings → Secrets and variables → Actions
+#   ANTHROPIC_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_KEY
+# (opcional, en "Variables"): PROVINCES, PROVINCES_PER_RUN, DAYS_AHEAD, CLAUDE_MODEL, CONTACT_EMAIL
+name: Importar fiestas con IA
+
+on:
+  schedule:
+    - cron: "0 3 * * *"   # todos los días a las 03:00 UTC (05:00 en España en verano)
+  workflow_dispatch:       # botón "Run workflow" para lanzarlo a mano
+
+jobs:
+  importar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalar dependencias
+        run: pip install -r importer/requirements.txt
+      - name: Buscar e importar fiestas
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          PROVINCES: ${{ vars.PROVINCES }}
+          PROVINCES_PER_RUN: ${{ vars.PROVINCES_PER_RUN }}
+          DAYS_AHEAD: ${{ vars.DAYS_AHEAD }}
+          CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL }}
+          CONTACT_EMAIL: ${{ vars.CONTACT_EMAIL }}
+          SEARCH_FOCUSES: ${{ vars.SEARCH_FOCUSES }}
+        run: python importer/import_events.py
