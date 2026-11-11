@@ -287,10 +287,36 @@ export function floatingPanel(title: string, content: Node, opts: { width?: numb
   return { el: panel, close };
 }
 
+/** Keeps the pending file input reachable until the person picks a file (or a later pick replaces it). */
+let pendingInput: HTMLInputElement | null = null;
+
 export function pickFile(accept: string, multiple = false): Promise<File[]> {
   return new Promise((resolve) => {
-    const input = h("input", { type: "file", accept, multiple });
-    input.addEventListener("change", () => resolve(Array.from(input.files ?? [])));
+    pendingInput?.remove();
+    // iOS Safari only fires "change" on a file input that is in the document, so it is
+    // attached (invisible) until a file is chosen.
+    const input = h("input", {
+      type: "file",
+      accept,
+      multiple,
+      style: "position:fixed;left:-1000px;top:0;width:1px;height:1px;opacity:0",
+      "aria-hidden": "true",
+      tabindex: -1,
+    });
+    pendingInput = input;
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      const files = Array.from(input.files ?? []);
+      input.remove();
+      if (pendingInput === input) pendingInput = null;
+      resolve(files);
+    };
+    input.addEventListener("change", finish);
+    input.addEventListener("input", finish);
+    input.addEventListener("cancel", finish);
+    document.body.append(input);
     input.click();
   });
 }
