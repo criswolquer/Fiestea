@@ -1,6 +1,6 @@
 import { db, uid } from "./db";
 import { pageToCanvas } from "./render";
-import type { AiResult, Folder, Notebook, Page, PageSizeId, PaperColor, Recording, TemplateId } from "./types";
+import type { AiResult, CoverPattern, Folder, Notebook, Page, PageSizeId, PaperColor, Recording, TemplateId } from "./types";
 import { LAYER_COUNT, PAGE_SIZES } from "./types";
 
 /* ---------- new pages ---------- */
@@ -23,6 +23,8 @@ export function blankPage(nb: Pick<Notebook, "id" | "template" | "paper" | "page
 export async function createNotebook(opts: {
   title: string;
   cover: string;
+  coverPattern?: CoverPattern;
+  coverImage?: string;
   template: TemplateId;
   paper: PaperColor;
   pageSize: PageSizeId;
@@ -157,6 +159,7 @@ export async function exportBackup(): Promise<Blob> {
   const ai: AiResult[] = [];
   const blobIds = new Set<string>();
   for (const nb of notebooks) {
+    if (nb.coverImage) blobIds.add(nb.coverImage);
     for (const p of await db.pages.ofNotebook(nb.id)) {
       pages.push(p);
       if (p.backgroundBlobId) blobIds.add(p.backgroundBlobId);
@@ -194,6 +197,11 @@ export async function duplicateNotebook(nb: Notebook): Promise<Notebook> {
   const pages = await loadPages(nb);
   const now = Date.now();
   const copy: Notebook = { ...structuredClone(nb), id: uid(), title: `${nb.title} (copia)`, pageIds: [], createdAt: now, updatedAt: now, favorite: false };
+  if (nb.coverImage) {
+    const b = await db.blobs.get(nb.coverImage);
+    copy.coverImage = b ? uid() : undefined;
+    if (b && copy.coverImage) await db.blobs.put(copy.coverImage, b);
+  }
   for (const p of pages) {
     const np: Page = { ...structuredClone(p), id: uid(), notebookId: copy.id };
     if (p.backgroundBlobId) {

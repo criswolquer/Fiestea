@@ -5,10 +5,20 @@ import { PAPER, TEMPLATES, drawPaper, pageToCanvas } from "./render";
 import { openSettings } from "./settings";
 import type { Folder, Notebook, PageSizeId, PaperColor, TemplateId } from "./types";
 import { PAGE_SIZES } from "./types";
+import { coverArt, coverPicker, coverSpecOf, randomCover } from "./covers";
+import type { CoverPattern } from "./types";
 import { confirmDialog, download, formatDate, h, icon, iconButton, modal, pickFile, popupMenu, promptDialog, toast } from "./ui";
 import { blankPage } from "./files";
 
-export const COVERS = ["#3b6cf6", "#e5484d", "#f5a524", "#2fa36b", "#8e4ec6", "#0e9aa7", "#d6409f", "#5b5f6b", "#c2763a", "#1d2b53"];
+let shelfMode: "covers" | "pages" = readShelfMode();
+
+function readShelfMode(): "covers" | "pages" {
+  try {
+    return localStorage.getItem("trazo.shelf") === "pages" ? "pages" : "covers";
+  } catch {
+    return "covers";
+  }
+}
 
 type Filter = { kind: "all" } | { kind: "favorites" } | { kind: "recent" } | { kind: "folder"; id: string } | { kind: "unfiled" };
 
@@ -162,6 +172,16 @@ export async function renderLibrary(root: HTMLElement, open: (id: string) => voi
 
   const currentFolder = filter.kind === "folder" ? filter.id : null;
 
+  function setShelf(m: "covers" | "pages") {
+    shelfMode = m;
+    try {
+      localStorage.setItem("trazo.shelf", m);
+    } catch {
+      /* ignore */
+    }
+    rerender();
+  }
+
   const header = h(
     "header",
     { class: "lib-head" },
@@ -169,6 +189,10 @@ export async function renderLibrary(root: HTMLElement, open: (id: string) => voi
     h("h1", {}, title),
     h("div", { class: "lib-actions" },
       searchInput,
+      h("div", { class: "seg shelf-toggle", role: "group", "aria-label": "Mostrar" },
+        h("button", { class: `seg-btn ${shelfMode === "covers" ? "active" : ""}`, type: "button", onclick: () => setShelf("covers") }, "Portadas"),
+        h("button", { class: `seg-btn ${shelfMode === "pages" ? "active" : ""}`, type: "button", onclick: () => setShelf("pages") }, "Páginas"),
+      ),
       sortSel,
       h("button", { class: "btn", type: "button", onclick: () => importFlow(currentFolder, open) }, icon("import"), h("span", { class: "hide-sm" }, "Importar")),
       h("button", { class: "btn primary", type: "button", onclick: () => newNotebookDialog(currentFolder, open) }, icon("plus"), h("span", { class: "hide-sm" }, "Nuevo")),
@@ -195,11 +219,12 @@ export async function renderLibrary(root: HTMLElement, open: (id: string) => voi
 }
 
 function notebookCard(nb: Notebook, folders: Folder[], open: (id: string) => void, rerender: () => void): HTMLElement {
-  const cover = h("div", { class: "nb-cover", style: `--cover:${nb.cover}` });
+  const showPage = shelfMode === "pages" && !nb.lock;
+  const cover = h("div", { class: `nb-cover ${showPage ? "page-mode" : ""}` }, coverArt(coverSpecOf(nb), { label: !showPage }));
   if (nb.lock) cover.append(h("div", { class: "nb-locked" }, icon("lock")));
-  else
+  else if (showPage)
     thumbnail(nb).then((url) => {
-      if (url) cover.append(h("img", { src: url, alt: "", loading: "lazy" }));
+      if (url) cover.append(h("img", { class: "nb-thumb", src: url, alt: "", loading: "lazy" }));
     });
   const more = iconButton("more", "Opciones", (e) => {
     e.stopPropagation();
@@ -208,11 +233,11 @@ function notebookCard(nb: Notebook, folders: Folder[], open: (id: string) => voi
 
   const card = h(
     "div",
-    { class: "nb-card", tabindex: 0, role: "button", "aria-label": nb.title },
+    { class: `nb-card ${showPage ? "" : "covers"}`, tabindex: 0, role: "button", "aria-label": nb.title },
     cover,
     h("div", { class: "nb-meta" },
       h("div", { class: "nb-title" }, nb.favorite ? icon("star") : null, h("span", {}, nb.title)),
-      h("div", { class: "row between" }, h("span", { class: "muted small" }, `${formatDate(nb.updatedAt)} · ${nb.pageIds.length} pág.`), more),
+      h("div", { class: "row between" }, h("span", { class: "muted small" }, nb.favorite && !showPage ? icon("star") : null, `${formatDate(nb.updatedAt)} · ${nb.pageIds.length} pág.`), more),
     ),
   );
   const go = async () => {
@@ -302,14 +327,20 @@ function moveDialog(nb: Notebook, folders: Folder[], after: () => void) {
 }
 
 function coverDialog(nb: Notebook, after: () => void) {
-  const m = modal("Portada", h("div", { class: "swatches big" }, COVERS.map((c) => h("button", {
-    class: `swatch ${c === nb.cover ? "active" : ""}`, style: `background:${c}`, type: "button", "aria-label": c,
-    onclick: async () => {
-      await db.notebooks.put({ ...nb, cover: c });
-      m.close();
-      after();
-    },
-  }))));
+  const state = { cover: nb.cover, coverPattern: nb.coverPattern ?? ("plain" as CoverPattern), coverImage: nb.coverImage };
+  const picker = coverPicker(state, () => nb.title);
+  const m = modal("Portada", [
+    picker.el,
+    h("div", { class: "actions" },
+      h("button", { class: "btn", type: "button", onclick: () => m.close() }, "Cancelar"),
+      h("button", { class: "btn primary", type: "button", onclick: async () => {
+        if (nb.coverImage && nb.coverImage !== state.coverImage) await db.blobs.delete(nb.coverImage);
+        await db.notebooks.put({ ...nb, ...state });
+        m.close();
+        after();
+      } }, "Guardar"),
+    ),
+  ], { wide: true });
 }
 
 function templatePreview(t: TemplateId, paper: PaperColor): HTMLCanvasElement {
@@ -324,19 +355,14 @@ function templatePreview(t: TemplateId, paper: PaperColor): HTMLCanvasElement {
 }
 
 export function newNotebookDialog(folderId: string | null, open: (id: string) => void): void {
-  let cover = COVERS[Math.floor(Math.random() * COVERS.length)];
+  const coverState: { cover: string; coverPattern: CoverPattern; coverImage?: string } = randomCover();
   let template: TemplateId = "lined";
   let paper: PaperColor = "white";
   let size: PageSizeId = "a4";
 
-  const title = h("input", { class: "input", value: "Cuaderno sin título" });
-  const swatches = h("div", { class: "swatches" });
-  const drawSwatches = () =>
-    swatches.replaceChildren(...COVERS.map((c) => h("button", {
-      class: `swatch ${c === cover ? "active" : ""}`, style: `background:${c}`, type: "button", "aria-label": `Portada ${c}`,
-      onclick: () => ((cover = c), drawSwatches()),
-    })));
-  drawSwatches();
+  const title = h("input", { class: "input", value: "", placeholder: "Por ejemplo: Biología, Tema 3" });
+  const picker = coverPicker(coverState, () => title.value.trim() || "Cuaderno sin título");
+  title.addEventListener("input", () => picker.refresh());
 
   const templates = h("div", { class: "tpl-grid" });
   const drawTemplates = () =>
@@ -360,26 +386,26 @@ export function newNotebookDialog(folderId: string | null, open: (id: string) =>
 
   const m = modal("Nuevo cuaderno", [
     h("label", { class: "field" }, h("span", {}, "Título"), title),
-    h("div", { class: "field" }, h("span", {}, "Portada"), swatches),
+    h("div", { class: "field" }, h("span", {}, "Portada"), picker.el),
     h("div", { class: "field" }, h("span", {}, "Plantilla"), templates),
     h("div", { class: "row wrap" },
       h("div", { class: "field" }, h("span", {}, "Papel"), papers),
       h("label", { class: "field" }, h("span", {}, "Tamaño de página"), sizes),
     ),
     h("div", { class: "actions" }, h("button", { class: "btn primary", type: "button", onclick: async () => {
-      const nb = await createNotebook({ title: title.value.trim() || "Cuaderno sin título", cover, template, paper, pageSize: size, folderId });
+      const nb = await createNotebook({ title: title.value.trim() || "Cuaderno sin título", ...coverState, template, paper, pageSize: size, folderId });
       m.close();
       open(nb.id);
     } }, "Crear")),
   ], { wide: true });
-  setTimeout(() => title.select(), 30);
+  setTimeout(() => title.focus(), 30);
 }
 
 export async function importFlow(folderId: string | null, open: (id: string) => void): Promise<void> {
   const files = await pickFile("application/pdf,image/*", true);
   if (!files.length) return;
   const name = files[0].name.replace(/\.[^.]+$/, "");
-  const nb = await createNotebook({ title: name, cover: COVERS[0], template: "blank", paper: "white", pageSize: "a4", folderId });
+  const nb = await createNotebook({ title: name, ...randomCover(), template: "blank", paper: "white", pageSize: "a4", folderId });
   // createNotebook adds one blank page; imported content replaces it.
   const blankId = nb.pageIds[0];
   nb.pageIds = [];

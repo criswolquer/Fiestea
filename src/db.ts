@@ -163,5 +163,6 @@ export async function deleteNotebookDeep(nb: Notebook): Promise<void> {
     await db.recordings.delete(r.id);
   }
   for (const a of await db.ai.ofNotebook(nb.id)) await db.ai.delete(a.id);
+  if (nb.coverImage) await db.blobs.delete(nb.coverImage);
   await db.notebooks.delete(nb.id);
 }
