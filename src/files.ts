@@ -56,8 +56,11 @@ export async function pdfToPages(
   onProgress?: (done: number, total: number) => void,
 ): Promise<Page[]> {
   const pdfjs = await import("pdfjs-dist");
-  const workerUrl = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
-  pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+  if (!pdfjs.GlobalWorkerOptions.workerSrc) {
+    // Load the worker from a blob so the app also works as a single self-contained file.
+    const code = (await import("pdfjs-dist/build/pdf.worker.min.mjs?raw")).default;
+    pdfjs.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([code], { type: "text/javascript" }));
+  }
   const task = pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) });
   const doc = await task.promise;
   const pages: Page[] = [];

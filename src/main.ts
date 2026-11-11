@@ -6,20 +6,48 @@ import { applyTheme } from "./settings";
 const root = document.getElementById("app")!;
 let cleanup: (() => void) | null = null;
 
-const openNotebook = (id: string) => (location.hash = `#/n/${id}`);
-const openLibrary = () => (location.hash = "#/");
+/** The open notebook id, or null for the library. */
+let view: string | null = null;
 
-async function route() {
+function fromHash(): string | null {
+  return /^#\/n\/([\w-]+)/.exec(location.hash)?.[1] ?? null;
+}
+
+/*
+ * Navigation renders directly and mirrors the view in the URL hash, so the
+ * browser's back button works where the hash is available, and the app still
+ * works where it is not (for example inside an embedded preview).
+ */
+function navigate(id: string | null) {
+  view = id;
+  try {
+    location.hash = id ? `#/n/${id}` : "#/";
+  } catch {
+    /* hash not writable here */
+  }
+  render();
+}
+
+const openNotebook = (id: string) => navigate(id);
+const openLibrary = () => navigate(null);
+
+async function render() {
   cleanup?.();
   cleanup = null;
-  const m = /^#\/n\/([\w-]+)/.exec(location.hash);
-  if (m) cleanup = await renderEditor(root, m[1], openLibrary, openNotebook);
+  if (view) cleanup = await renderEditor(root, view, openLibrary, openNotebook);
   else await renderLibrary(root, openNotebook);
 }
 
-window.addEventListener("hashchange", route);
+window.addEventListener("hashchange", () => {
+  const id = fromHash();
+  if (id !== view) {
+    view = id;
+    render();
+  }
+});
 applyTheme();
-route();
+view = fromHash();
+render();
 
 if ("serviceWorker" in navigator && import.meta.env.PROD) {
   window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
