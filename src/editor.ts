@@ -10,9 +10,11 @@ import {
   drawMask,
   drawShape,
   drawStroke,
+  freeCanvas,
   hitItem,
   itemBounds,
   pageToCanvas,
+  pageImagesReady,
   preloadPageImages,
   recognizeShape,
   renderPage,
@@ -111,10 +113,15 @@ interface Pane {
   observer: IntersectionObserver;
 }
 
-const MAX_CANVAS_AREA = 16_000_000;
+/*
+ * Canvas memory budget. iOS Safari caps the total memory of all canvases and,
+ * once over, silently renders blank pages, so each page canvas stays modest.
+ */
+const MAX_CANVAS_AREA = 6_000_000;
+const MAX_SCALE = 2.5;
 
 function backingScale(page: Page, zoom: number): number {
-  const want = zoom * (window.devicePixelRatio || 1);
+  const want = Math.min(MAX_SCALE, zoom * (window.devicePixelRatio || 1));
   return Math.min(want, Math.sqrt(MAX_CANVAS_AREA / (page.width * page.height)));
 }
 
@@ -146,7 +153,6 @@ export async function renderEditor(root: HTMLElement, notebookId: string, back: 
     await db.pages.put(p);
     await db.notebooks.put(nb);
   }
-  await Promise.all(pages.map(preloadPageImages));
 
   let current = 0;
   let activeLayer = 0;
@@ -341,7 +347,7 @@ export async function renderEditor(root: HTMLElement, notebookId: string, back: 
             else releaseCanvas(v);
           }
         },
-        { root: el, rootMargin: "800px 400px" },
+        { root: el, rootMargin: "300px 200px" },
       ),
     };
     el.addEventListener("scroll", () => {
@@ -388,6 +394,15 @@ export async function renderEditor(root: HTMLElement, notebookId: string, back: 
   }
 
   function ensureRendered(v: PageView) {
+    if (!pageImagesReady(v.page)) {
+      // Decode this page's PDF background or pictures first, then draw.
+      preloadPageImages(v.page).then(() => {
+        if (!v.visible) return;
+        v.dirty = true;
+        if (pageImagesReady(v.page)) ensureRendered(v);
+      });
+      if (v.canvas.width) return;
+    }
     const scale = backingScale(v.page, v.pane.zoom);
     if (!v.dirty && Math.abs(v.renderedScale - scale) < 0.01 && v.canvas.width) return;
     const W = Math.round(v.page.width * scale);
@@ -409,7 +424,7 @@ export async function renderEditor(root: HTMLElement, notebookId: string, back: 
   }
 
   function sizeOverlay(v: PageView) {
-    const scale = Math.min(backingScale(v.page, v.pane.zoom), 2 * (window.devicePixelRatio || 1));
+    const scale = Math.min(backingScale(v.page, v.pane.zoom), 1.5);
     const W = Math.round(v.page.width * scale);
     const H = Math.round(v.page.height * scale);
     if (v.overlay.width !== W || v.overlay.height !== H) {
@@ -1254,6 +1269,7 @@ export async function renderEditor(root: HTMLElement, notebookId: string, back: 
     c.width = Math.round(r.w * scale);
     c.height = Math.round(r.h * scale);
     c.getContext("2d")!.drawImage(full, r.x * scale, r.y * scale, r.w * scale, r.h * scale, 0, 0, c.width, c.height);
+    freeCanvas(full);
     return c;
   }
 

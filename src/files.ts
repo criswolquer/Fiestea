@@ -1,5 +1,5 @@
 import { db, uid } from "./db";
-import { pageToCanvas } from "./render";
+import { freeCanvas, pageToCanvas } from "./render";
 import type { AiResult, CoverPattern, Folder, Notebook, Page, PageSizeId, PaperColor, Recording, TemplateId } from "./types";
 import { LAYER_COUNT, PAGE_SIZES } from "./types";
 
@@ -57,31 +57,39 @@ export async function pdfToPages(
   nb: Notebook,
   onProgress?: (done: number, total: number) => void,
 ): Promise<Page[]> {
-  const pdfjs = await import("pdfjs-dist");
+  // The "legacy" build of pdf.js supports a wider range of browsers, including older Safari on iOS.
+  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   if (!pdfjs.GlobalWorkerOptions.workerSrc) {
     // Load the worker from a blob so the app also works as a single self-contained file.
-    const code = (await import("pdfjs-dist/build/pdf.worker.min.mjs?raw")).default;
+    const code = (await import("pdfjs-dist/legacy/build/pdf.worker.min.mjs?raw")).default;
     pdfjs.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([code], { type: "text/javascript" }));
   }
   const task = pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) });
   const doc = await task.promise;
   const pages: Page[] = [];
+  // One canvas reused for every page: iOS Safari has a small total canvas memory budget and
+  // silently draws nothing once it is exceeded.
+  const canvas = document.createElement("canvas");
   for (let n = 1; n <= doc.numPages; n++) {
     const pdfPage = await doc.getPage(n);
     const base = pdfPage.getViewport({ scale: 1 });
     // Page coordinates: 794 px wide like A4; render the background at 2x for sharpness.
     const width = 794;
     const height = Math.round((base.height / base.width) * width);
-    const viewport = pdfPage.getViewport({ scale: (width / base.width) * 2 });
-    const canvas = document.createElement("canvas");
+    // Render at 2x for sharpness, capped at about 4 million pixels per page.
+    const want = (width / base.width) * 2;
+    const scale = Math.min(want, Math.sqrt(4_000_000 / (base.width * base.height)));
+    const viewport = pdfPage.getViewport({ scale });
     canvas.width = Math.round(viewport.width);
     canvas.height = Math.round(viewport.height);
     const ctx = canvas.getContext("2d")!;
     ctx.fillStyle = "#fff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     await pdfPage.render({ canvas, canvasContext: ctx, viewport }).promise;
+    const blob = await canvasToBlob(canvas);
+    pdfPage.cleanup();
     const blobId = uid();
-    await db.blobs.put(blobId, await canvasToBlob(canvas));
+    await db.blobs.put(blobId, blob);
     const page = blankPage(nb, "blank", "white");
     page.width = width;
     page.height = height;
@@ -89,6 +97,7 @@ export async function pdfToPages(
     pages.push(page);
     onProgress?.(n, doc.numPages);
   }
+  freeCanvas(canvas);
   await task.destroy();
   return pages;
 }
@@ -114,10 +123,12 @@ export async function exportPdf(nb: Notebook, pages: Page[]): Promise<Blob> {
   let pdf: InstanceType<typeof jsPDF> | null = null;
   for (const p of pages) {
     const c = await pageToCanvas(p, 2, { hideMasks: true });
+    const data = c.toDataURL("image/jpeg", 0.92);
+    freeCanvas(c);
     const orientation = p.width > p.height ? "l" : "p";
     if (!pdf) pdf = new jsPDF({ unit: "px", format: [p.width, p.height], orientation, hotfixes: ["px_scaling"] });
     else pdf.addPage([p.width, p.height], orientation);
-    pdf.addImage(c.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, p.width, p.height);
+    pdf.addImage(data, "JPEG", 0, 0, p.width, p.height);
   }
   if (!pdf) throw new Error("El cuaderno no tiene páginas.");
   pdf.setProperties({ title: nb.title });
@@ -125,7 +136,10 @@ export async function exportPdf(nb: Notebook, pages: Page[]): Promise<Blob> {
 }
 
 export async function exportPng(p: Page): Promise<Blob> {
-  return canvasToBlob(await pageToCanvas(p, 2, { hideMasks: true }), "image/png");
+  const c = await pageToCanvas(p, 2, { hideMasks: true });
+  const blob = await canvasToBlob(c, "image/png");
+  freeCanvas(c);
+  return blob;
 }
 
 /* ---------- full backup (move notes between devices) ---------- */

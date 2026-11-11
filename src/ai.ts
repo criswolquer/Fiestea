@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { BetaContentBlockParam } from "@anthropic-ai/sdk/resources/beta/messages/messages";
 import type { Flashcard, Page, QuizQuestion } from "./types";
-import { pageToCanvas } from "./render";
+import { freeCanvas, pageToCanvas } from "./render";
 
 /*
  * AI tools (summaries, quizzes, flashcards, the AI pen and transcript
@@ -105,8 +105,10 @@ async function pageBlocks(pages: Page[]): Promise<BetaContentBlockParam[]> {
     // ~1000px on the long side keeps handwriting legible without huge requests.
     const scale = Math.min(1.2, 1100 / Math.max(p.width, p.height));
     const c = await pageToCanvas(p, scale, { hideMasks: true });
+    const data = await canvasToBase64(c);
+    freeCanvas(c);
     blocks.push({ type: "text", text: `Página ${i + 1}:` });
-    blocks.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: await canvasToBase64(c) } });
+    blocks.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data } });
   }
   return blocks;
 }

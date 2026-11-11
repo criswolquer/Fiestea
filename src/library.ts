@@ -1,14 +1,18 @@
 import { db, deleteNotebookDeep, uid } from "./db";
 import { createNotebook, duplicateNotebook, exportPdf, imageToPage, loadPages, pdfToPages } from "./files";
 import { checkLock, makeLock, unlocked } from "./lock";
-import { PAPER, TEMPLATES, drawPaper, pageToCanvas } from "./render";
+import { PAPER, TEMPLATES, drawPaper, freeCanvas, pageToCanvas } from "./render";
 import { openSettings } from "./settings";
 import type { Folder, Notebook, PageSizeId, PaperColor, TemplateId } from "./types";
 import { PAGE_SIZES } from "./types";
+import logoSvg from "../public/icon.svg?raw";
 import { coverArt, coverPicker, coverSpecOf, randomCover } from "./covers";
 import type { CoverPattern } from "./types";
 import { confirmDialog, download, formatDate, h, icon, iconButton, modal, pickFile, popupMenu, promptDialog, toast } from "./ui";
 import { blankPage } from "./files";
+
+/** The logo, embedded so the app also works as one self-contained file. */
+const LOGO = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(logoSvg)}`;
 
 let shelfMode: "covers" | "pages" = readShelfMode();
 
@@ -38,6 +42,7 @@ async function thumbnail(nb: Notebook): Promise<string | null> {
   if (hit) return hit;
   const c = await pageToCanvas(page, 260 / page.width, { hideMasks: false });
   const url = c.toDataURL("image/jpeg", 0.8);
+  freeCanvas(c);
   thumbCache.set(key, url);
   return url;
 }
@@ -117,7 +122,7 @@ export async function renderLibrary(root: HTMLElement, open: (id: string) => voi
   const sidebar = h(
     "aside",
     { class: "sidebar" },
-    h("div", { class: "brand" }, h("img", { src: "icon.svg", alt: "" }), h("span", {}, "Trazo")),
+    h("div", { class: "brand" }, h("img", { src: LOGO, alt: "" }), h("span", {}, "Trazo")),
     navItem("Todos", "book", { kind: "all" }, notebooks.length),
     navItem("Favoritos", "star", { kind: "favorites" }, notebooks.filter((n) => n.favorite).length),
     navItem("Recientes", "clock", { kind: "recent" }, Math.min(8, notebooks.length)),
@@ -205,7 +210,7 @@ export async function renderLibrary(root: HTMLElement, open: (id: string) => voi
       h(
         "div",
         { class: "empty" },
-        h("img", { src: "icon.svg", alt: "", width: 72, height: 72 }),
+        h("img", { src: LOGO, alt: "", width: 72, height: 72 }),
         h("h2", {}, search ? "Nada coincide con la búsqueda" : "Empieza tu primer cuaderno"),
         h("p", { class: "muted" }, "Escribe a mano con el dedo o el Apple Pencil, importa PDFs y usa la IA para estudiar."),
         h("button", { class: "btn primary", type: "button", onclick: () => newNotebookDialog(currentFolder, open) }, icon("plus"), "Nuevo cuaderno"),
