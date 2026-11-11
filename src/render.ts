@@ -351,6 +351,27 @@ function wavyPath(ctx: CanvasRenderingContext2D, pts: Point[], amp: number, wave
   }
 }
 
+/**
+ * Fast preview of a stroke being drawn: a single smoothed path at the stroke's
+ * average width. The full rendering (pressure, nib angle, texture) happens once
+ * the stroke is finished.
+ */
+export function drawLiveStroke(ctx: CanvasRenderingContext2D, s: Stroke): void {
+  if (s.pen === "dashed" || s.pen === "dotted" || s.pen === "wavy" || s.pen === "highlighter") {
+    drawStroke(ctx, s);
+    return;
+  }
+  ctx.save();
+  ctx.strokeStyle = s.color;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.globalAlpha = s.pen === "pencil" ? 0.8 : 1;
+  ctx.lineWidth = s.pen === "pencil" ? s.width * 0.8 : s.width;
+  smoothPath(ctx, s.points);
+  ctx.stroke();
+  ctx.restore();
+}
+
 /* ---------- shapes, text, images ---------- */
 
 export function drawShape(ctx: CanvasRenderingContext2D, s: Shape): void {

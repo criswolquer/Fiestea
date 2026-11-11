@@ -7,6 +7,7 @@ import { openRecorder } from "./recorder";
 import {
   TEMPLATES,
   drawItem,
+  drawLiveStroke,
   drawMask,
   drawShape,
   drawStroke,
@@ -636,11 +637,24 @@ export async function renderEditor(root: HTMLElement, notebookId: string, back: 
   let momentumId = 0;
 
   function attachGestures(pane: Pane) {
-    // Apple Pencil on iOS: stop the stylus from scrolling the page.
-    pane.el.addEventListener("touchstart", (e) => {
-      if (Array.from(e.touches).some((t) => (t as Touch & { touchType?: string }).touchType === "stylus")) e.preventDefault();
-    }, { passive: false });
+    /*
+     * iOS Safari does not always honour touch-action, and would scroll, zoom,
+     * show the text magnifier or start a back-swipe while writing. Cancel the
+     * browser's default touch handling on pages whenever the touch is ours.
+     */
+    const ours = (e: TouchEvent) => {
+      if (!(e.target as HTMLElement).closest?.(".page-overlay")) return false;
+      if (Array.from(e.touches).some((t) => (t as Touch & { touchType?: string }).touchType === "stylus")) return true;
+      // Fingers scroll natively in Pencil-only mode and with the hand tool.
+      return !(fingersPan() || settings.tool === "hand") || e.touches.length > 1;
+    };
+    pane.el.addEventListener("touchstart", (e) => ours(e) && e.preventDefault(), { passive: false });
+    pane.el.addEventListener("touchmove", (e) => ours(e) && e.preventDefault(), { passive: false });
   }
+
+  /** Once an Apple Pencil has been used, fingers scroll instead of drawing (palm rejection). */
+  let pencilSeen = false;
+  const fingersPan = () => prefs.pencilOnly || pencilSeen;
 
   function pageCoords(v: PageView, e: PointerEvent): Point {
     const r = v.overlay.getBoundingClientRect();
@@ -660,6 +674,14 @@ export async function renderEditor(root: HTMLElement, notebookId: string, back: 
 
     el.addEventListener("pointerdown", (e) => {
       closeMenus();
+      if (e.pointerType === "pen" && !pencilSeen) {
+        pencilSeen = true;
+        if (!prefs.pencilOnly) toast("Apple Pencil detectado: el lápiz escribe y el dedo desplaza.");
+      }
+      // A primary touch is the first finger down: forget any touch whose release was lost,
+      // otherwise the app would think two fingers are down and refuse to draw.
+      if (e.pointerType === "touch" && e.isPrimary)
+        for (const [id, ap] of activePointers) if (ap.type === "touch") activePointers.delete(id);
       activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY, type: e.pointerType });
       cancelAnimationFrame(momentumId);
 
@@ -675,7 +697,7 @@ export async function renderEditor(root: HTMLElement, notebookId: string, back: 
         return;
       }
 
-      const fingerPans = e.pointerType === "touch" && prefs.pencilOnly;
+      const fingerPans = e.pointerType === "touch" && fingersPan();
       if (settings.tool === "hand" || fingerPans || (e.pointerType === "mouse" && e.button === 1)) {
         pan = { pane: v.pane, last: [e.clientX, e.clientY], vel: [0, 0], t: performance.now() };
         el.setPointerCapture(e.pointerId);
@@ -683,6 +705,8 @@ export async function renderEditor(root: HTMLElement, notebookId: string, back: 
       }
       if (e.pointerType === "mouse" && e.button !== 0) return;
 
+      // Stops the compatibility mouse events, which would steal focus from a text box opened here.
+      e.preventDefault();
       el.setPointerCapture(e.pointerId);
       const handler = startTool(v, pageCoords(v, e), e);
       if (handler) drawing = { id: e.pointerId, ...handler };
@@ -853,8 +877,13 @@ export async function renderEditor(root: HTMLElement, notebookId: string, back: 
     }
   }
 
-  function makeShape(kind: ShapeKind, a: Point, b: Point): Shape {
-    return { id: uid(), type: "shape", shape: kind, color: settings.color, width: settings.widths.pen, dashed: settings.shapeDashed, x1: a[0], y1: a[1], x2: b[0], y2: b[1] };
+  function makeShape(kind: ShapeKind, a: Point, b: Point, zoom = panes[0].zoom): Shape {
+    return { id: uid(), type: "shape", shape: kind, color: settings.color, width: settings.widths.pen / zoom, dashed: settings.shapeDashed, x1: a[0], y1: a[1], x2: b[0], y2: b[1] };
+  }
+
+  /** Converts a thickness chosen on screen into page units, so lines look the same at any zoom. */
+  function screenWidth(w: number, v: PageView): number {
+    return Math.round((w / v.pane.zoom) * 100) / 100;
   }
 
   function normRect(a: Point, b: Point) {
@@ -890,7 +919,7 @@ export async function renderEditor(root: HTMLElement, notebookId: string, back: 
       type: "stroke",
       pen,
       color: pen === "highlighter" ? settings.highlightColor : settings.color,
-      width: settings.widths[pen],
+      width: screenWidth(settings.widths[pen], v),
       points: [p],
     };
     let snapped: Shape | null = null;
@@ -899,15 +928,17 @@ export async function renderEditor(root: HTMLElement, notebookId: string, back: 
       clearTimeout(holdTimer);
       if (!settings.autoShape || pen === "highlighter") return;
       holdTimer = window.setTimeout(() => {
+        const b = itemBounds(stroke);
+        if (Math.max(b.w, b.h) * v.pane.zoom < 60) return; // too small: handwriting, not a shape
         const s = recognizeShape(stroke.points);
         if (!s) return;
         snapped = { ...s, id: uid(), color: stroke.color, width: stroke.width, dashed: pen === "dashed" || pen === "dotted" } as Shape;
         v.preview = (ctx) => drawShape(ctx, snapped!);
         scheduleOverlay(v);
         navigator.vibrate?.(10);
-      }, 550);
+      }, 800);
     };
-    v.preview = (ctx) => drawStroke(ctx, stroke);
+    v.preview = (ctx) => drawLiveStroke(ctx, stroke);
     scheduleOverlay(v);
     armHold();
     return {
@@ -952,7 +983,7 @@ export async function renderEditor(root: HTMLElement, notebookId: string, back: 
 
   function tempTool(v: PageView, p: Point, laser: boolean): Handler {
     const t: TempStroke = {
-      stroke: { id: uid(), type: "stroke", pen: "pen", color: settings.color, width: settings.widths.pen, points: [p] },
+      stroke: { id: uid(), type: "stroke", pen: "pen", color: settings.color, width: screenWidth(settings.widths.pen, v), points: [p] },
       times: [performance.now()],
       end: 0,
       laser,
@@ -976,7 +1007,7 @@ export async function renderEditor(root: HTMLElement, notebookId: string, back: 
     const page = v.page;
     let changed = false;
     const before = snap(page);
-    const r = settings.eraserSize;
+    const r = settings.eraserSize / v.pane.zoom;
     const eraseAt = (pt: Point) => {
       const items = layerItems(page);
       const keep = items.filter((it) => !hitItem(it, pt[0], pt[1], r));
@@ -1254,10 +1285,9 @@ export async function renderEditor(root: HTMLElement, notebookId: string, back: 
       if (e.key === "Escape") ta.blur();
     });
     v.wrap.append(ta);
-    setTimeout(() => {
-      ta.focus();
-      autosize();
-    }, 0);
+    // iOS only opens the keyboard when focus happens inside the touch handler itself.
+    ta.focus({ preventScroll: true });
+    autosize();
   }
 
   /* ---------- capture & AI pen ---------- */
@@ -1849,6 +1879,15 @@ export async function renderEditor(root: HTMLElement, notebookId: string, back: 
   };
   document.addEventListener("paste", onPaste);
 
+  // Safety net: forget pointers released outside a page (or after the page was rebuilt).
+  const forgetPointer = (e: PointerEvent) => activePointers.delete(e.pointerId);
+  window.addEventListener("pointerup", forgetPointer);
+  window.addEventListener("pointercancel", forgetPointer);
+  // Stop Safari's own pinch-zoom of the whole page while a notebook is open.
+  const noGesture = (e: Event) => e.preventDefault();
+  document.addEventListener("gesturestart", noGesture, { passive: false } as AddEventListenerOptions);
+  document.addEventListener("gesturechange", noGesture, { passive: false } as AddEventListenerOptions);
+
   const onHide = () => {
     if (document.visibilityState === "hidden") flush();
   };
@@ -1870,6 +1909,10 @@ export async function renderEditor(root: HTMLElement, notebookId: string, back: 
     document.removeEventListener("keydown", onKey);
     document.removeEventListener("paste", onPaste);
     document.removeEventListener("visibilitychange", onHide);
+    window.removeEventListener("pointerup", forgetPointer);
+    window.removeEventListener("pointercancel", forgetPointer);
+    document.removeEventListener("gesturestart", noGesture);
+    document.removeEventListener("gesturechange", noGesture);
     selectionBar.remove();
     panes.forEach((p) => p.observer.disconnect());
     closeMenus();

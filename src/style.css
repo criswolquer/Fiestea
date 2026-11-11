@@ -346,7 +346,13 @@ textarea.input.small { font-size: 13px; }
 
 /* ---------- editor ---------- */
 
-.editor { display: flex; flex-direction: column; height: 100%; background: var(--desk); }
+.editor {
+  display: flex; flex-direction: column; height: 100%; background: var(--desk);
+  /* No text selection, magnifier or long-press menu while writing. */
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+}
+.editor input, .editor textarea, .editor [contenteditable] { -webkit-user-select: text; user-select: text; }
+.page-wrap, .page-wrap canvas { -webkit-tap-highlight-color: transparent; }
 .ed-top {
   display: flex; align-items: center; gap: 4px;
   padding: calc(4px + env(safe-area-inset-top)) 8px 4px; min-height: var(--top-h);
