@@ -1,143 +1,93 @@
-# Fiestea 🎉
+# Trazo
 
-App Android para descubrir **fiestas de discoteca, sesiones de DJ, fiestas temáticas y ocio nocturno** cerca de ti (y, si quieres, también fiestas de pueblo y ferias).
-**Las fiestas se buscan en internet de forma automática cada noche con IA**; no hay que cargarlas a mano.
+Cuaderno digital para tomar apuntes a mano en iPhone, iPad y ordenador, con herramientas de IA para estudiar.
+Es una app web instalable (PWA): se abre en Safari y se añade a la pantalla de inicio, y funciona sin conexión.
 
-```
- ┌────────────────────────┐   cada noche   ┌──────────────┐   lee    ┌──────────────┐
- │ GitHub Actions (gratis)│ ─────────────► │  Supabase    │ ◄─────── │  App Android │
- │ importer/ + Claude IA  │   guarda       │ (base datos) │          │  (tu Pixel)  │
- │ + búsqueda web         │                └──────────────┘          └──────────────┘
- └────────────────────────┘
-```
+## Instalar en el iPhone o iPad
 
-## Qué hay en el proyecto
+1. Abre la dirección de la app en **Safari**.
+2. Pulsa **Compartir** → **Añadir a pantalla de inicio**.
+3. Ábrela desde el icono: se ve a pantalla completa, como una app normal.
 
-| Carpeta | Qué es |
-|---|---|
-| `app/` | App Android (Kotlin + Jetpack Compose). Mapa con OpenStreetMap (sin API key). |
-| `importer/` | Script en Python: busca con Claude y búsqueda web (por defecto, discotecas y ocio nocturno), saca el cartel de cada fiesta, las sitúa en el mapa, quita duplicados y las guarda en Supabase. |
-| `supabase/schema.sql` | Tabla de eventos y reglas de seguridad. |
-| `.github/workflows/` | Ejecuta el importador automáticamente una vez al día (03:00 UTC). |
+Los cuadernos se guardan en el propio dispositivo.
 
-### Funciones de la app
-- **Explorar**: lista "Esta noche cerca de ti" y "Próximamente", o vista de mapa. Con **fotos/carteles** de cada fiesta.
-- **Zona 📍**: "Cerca de mí" (GPS) o cualquier provincia. Si no hay nada cerca, enseña otras zonas en vez de quedarse vacía.
-- **Filtros**: hoy, este finde, 7 días, gratis, tipo de fiesta y distancia. También hay buscador.
-- **Ficha**: fecha, lugar, distancia, precio, botón **Voy**, **Cómo llegar**, compartir y guardar.
-- **Etiqueta ✨ "Detectado automáticamente"** con enlace a la fuente original.
-- **"Esta información es incorrecta"**: con 3 avisos la fiesta se oculta para todos.
-- **Publicar**: cualquiera con cuenta puede subir su fiesta y elegir el sitio en el mapa (y borrarla después).
-- **Mis planes**: fiestas a las que vas (con valoración cuando ya han empezado), guardadas y publicadas.
-- **Cuentas de usuario** (email y contraseña): necesarias para publicar, avisar de errores y contar el ambiente. Explorar no requiere cuenta.
-- **Ambiente en directo** 🔥: quien está en la fiesta (a menos de 1,5 km) cuenta si hay poca gente, bastante o que está a tope, si hay cola y cómo está el ambiente. Se muestra el resumen de los últimos 90 minutos en la ficha y en las tarjetas.
-- **Avisos** 🔔:
-  - Recordatorio la tarde antes (18:00) de las fiestas marcadas con "Voy"; si te apuntas el mismo día, 2 horas antes.
-  - "Fiestas nuevas cerca de ti": cada ~6 horas la app comprueba si el buscador ha encontrado fiestas nuevas en tu zona (radio y tipos configurables) y te avisa.
-  - Al pulsar el aviso se abre directamente la ficha de la fiesta.
+## Funciones
 
----
+**Escritura**
+- 8 plumas: bolígrafo, estilográfica, pincel, lápiz, fluorescente, discontinua, punteada y ondulada. Las plumas que varían el grosor responden a la presión del Apple Pencil.
+- Colores predefinidos y selector libre; grosor ajustable.
+- **Formas automáticas**: dibuja un círculo, un rectángulo, un triángulo o una línea y mantén el lápiz quieto un momento para que se convierta en una forma perfecta. También hay una herramienta de formas (línea, flecha, rectángulo, elipse, triángulo).
+- Borrador de trazos, texto escrito con teclado, selección para mover, duplicar, cambiar de color o pasar a otra capa.
+- Deshacer y rehacer.
+- Modo **"solo Apple Pencil"** (en Ajustes): el dedo desplaza y hace zoom, y el lápiz escribe.
 
-## Paso 0 · Probarla ya en tu móvil (sin configurar nada)
+**Herramientas especiales**
+- **Pluma que desaparece**: notas temporales que se borran solas a los 2 segundos.
+- **Puntero láser**: para señalar o presentar sin dejar marca.
+- **Ocultar para memorizar**: tapa partes de la página y tócalas para descubrirlas.
+- **Captura**: recorta una zona de la página para copiarla, guardarla, pegarla o preguntar a la IA.
+- **Capas**: tres capas por página, que se pueden ocultar, atenuar y vaciar. Sirven para resolver el mismo problema varias veces.
 
-1. Abre la carpeta `Fiestea` en **Android Studio** (File → Open).
-2. Espera a que termine el "Gradle sync". Si Android Studio sugiere actualizar AGP o Gradle, puedes aceptar.
-3. Conecta tu Pixel con la depuración USB activada y pulsa ▶ Run.
+**Organización**
+- Biblioteca con carpetas, favoritos, recientes, búsqueda y portadas de colores.
+- 9 plantillas (en blanco, rayado, rayado estrecho, cuadrícula, puntos, Cornell, pentagrama, lista de tareas y planificador semanal) y 4 colores de papel.
+- Tamaños de página: A4, Carta, Cuadrado, Móvil y **Nota grande**.
+- **Ampliar página** hacia abajo o el margen derecho, para tener espacio extra junto a un PDF.
+- **Vista de cuadrícula** para saltar entre páginas, reordenarlas, duplicarlas o borrarlas.
+- **Páginas duales**: el mismo cuaderno en dos paneles independientes.
+- **Imagen en imagen**: ventana flotante y ampliable con cualquier página.
+- **Documentos asociados**: enlaza otros cuadernos para abrirlos o verlos al lado.
+- **Protección con contraseña** por cuaderno.
 
-Sin Supabase, la app muestra **eventos de ejemplo en Madrid** para que veas cómo funciona.
+**Importar y exportar**
+- Importa PDFs (cada página se convierte en una página donde escribir) e imágenes.
+- Exporta a PDF o una página a PNG.
+- Copia de seguridad completa (Ajustes) para pasar los cuadernos a otro dispositivo.
 
-## Paso 1 · Base de datos (Supabase, gratis) · 5 min
+**Productividad**
+- Calculadora científica, temporizador y cronómetro.
+- Navegador integrado.
+- Grabación de voz con transcripción en vivo (si el navegador la ofrece).
 
-1. Crea una cuenta en https://supabase.com y luego un proyecto nuevo (región: Europa).
-2. Ve a **SQL Editor → New query**, pega el contenido de `supabase/schema.sql` y pulsa **Run**.
-   (Si ya lo habías ejecutado con una versión anterior, vuelve a ejecutarlo: se actualiza sin perder datos.)
-3. En **Project Settings → API** copia:
-   - **Project URL** → `https://xxxx.supabase.co`
-   - Clave **anon public**, que va en la app.
-   - Clave **service_role**, que va en el importador. **No la pongas nunca en la app.**
+**IA (con Claude)**
+- **Resumen** de una página o del cuaderno entero.
+- **Cuestionario** tipo test interactivo, con explicaciones.
+- **Tarjetas de memoria** que se giran y se repasan.
+- **Pluma IA**: rodea un ejercicio o una fórmula y pregunta; la respuesta se puede insertar en la página.
+- **Resumen de audio**: resume la transcripción de una grabación.
+- **Resumen de texto**: pega la transcripción de un vídeo de YouTube, de una clase o un artículo.
 
-### Cuentas de usuario
-Las cuentas con email vienen activadas por defecto en Supabase. Por defecto, Supabase pide **confirmar el email** con un enlace; la app lo gestiona ("te hemos enviado un correo…").
-- Para probar más rápido puedes desactivarlo en **Authentication → Sign In / Providers → Email → Confirm email**.
-- El servidor de correo incluido en Supabase tiene un límite bajo de envíos por hora. Para producción, configura el tuyo en **Authentication → Emails → SMTP Settings**.
+La IA lee la letra manuscrita a partir de una imagen de cada página. Para usarla, añade tu clave de API de Claude en **Ajustes**: se guarda solo en el dispositivo y las peticiones van directamente del navegador a la API de Anthropic.
 
-## Paso 2 · Conectar la app
+## Limitaciones
 
-Crea o edita el archivo `local.properties` en la raíz del proyecto (Android Studio ya crea uno) y añade:
+- **No hay sincronización en la nube.** Para pasar cuadernos de un dispositivo a otro, usa la copia de seguridad.
+- **Contraseña:** impide abrir el cuaderno dentro de la app, pero no cifra los datos del dispositivo.
+- **YouTube:** la app no descarga la transcripción por sí sola. Hay que copiarla de YouTube ("Mostrar transcripción") y pegarla.
+- **Navegador integrado:** algunas webs no se dejan mostrar dentro de otra app. Para esas está el botón "Abrir fuera".
+- **Transcripción de voz:** depende del navegador. Safari la ofrece en iOS 14.5 o posterior. Si no está disponible, se guarda solo el audio y la transcripción se puede escribir a mano.
 
-```properties
-supabase.url=https://xxxx.supabase.co
-supabase.anonKey=eyJhbGciOi...tu_clave_anon
-```
-
-Vuelve a ejecutar la app. Ahora lee las fiestas reales de tu base de datos.
-
-## Paso 3 · Clave de la IA
-
-1. Entra en https://console.anthropic.com, añade saldo y crea una **API key**.
-2. **Coste**: cada provincia supone una consulta a la IA por cada enfoque (por defecto 2), con hasta 10–14 búsquedas web cada una, y el robot se ejecuta 2 veces al día. Tras la primera ejecución, mira en la consola de Anthropic (**Usage**) cuánto ha costado y ajusta:
-   - Menos provincias (`PROVINCES`) o menos enfoques (`SEARCH_FOCUSES`).
-   - Al final de cada ejecución, el registro del robot muestra una **estimación del coste** ("Consumo IA… coste aproximado").
-   - Si se acaba el saldo, el robot se para, guarda lo que haya encontrado y marca la ejecución en rojo.
-   - Por defecto usa el modelo **Haiku**, el más barato. Si quieres más precisión (y más coste), crea la variable `CLAUDE_MODEL` = `claude-sonnet-5`.
-   - `MAX_SEARCHES` limita las búsquedas web por consulta (por ejemplo `3` para gastar menos).
-
-## Paso 4 · Automatizarlo cada noche (GitHub, gratis)
-
-1. Sube el proyecto a un repositorio de GitHub (puede ser privado).
-2. En el repositorio, ve a **Settings → Secrets and variables → Actions → New repository secret** y crea:
-   - `ANTHROPIC_API_KEY`
-   - `SUPABASE_URL`
-   - `SUPABASE_SERVICE_KEY` (la clave service_role)
-3. Pestaña **Actions → "Importar fiestas con IA" → Run workflow** para la primera carga.
-   A partir de ahí se ejecuta solo **todas las noches**.
-
-### Ajustes opcionales (en "Variables", no en "Secrets")
-| Variable | Para qué | Por defecto |
-|---|---|---|
-| `PROVINCES` | Limitarlo a ciertas provincias, p. ej. `Zamora,León,Salamanca` (se buscan todas cada noche) | Toda España en rotación |
-| `PROVINCES_PER_RUN` | Provincias por ejecución en modo rotación (si no pones `PROVINCES`) | 3 |
-| `DAYS_AHEAD` | Cuántos días hacia delante buscar | 21 |
-| `CLAUDE_MODEL` | Modelo de IA | `claude-haiku-4-5-20251001` |
-| `MAX_SEARCHES` | Máximo de búsquedas web por consulta | 4–6 según el tipo |
-| `SEARCH_FOCUSES` | Qué buscar, separado por comas: `discotecas` (programación de cada discoteca/club y webs de entradas), `noche` (fiestas temáticas, universitarias, salas, conciertos), `fiestas` (agendas oficiales, ferias, fiestas de ciudades), `pueblos` (fiestas de pueblos, comarca por comarca) | `discotecas,noche` |
-| `CONTACT_EMAIL` | Contacto para el servicio de mapas Nominatim (lo piden sus normas) | — |
-
-## Probar el importador en tu ordenador
+## Desarrollo
 
 ```bash
-cd importer
-pip install -r requirements.txt
-export ANTHROPIC_API_KEY=sk-ant-...
-python import_events.py --dry-run --provinces "Zamora"
+npm install
+npm run dev       # servidor local (accesible desde el móvil en la misma red)
+npm run build     # compila en dist/
+npm run preview   # sirve la versión compilada
 ```
 
-`--dry-run` muestra las fiestas encontradas en pantalla sin guardarlas en la base de datos.
+Está hecha con TypeScript y Vite, sin frameworks. Los datos se guardan en IndexedDB. Usa `pdfjs-dist` para importar PDFs, `jspdf` para exportarlos y `@anthropic-ai/sdk` para la IA.
 
----
+| Archivo | Contenido |
+|---|---|
+| `src/editor.ts` | Lienzo, herramientas, capas, zoom, páginas y paneles |
+| `src/render.ts` | Dibujo de plantillas, plumas, formas, texto y reconocimiento de formas |
+| `src/library.ts` | Biblioteca, carpetas y creación de cuadernos |
+| `src/ai.ts`, `src/aiviews.ts` | Llamadas a Claude y pantallas de resumen, cuestionario y tarjetas |
+| `src/files.ts` | Importar y exportar PDF e imágenes, copias de seguridad |
+| `src/widgets.ts`, `src/recorder.ts` | Calculadora, temporizador, navegador y grabadora |
+| `src/db.ts`, `src/types.ts` | Almacenamiento y modelo de datos |
 
-## Cómo evita errores la IA
-- Solo acepta fiestas con **fecha concreta** y **URL de la fuente**. Descarta las que ya pasaron o duran más de 20 días.
-- Sitúa cada fiesta con OpenStreetMap y descarta las que caen fuera de España.
-- Detecta duplicados: "Fiestas de San Roque 2026" y "Fiesta San Roque" en el mismo pueblo y día cuentan como una sola.
-- Borra cada noche las fiestas terminadas hace más de 2 días.
-- Los usuarios pueden avisar de errores; con 3 avisos la fiesta desaparece.
+### Publicación
 
-## Seguridad de los datos (probado)
-- Sin cuenta solo se puede **leer**. Publicar, votar el ambiente y avisar de errores exige sesión.
-- Nadie puede publicar a nombre de otro, ni hacerse pasar por el buscador automático.
-- Cada usuario solo puede borrar lo que ha publicado.
-- Cada usuario cuenta **una sola vez** al avisar de un error, aunque pulse varias veces.
-- Los votos de ambiente son anónimos: solo se publica el resumen (media de los últimos 90 minutos), nunca quién votó qué.
-
-## Siguientes pasos posibles
-- Planes con amigos: ver qué amigos van y crear grupos.
-- Fotos de los eventos (Supabase Storage).
-- Perfil para discotecas y ayuntamientos, con fiestas destacadas.
-- Avisos push desde el servidor (Firebase Cloud Messaging) para avisar al instante, sin esperar a la comprobación periódica.
-
-## Notas técnicas
-- `minSdk 26`, `targetSdk 35`, AGP 8.7, Kotlin 2.1, Compose BOM 2024.12.
-- Mapa: osmdroid + teselas de OpenStreetMap. Para mucho tráfico conviene un proveedor de teselas propio (MapTiler, Stadia…).
-- Las horas se guardan como hora local del lugar, sin zona horaria.
-- Avisos con WorkManager: siguen funcionando tras reiniciar el móvil. Android puede retrasar la comprobación periódica unos minutos para ahorrar batería.
+`.github/workflows/deploy.yml` publica la app en GitHub Pages en cada push a `main`. Hay que activarlo una vez en el repositorio: **Settings → Pages → Source: GitHub Actions**.
