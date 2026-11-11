@@ -1,0 +1,30 @@
+{
+  "name": "trazo",
+  "version": "1.0.0",
+  "description": "Trazo: cuaderno digital para tomar apuntes a mano, con herramientas de IA",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "tsc && vite build",
+    "preview": "vite preview --host"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/criswolquer/Fiestea.git"
+  },
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/criswolquer/Fiestea/issues"
+  },
+  "homepage": "https://github.com/criswolquer/Fiestea#readme",
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^6.4.6"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0",
+    "jspdf": "^4.2.1",
+    "pdfjs-dist": "^6.5.438"
+  },
+  "private": true,
+  "type": "module"
+}
