@@ -47,12 +47,13 @@ Responde siempre en el idioma de los apuntes; si no está claro, en español.`;
 
 interface RunOptions {
   content: BetaContentBlockParam[];
+  effort?: "low" | "medium" | "high";
   schema?: Record<string, unknown>;
   onText?: (snapshot: string) => void;
   signal?: AbortSignal;
 }
 
-async function run({ content, schema, onText, signal }: RunOptions): Promise<string> {
+async function run({ content, schema, onText, signal, effort = "medium" }: RunOptions): Promise<string> {
   const c = client();
   try {
     const stream = c.beta.messages.stream(
@@ -64,8 +65,8 @@ async function run({ content, schema, onText, signal }: RunOptions): Promise<str
         // If a safety classifier declines, the API retries on a fallback model in the same call.
         fallbacks: "default",
         output_config: schema
-          ? { effort: "medium", format: { type: "json_schema", schema } }
-          : { effort: "medium" },
+          ? { effort, format: { type: "json_schema", schema } }
+          : { effort },
         messages: [{ role: "user", content }],
       },
       { signal },
@@ -230,4 +231,27 @@ export async function askAboutRegion(
     onText,
     signal,
   });
+}
+
+/**
+ * Reads handwriting and returns it as typed text, fixing obvious spelling slips.
+ * Low effort keeps it quick: it runs every time the person pauses while writing.
+ */
+export async function transcribeHandwriting(image: HTMLCanvasElement, signal?: AbortSignal): Promise<string> {
+  const text = await run({
+    effort: "low",
+    content: [
+      { type: "image", source: { type: "base64", media_type: "image/png", data: await canvasToBase64(image, "image/png") } },
+      {
+        type: "text",
+        text: `Transcribe el texto manuscrito de la imagen.
+- Corrige solo faltas de ortografía evidentes y letras mal trazadas; no cambies palabras ni el sentido.
+- Respeta los saltos de línea del original.
+- Si hay fórmulas, escríbelas en texto plano (por ejemplo x^2 + 3x = 0).
+- Responde únicamente con el texto transcrito, sin comillas ni comentarios. Si no hay texto legible, responde vacío.`,
+      },
+    ],
+    signal,
+  });
+  return text.trim().replace(/^["«]|["»]$/g, "");
 }

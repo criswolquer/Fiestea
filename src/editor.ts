@@ -1,4 +1,4 @@
-import { askAboutRegion } from "./ai";
+import { AiError, askAboutRegion, getApiKey, transcribeHandwriting } from "./ai";
 import { openAiHub } from "./aiviews";
 import { db, uid } from "./db";
 import { blankPage, exportPdf, exportPng, imageToPage, loadPages, pdfToPages } from "./files";
@@ -42,7 +42,7 @@ import { markdown, openBrowser, openCalculator, openTimer } from "./widgets";
 /* Tool settings                                                       */
 /* ------------------------------------------------------------------ */
 
-type Tool = "pen" | "eraser" | "shape" | "text" | "select" | "laser" | "vanish" | "hide" | "capture" | "aipen" | "hand";
+type Tool = "pen" | "convert" | "eraser" | "shape" | "text" | "select" | "laser" | "vanish" | "hide" | "capture" | "aipen" | "hand";
 
 export const PENS: { id: PenKind; label: string }[] = [
   { id: "pen", label: "Bolígrafo" },
@@ -282,6 +282,7 @@ export async function renderEditor(root: HTMLElement, notebookId: string, back: 
       "div",
       { class: "tool-group" },
       toolBtn("pen", "pen", "Pluma (P)"),
+      toolBtn("convert", "handtext", "Escritura a texto: escribe a mano y se convierte en texto"),
       toolBtn("eraser", "eraser", "Borrador (E)"),
       toolBtn("shape", "shape", "Formas (S)"),
       toolBtn("text", "text", "Texto (T)"),
@@ -832,6 +833,7 @@ export async function renderEditor(root: HTMLElement, notebookId: string, back: 
 
     switch (settings.tool) {
       case "pen":
+      case "convert":
         return penTool(v, p);
       case "vanish":
       case "laser":
@@ -977,8 +979,93 @@ export async function renderEditor(root: HTMLElement, notebookId: string, back: 
               // Masks must stay on top of ink.
               if (page.masks.length) for (const m of page.masks) drawMask(ctx, m, revealed.has(m.id));
             } else if (view.page === page) invalidate(page);
+        if (settings.tool === "convert" && added.type === "stroke") queueConversion(v, added);
       },
     };
+  }
+
+  /* ---------- handwriting to text ---------- */
+
+  /** Strokes written in "Escritura a texto" mode that are waiting to be converted, per page. */
+  const pendingInk = new Map<Page, { view: PageView; strokes: Stroke[]; timer: number }>();
+  let convertingNotice: HTMLElement | null = null;
+
+  function queueConversion(v: PageView, s: Stroke) {
+    const entry = pendingInk.get(v.page) ?? { view: v, strokes: [], timer: 0 };
+    entry.strokes.push(s);
+    entry.view = v;
+    clearTimeout(entry.timer);
+    // Convert once the writer pauses.
+    entry.timer = window.setTimeout(() => convertPending(v.page), 1400);
+    pendingInk.set(v.page, entry);
+  }
+
+  async function convertPending(page: Page) {
+    const entry = pendingInk.get(page);
+    if (!entry || !entry.strokes.length) return;
+    const batch = entry.strokes.splice(0);
+    await convertStrokes(page, batch);
+  }
+
+  /** Replaces handwritten strokes with a text box holding what they say. */
+  async function convertStrokes(page: Page, strokes: Stroke[]): Promise<boolean> {
+    const live = strokes.filter((st) => layerItems(page).includes(st));
+    if (!live.length) return false;
+    if (!getApiKey()) {
+      toast("Para convertir la letra en texto, añade tu clave de Claude en Ajustes.", 4500);
+      return false;
+    }
+    // Bounds of the handwriting, with a little margin.
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const st of live) {
+      const b = itemBounds(st);
+      x0 = Math.min(x0, b.x);
+      y0 = Math.min(y0, b.y);
+      x1 = Math.max(x1, b.x + b.w);
+      y1 = Math.max(y1, b.y + b.h);
+    }
+    const pad = 12;
+    const r = { x: Math.max(0, x0 - pad), y: Math.max(0, y0 - pad), w: x1 - x0 + pad * 2, h: y1 - y0 + pad * 2 };
+    // Draw only the ink on white, so the paper lines don't confuse the reading.
+    const scale = Math.min(3, 1600 / Math.max(r.w, r.h));
+    const c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(r.w * scale));
+    c.height = Math.max(1, Math.round(r.h * scale));
+    const ctx = c.getContext("2d")!;
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.setTransform(scale, 0, 0, scale, -r.x * scale, -r.y * scale);
+    for (const st of live) drawStroke(ctx, { ...st, color: "#000", pen: st.pen === "highlighter" ? "pen" : st.pen });
+
+    convertingNotice ??= document.body.appendChild(h("div", { class: "converting" }, h("div", { class: "spinner" }), "Convirtiendo letra…"));
+    let text = "";
+    try {
+      text = await transcribeHandwriting(c);
+    } catch (e) {
+      toast(e instanceof AiError ? e.message : "No se pudo convertir la letra.", 4500);
+      return false;
+    } finally {
+      freeCanvas(c);
+      if (![...pendingInk.values()].some((p) => p.strokes.length)) {
+        convertingNotice?.remove();
+        convertingNotice = null;
+      }
+    }
+    if (!text) {
+      toast("No he podido leer esa letra. Prueba a escribir un poco más grande.");
+      return false;
+    }
+    // Font size from the height of the writing per line.
+    const lines = Math.max(1, text.split("\n").length);
+    const size = Math.round(Math.min(56, Math.max(14, ((y1 - y0) / lines) * 0.62)));
+    const color = live[0].color;
+    checkpoint(page);
+    const gone = new Set<Item>(live);
+    page.layers[activeLayer].items = layerItems(page).filter((it) => !gone.has(it));
+    layerItems(page).push({ id: uid(), type: "text", x: x0, y: y0, w: Math.max(x1 - x0 + size, Math.min(page.width - x0 - 10, 420)), text, color, size });
+    markDirty(page);
+    invalidate(page);
+    return true;
   }
 
   function tempTool(v: PageView, p: Point, laser: boolean): Handler {
@@ -1072,6 +1159,14 @@ export async function renderEditor(root: HTMLElement, notebookId: string, back: 
   const selectionBar = h(
     "div",
     { class: "selection-bar" },
+    iconButton("handtext", "Convertir letra en texto", async () => {
+      if (!selection) return;
+      const page = selection.view.page;
+      const strokes = selection.items.filter((i): i is Stroke => i.type === "stroke");
+      if (!strokes.length) return toast("Selecciona algo escrito a mano.");
+      clearSelection();
+      await convertStrokes(page, strokes);
+    }),
     iconButton("copy", "Duplicar", () => duplicateSelection()),
     iconButton("pen", "Cambiar color", (e) => recolorSelection(e.currentTarget as HTMLElement)),
     iconButton("layers", "Mover a otra capa", (e) => moveSelectionLayer(e.currentTarget as HTMLElement)),
@@ -1239,11 +1334,17 @@ export async function renderEditor(root: HTMLElement, notebookId: string, back: 
     }
     const ta = h("textarea", { class: "text-editor" });
     ta.value = box.text;
+    // iOS zooms the whole page into any field whose text is under 16px. Keep the field at 16px
+    // or more and shrink it visually to the size it has on the page instead.
+    const visual = box.size * z;
+    const shrink = visual < 16 ? visual / 16 : 1;
     Object.assign(ta.style, {
       left: `${box.x * z}px`,
       top: `${box.y * z}px`,
-      width: `${box.w * z}px`,
-      fontSize: `${box.size * z}px`,
+      width: `${(box.w * z) / shrink}px`,
+      fontSize: `${visual / shrink}px`,
+      transform: shrink < 1 ? `scale(${shrink})` : "",
+      transformOrigin: "0 0",
       color: box.color,
       lineHeight: "1.3",
     });
@@ -1406,6 +1507,7 @@ export async function renderEditor(root: HTMLElement, notebookId: string, back: 
   /* ---------- tool UI ---------- */
 
   function setTool(t: Tool) {
+    if (settings.tool === "convert" && t !== "convert") for (const page of pendingInk.keys()) convertPending(page);
     settings.tool = t;
     toolButtons.forEach((b, k) => b.classList.toggle("active", k === t));
     if (t !== "select") clearSelection();
@@ -1530,6 +1632,12 @@ export async function renderEditor(root: HTMLElement, notebookId: string, back: 
           revealed.clear();
           invalidateAll();
         } }, "Ocultar todo"),
+      );
+    } else if (t === "convert") {
+      optionsBar.append(
+        h("span", { class: "muted small" }, "Escribe a mano: al parar un momento, se convierte en texto."),
+        swatchRow(() => settings.color, (c) => (settings.color = c)),
+        getApiKey() ? "" : h("button", { class: "btn small", type: "button", onclick: () => openSettings() }, "Añadir clave de IA"),
       );
     } else if (t === "laser") {
       optionsBar.append(h("span", { class: "muted small" }, "Señala sin dejar marca: ideal para presentar o explicar."));
