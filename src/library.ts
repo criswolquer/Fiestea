@@ -1,4 +1,4 @@
-import { db, deleteNotebookDeep } from "./db";
+import { db, deleteNotebookDeep, uid } from "./db";
 import { createNotebook, duplicateNotebook, exportPdf, imageToPage, loadPages, pdfToPages } from "./files";
 import { checkLock, makeLock, unlocked } from "./lock";
 import { PAPER, TEMPLATES, drawPaper, pageToCanvas } from "./render";
@@ -115,7 +115,7 @@ export async function renderLibrary(root: HTMLElement, open: (id: string) => voi
     h("div", { class: "nav-title" }, h("span", {}, "Carpetas"), iconButton("plus", "Nueva carpeta", async () => {
       const name = await promptDialog("Nueva carpeta", "Nombre");
       if (name?.trim()) {
-        await db.folders.put({ id: crypto.randomUUID(), name: name.trim(), createdAt: Date.now() });
+        await db.folders.put({ id: uid(), name: name.trim(), createdAt: Date.now() });
         rerender();
       }
     }, "small ghost")),
