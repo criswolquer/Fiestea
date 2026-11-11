@@ -29,8 +29,8 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   });
 }
 
-async function idbBackend(): Promise<Backend> {
-  const db = await withTimeout(
+function openDb(): Promise<IDBDatabase> {
+  return withTimeout(
     new Promise<IDBDatabase>((resolve, reject) => {
       const req = indexedDB.open(DB_NAME, DB_VERSION);
       req.onupgradeneeded = () => {
@@ -46,18 +46,63 @@ async function idbBackend(): Promise<Backend> {
       req.onerror = () => reject(req.error);
       req.onblocked = () => reject(new Error("blocked"));
     }),
-    3000,
+    5000,
   );
-  const store = (name: StoreName, mode: IDBTransactionMode = "readonly") => db.transaction(name, mode).objectStore(name);
-  const backend: Backend = {
-    getAll: (name) => wrap(store(name).getAll()),
-    get: (name, key) => wrap(store(name).get(key)),
-    put: async (name, value, key) => void (await wrap(store(name, "readwrite").put(value, key))),
-    delete: async (name, key) => void (await wrap(store(name, "readwrite").delete(key))),
-    byNotebook: (name, id) => wrap(store(name).index("notebookId").getAll(id)),
+}
+
+/** Errors that mean the connection was closed under us (Safari does this when the app is backgrounded). */
+function isConnectionLost(e: unknown): boolean {
+  const name = (e as { name?: string })?.name ?? "";
+  const msg = String((e as { message?: string })?.message ?? e);
+  return name === "InvalidStateError" || name === "UnknownError" || name === "AbortError" || /closing|closed|connection/i.test(msg);
+}
+
+async function idbBackend(): Promise<Backend> {
+  let conn: Promise<IDBDatabase> | null = null;
+  const connect = () => {
+    if (!conn) {
+      conn = openDb().then((db) => {
+        // Forget the connection when the browser closes it, so the next call reopens it.
+        db.onclose = () => (conn = null);
+        db.onversionchange = () => {
+          db.close();
+          conn = null;
+        };
+        return db;
+      });
+      conn.catch(() => (conn = null));
+    }
+    return conn;
   };
+
+  /** Runs one request, reopening the database and retrying once if the connection was lost. */
+  async function run<T>(name: StoreName, mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest<T>): Promise<T> {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const db = await connect();
+        return await wrap(fn(db.transaction(name, mode).objectStore(name)));
+      } catch (e) {
+        if (attempt >= 1 || !isConnectionLost(e)) throw e;
+        try {
+          (await conn)?.close();
+        } catch {
+          /* already closed */
+        }
+        conn = null;
+      }
+    }
+  }
+
+  const backend: Backend = {
+    getAll: (name) => run(name, "readonly", (s) => s.getAll()),
+    get: (name, key) => run(name, "readonly", (s) => s.get(key)),
+    put: async (name, value, key) => void (await run(name, "readwrite", (s) => s.put(value, key))),
+    delete: async (name, key) => void (await run(name, "readwrite", (s) => s.delete(key))),
+    byNotebook: (name, id) => run(name, "readonly", (s) => s.index("notebookId").getAll(id)),
+  };
+  await connect();
   // Some embedded or private browsers open the database but refuse writes: check once.
-  await withTimeout(backend.put("blobs", new Blob(["ok"]), "__probe__"), 3000);
+  await withTimeout(backend.put("blobs", new Blob(["ok"]), "__probe__"), 5000);
   await backend.delete("blobs", "__probe__");
   return backend;
 }
