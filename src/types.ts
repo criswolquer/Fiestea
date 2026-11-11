@@ -108,10 +108,15 @@ export interface LockInfo {
   hash: string;
 }
 
+export type CoverPattern = "plain" | "linen" | "stripes" | "dots" | "grid" | "waves" | "geo" | "gradient" | "terrazzo" | "spine";
+
 export interface Notebook {
   id: string;
   title: string;
   cover: string;
+  coverPattern?: CoverPattern;
+  /** Blob id of a photo used as the cover. */
+  coverImage?: string;
   folderId: string | null;
   favorite: boolean;
   template: TemplateId;

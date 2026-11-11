@@ -22,29 +22,68 @@ export const TEMPLATES: { id: TemplateId; label: string }[] = [
 
 /* ---------- image cache (backgrounds and pasted images) ---------- */
 
-const imageCache = new Map<string, Promise<ImageBitmap | null>>();
+/*
+ * Decoded images are large (a PDF page is ~15 MB once decoded), so only the
+ * most recently used ones stay in memory; the rest are decoded again on demand.
+ */
+const MAX_DECODED = 10;
+const loading = new Map<string, Promise<ImageBitmap | null>>();
+/** Ready bitmaps in least- to most-recently-used order. */
+const ready = new Map<string, ImageBitmap>();
+
+function touch(id: string, bmp: ImageBitmap): void {
+  ready.delete(id);
+  ready.set(id, bmp);
+}
+
+function evict(keep: Set<string>): void {
+  for (const [id, bmp] of ready) {
+    if (ready.size <= MAX_DECODED) break;
+    if (keep.has(id)) continue;
+    bmp.close();
+    ready.delete(id);
+  }
+}
 
 export function loadImage(blobId: string): Promise<ImageBitmap | null> {
-  let p = imageCache.get(blobId);
+  const have = ready.get(blobId);
+  if (have) {
+    touch(blobId, have);
+    return Promise.resolve(have);
+  }
+  let p = loading.get(blobId);
   if (!p) {
-    p = db.blobs.get(blobId).then((b) => (b ? createImageBitmap(b) : null)).catch(() => null);
-    imageCache.set(blobId, p);
+    p = db.blobs
+      .get(blobId)
+      .then((b) => (b ? createImageBitmap(b) : null))
+      .catch(() => null)
+      .then((bmp) => {
+        loading.delete(blobId);
+        if (bmp) touch(blobId, bmp);
+        return bmp;
+      });
+    loading.set(blobId, p);
   }
   return p;
 }
 
-/** Synchronous lookup used while drawing; returns null until the bitmap is ready. */
-const ready = new Map<string, ImageBitmap>();
-export async function preloadPageImages(page: Page): Promise<void> {
+function pageImageIds(page: Page): string[] {
   const ids: string[] = [];
   if (page.backgroundBlobId) ids.push(page.backgroundBlobId);
   for (const l of page.layers) for (const it of l.items) if (it.type === "image") ids.push(it.blobId);
-  await Promise.all(
-    ids.map(async (id) => {
-      const bmp = await loadImage(id);
-      if (bmp) ready.set(id, bmp);
-    }),
-  );
+  return ids;
+}
+
+/** True when every image the page needs is decoded and can be drawn right now. */
+export function pageImagesReady(page: Page): boolean {
+  return pageImageIds(page).every((id) => ready.has(id));
+}
+
+/** Decodes the images a page needs (and frees older ones beyond the memory budget). */
+export async function preloadPageImages(page: Page): Promise<void> {
+  const ids = pageImageIds(page);
+  await Promise.all(ids.map(loadImage));
+  evict(new Set(ids));
 }
 
 /* ---------- paper ---------- */
@@ -455,6 +494,12 @@ export function renderPage(ctx: CanvasRenderingContext2D, page: Page, opts: Rend
     for (const it of layer.items) drawItem(ctx, it, alpha);
   });
   if (!opts.hideMasks) for (const m of page.masks) drawMask(ctx, m, opts.revealed?.has(m.id) ?? false);
+}
+
+/** Releases a canvas's pixel memory right away instead of waiting for garbage collection (matters on iOS). */
+export function freeCanvas(c: HTMLCanvasElement): void {
+  c.width = 0;
+  c.height = 0;
 }
 
 /** Renders a page to a new canvas at the given scale (for thumbnails, export and AI). */
