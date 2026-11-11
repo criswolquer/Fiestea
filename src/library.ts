@@ -363,7 +363,8 @@ export function newNotebookDialog(folderId: string | null, open: (id: string) =>
   const coverState: { cover: string; coverPattern: CoverPattern; coverImage?: string } = randomCover();
   let template: TemplateId = "lined";
   let paper: PaperColor = "white";
-  let size: PageSizeId = "a4";
+  // On a phone, a page shaped like the screen is far easier to write on than A4.
+  let size: PageSizeId = window.innerWidth < 600 ? "phone" : "a4";
 
   const title = h("input", { class: "input", value: "", placeholder: "Por ejemplo: Biología, Tema 3" });
   const picker = coverPicker(coverState, () => title.value.trim() || "Cuaderno sin título");
@@ -387,6 +388,7 @@ export function newNotebookDialog(folderId: string | null, open: (id: string) =>
   }, { white: "Blanco", cream: "Crema", dark: "Oscuro", green: "Pizarra" }[p])));
 
   const sizes = h("select", { class: "input" }, (Object.keys(PAGE_SIZES) as PageSizeId[]).map((k) => h("option", { value: k }, PAGE_SIZES[k].label)));
+  sizes.value = size;
   sizes.addEventListener("change", () => (size = sizes.value as PageSizeId));
 
   const m = modal("Nuevo cuaderno", [
