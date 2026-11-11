@@ -17,6 +17,7 @@ Los cuadernos se guardan en el propio dispositivo.
 - 8 plumas: bolígrafo, estilográfica, pincel, lápiz, fluorescente, discontinua, punteada y ondulada. Las plumas que varían el grosor responden a la presión del Apple Pencil.
 - Colores predefinidos y selector libre; grosor ajustable.
 - **Formas automáticas**: dibuja un círculo, un rectángulo, un triángulo o una línea y mantén el lápiz quieto un momento para que se convierta en una forma perfecta. También hay una herramienta de formas (línea, flecha, rectángulo, elipse, triángulo).
+- **Escritura a texto**: escribes a mano y, al parar un momento, se convierte en texto limpio en el mismo sitio, con las faltas evidentes corregidas. Usa la IA, así que necesita la clave. También se puede convertir lo que ya está escrito seleccionándolo.
 - Borrador de trazos, texto escrito con teclado, selección para mover, duplicar, cambiar de color o pasar a otra capa.
 - Deshacer y rehacer.
 - Modo **"solo Apple Pencil"** (en Ajustes): el dedo desplaza y hace zoom, y el lápiz escribe.

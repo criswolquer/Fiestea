@@ -510,6 +510,18 @@ textarea.input.small { font-size: 13px; }
 .pip-view { overflow: auto; max-height: 55dvh; background: var(--desk); border-radius: 10px; padding: 8px; }
 .pip-view canvas { display: block; margin: 0 auto; box-shadow: 0 1px 6px rgba(0,0,0,.2); }
 
+.converting {
+  position: fixed; left: 50%; top: calc(120px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); z-index: 30;
+  display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px;
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); font-size: 14px;
+}
+.converting .spinner { width: 16px; height: 16px; border-width: 2px; }
+
+/* iOS zooms into any field with text under 16px; on touch screens keep every field at 16px. */
+@media (pointer: coarse) {
+  .input, .calc-display, textarea, select, input[type="text"], input[type="search"], input[type="password"], input[type="number"] { font-size: 16px; }
+}
+
 /* ---------- small screens ---------- */
 
 @media (max-width: 760px) {
