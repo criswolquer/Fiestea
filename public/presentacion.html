@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Trazo · Cuaderno digital con IA</title>
+  <meta name="description" content="Trazo es un cuaderno digital para tomar apuntes a mano en iPhone, iPad y ordenador, con herramientas de IA para estudiar. Funciona sin conexión y tus cuadernos se quedan en tu dispositivo." />
+  <meta name="theme-color" content="#fbfaf8" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#121316" media="(prefers-color-scheme: dark)" />
+  <meta property="og:title" content="Trazo · Cuaderno digital con IA" />
+  <meta property="og:description" content="Apuntes a mano, formas perfectas y herramientas de IA para estudiar. Sin cuentas, sin nube, sin conexión." />
+  <meta property="og:type" content="website" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400;500;600&family=Caveat:wght@500;700&display=swap" />
+  <style>
+    :root {
+      --bg: #fbfaf8;
+      --bg-2: #f3f1ed;
+      --surface: #ffffff;
+      --border: #e6e2db;
+      --text: #17181b;
+      --muted: #62656d;
+      --accent: #e5484d;
+      --accent-2: #ff8a4c;
+      --accent-soft: #fdeeea;
+      --blue: #3b6cf6;
+      --paper: #fffdf9;
+      --rule: #dfe7f5;
+      --shadow-lg: 0 30px 80px -20px rgba(40, 30, 20, .25), 0 10px 30px -10px rgba(40, 30, 20, .12);
+      --shadow-sm: 0 1px 2px rgba(20, 20, 30, .06), 0 4px 14px rgba(20, 20, 30, .05);
+      --radius: 18px;
+      --display: "Bricolage Grotesque", -apple-system, "Segoe UI", system-ui, sans-serif;
+      --body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+      --hand: "Caveat", "Bradley Hand", cursive;
+      --gutter: clamp(16px, 5vw, 40px);
+      color-scheme: light;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #121316;
+        --bg-2: #191b1f;
+        --surface: #1d2025;
+        --border: #2d3139;
+        --text: #eef0f3;
+        --muted: #9ba1ac;
+        --accent-soft: #33201f;
+        --paper: #1b1d22;
+        --rule: #283042;
+        --shadow-lg: 0 30px 80px -20px rgba(0, 0, 0, .7), 0 10px 30px -10px rgba(0, 0, 0, .5);
+        --shadow-sm: 0 1px 2px rgba(0, 0, 0, .4), 0 4px 14px rgba(0, 0, 0, .3);
+        color-scheme: dark;
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg: #121316; --bg-2: #191b1f; --surface: #1d2025; --border: #2d3139;
+      --text: #eef0f3; --muted: #9ba1ac; --accent-soft: #33201f; --paper: #1b1d22; --rule: #283042;
+      --shadow-lg: 0 30px 80px -20px rgba(0, 0, 0, .7), 0 10px 30px -10px rgba(0, 0, 0, .5);
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, .4), 0 4px 14px rgba(0, 0, 0, .3);
+      color-scheme: dark;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 16px/1.6 var(--body);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    img, svg { display: block; max-width: 100%; }
+    a { color: inherit; }
+    h1, h2, h3 { font-family: var(--display); line-height: 1.08; margin: 0; letter-spacing: -.02em; }
+    p { margin: 0; }
+    .wrap { width: 100%; max-width: 1160px; margin: 0 auto; padding: 0 var(--gutter); }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+      color: var(--accent);
+    }
+    .hand { font-family: var(--hand); font-weight: 700; color: var(--accent); }
+    :focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 6px; }
+
+    /* ---------- Header ---------- */
+    .nav {
+      position: sticky; top: 0; z-index: 50;
+      background: color-mix(in srgb, var(--bg) 82%, transparent);
+      backdrop-filter: saturate(160%) blur(14px);
+      -webkit-backdrop-filter: saturate(160%) blur(14px);
+      border-bottom: 1px solid transparent;
+      transition: border-color .2s;
+    }
+    .nav.scrolled { border-bottom-color: var(--border); }
+    .nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 68px; gap: 16px; }
+    .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-family: var(--display); font-weight: 700; font-size: 21px; }
+    .brand img { width: 32px; height: 32px; }
+    .nav-links { display: flex; gap: 28px; list-style: none; margin: 0; padding: 0; }
+    .nav-links a { text-decoration: none; font-size: 15px; color: var(--muted); font-weight: 500; transition: color .15s; }
+    .nav-links a:hover { color: var(--text); }
+    .nav-actions { display: flex; align-items: center; gap: 8px; }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      height: 46px; padding: 0 22px; border-radius: 999px;
+      font: 600 15px/1 var(--body); text-decoration: none; white-space: nowrap;
+      border: 1px solid transparent; cursor: pointer;
+      transition: transform .15s, box-shadow .15s, background .15s;
+    }
+    .btn-primary {
+      color: #fff;
+      background: linear-gradient(135deg, var(--accent-2), var(--accent));
+      box-shadow: 0 8px 22px -8px rgba(229, 72, 77, .7);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 12px 28px -8px rgba(229, 72, 77, .8); }
+    .btn-ghost { background: var(--surface); border-color: var(--border); color: var(--text); }
+    .btn-ghost:hover { background: var(--bg-2); }
+    .btn-sm { height: 38px; padding: 0 16px; font-size: 14px; }
+    .icon-btn {
+      width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--border);
+      background: var(--surface); color: var(--text); cursor: pointer; display: grid; place-items: center;
+    }
+    .icon-btn svg { width: 18px; height: 18px; }
+
+    /* ---------- Hero ---------- */
+    .hero { position: relative; overflow: hidden; padding: clamp(48px, 9vw, 110px) 0 clamp(56px, 8vw, 100px); }
+    .hero::before {
+      content: ""; position: absolute; inset: -20% -10% auto; height: 120%; z-index: -1;
+      background:
+        radial-gradient(40% 45% at 85% 20%, color-mix(in srgb, var(--accent-2) 22%, transparent), transparent 70%),
+        radial-gradient(35% 40% at 10% 0%, color-mix(in srgb, var(--blue) 12%, transparent), transparent 70%);
+    }
+    .hero .wrap { display: grid; grid-template-columns: 1.05fr 1fr; gap: clamp(32px, 6vw, 72px); align-items: center; }
+    .hero h1 { font-size: clamp(42px, 6.4vw, 76px); font-weight: 800; margin: 18px 0 22px; }
+    .hero h1 .underline { position: relative; white-space: nowrap; }
+    .hero h1 .underline svg { position: absolute; left: -2%; bottom: -.18em; width: 104%; height: .4em; overflow: visible; }
+    .hero h1 .underline path { stroke: var(--accent); stroke-width: 7; fill: none; stroke-linecap: round; stroke-dasharray: 420; stroke-dashoffset: 420; animation: draw 1.1s .5s cubic-bezier(.6,.1,.3,1) forwards; }
+    .lead { font-size: clamp(17px, 1.6vw, 19px); color: var(--muted); max-width: 34em; }
+    .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+    .hero-meta { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 28px; font-size: 14px; color: var(--muted); }
+    .hero-meta span { display: inline-flex; align-items: center; gap: 7px; }
+    .hero-meta svg { width: 17px; height: 17px; color: var(--accent); }
+
+    /* Notebook mock */
+    .device {
+      position: relative; aspect-ratio: 4 / 3.2; border-radius: 28px; padding: 14px;
+      background: linear-gradient(160deg, #2a2c31, #17181b);
+      box-shadow: var(--shadow-lg);
+      transform: rotate(1.5deg);
+    }
+    .screen { position: relative; height: 100%; border-radius: 16px; overflow: hidden; background: var(--paper); display: flex; flex-direction: column; }
+    .toolbar { display: flex; align-items: center; gap: 6px; padding: 9px 12px; border-bottom: 1px solid var(--border); background: var(--surface); }
+    .toolbar .dot { width: 18px; height: 18px; border-radius: 50%; }
+    .toolbar .tool { width: 26px; height: 18px; border-radius: 5px; background: var(--bg-2); }
+    .toolbar .sp { flex: 1; }
+    .page {
+      flex: 1; position: relative;
+      background-image: linear-gradient(var(--rule) 1px, transparent 1px);
+      background-size: 100% 26px; background-position: 0 14px;
+    }
+    .page::before { content: ""; position: absolute; top: 0; bottom: 0; left: 44px; width: 1.5px; background: color-mix(in srgb, var(--accent) 35%, transparent); }
+    .page svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .ink { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .ink.draw { stroke-dasharray: var(--len); stroke-dashoffset: var(--len); animation: draw var(--d, 1.2s) var(--delay, 0s) cubic-bezier(.5,.1,.3,1) forwards; }
+    .page text { font-family: var(--hand); fill: var(--text); opacity: 0; animation: fade .5s var(--delay, 0s) forwards; }
+    .ai-chip {
+      position: absolute; right: -18px; bottom: 34px; z-index: 2;
+      display: flex; align-items: center; gap: 10px; padding: 12px 16px; max-width: 250px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow-sm);
+      font-size: 13px; line-height: 1.35; transform: rotate(-1.5deg);
+      opacity: 0; animation: pop .5s 3.4s cubic-bezier(.2,1.4,.4,1) forwards;
+    }
+    .ai-chip b { display: block; font-size: 13px; }
+    .ai-chip .spark { flex: none; width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, var(--accent-2), var(--accent)); }
+    .ai-chip .spark svg { width: 17px; height: 17px; }
+    @keyframes draw { to { stroke-dashoffset: 0; } }
+    @keyframes fade { to { opacity: 1; } }
+    @keyframes pop { from { opacity: 0; transform: translateY(10px) rotate(-1.5deg) scale(.95); } to { opacity: 1; transform: rotate(-1.5deg); } }
+
+    /* ---------- Strip ---------- */
+    .strip { border-block: 1px solid var(--border); background: var(--bg-2); }
+    .strip .wrap { display: grid; grid-template-columns: repeat(4, 1fr); }
+    .stat { padding: 26px 12px; text-align: center; }
+    .stat + .stat { border-left: 1px solid var(--border); }
+    .stat strong { display: block; font: 800 clamp(28px, 3.4vw, 38px)/1 var(--display); letter-spacing: -.02em; }
+    .stat span { font-size: 14px; color: var(--muted); }
+
+    /* ---------- Sections ---------- */
+    section { scroll-margin-top: 80px; }
+    .section { padding: clamp(72px, 10vw, 120px) 0; }
+    .section-head { max-width: 680px; margin-bottom: clamp(36px, 5vw, 56px); }
+    .section-head h2 { font-size: clamp(32px, 4.4vw, 50px); font-weight: 800; margin: 12px 0 16px; }
+    .section-head p { color: var(--muted); font-size: 18px; }
+    .center { text-align: center; margin-inline: auto; }
+
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .card {
+      position: relative; padding: 28px; border-radius: var(--radius);
+      background: var(--surface); border: 1px solid var(--border);
+      transition: transform .2s, box-shadow .2s, border-color .2s;
+    }
+    .card:hover { transform: translateY(-3px); box-shadow: var(--shadow-sm); border-color: color-mix(in srgb, var(--accent) 30%, var(--border)); }
+    .card .ic { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); margin-bottom: 18px; }
+    .card .ic svg { width: 22px; height: 22px; }
+    .card h3 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+    .card p { color: var(--muted); font-size: 15px; }
+
+    /* Split / AI */
+    .ai { background: var(--bg-2); border-block: 1px solid var(--border); }
+    .split { display: grid; grid-template-columns: 1fr 1.1fr; gap: clamp(32px, 6vw, 80px); align-items: center; }
+    .checklist { list-style: none; padding: 0; margin: 28px 0 0; display: grid; gap: 18px; }
+    .checklist li { display: grid; grid-template-columns: 28px 1fr; gap: 12px; }
+    .checklist .tick { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; margin-top: 1px; }
+    .checklist .tick svg { width: 14px; height: 14px; }
+    .checklist b { display: block; font-weight: 600; }
+    .checklist span { color: var(--muted); font-size: 15px; }
+
+    .quiz { background: var(--surface); border: 1px solid var(--border); border-radius: 22px; padding: clamp(20px, 3vw, 30px); box-shadow: var(--shadow-lg); }
+    .quiz-top { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--muted); margin-bottom: 14px; }
+    .bar { height: 6px; border-radius: 9px; background: var(--bg-2); overflow: hidden; margin-bottom: 22px; }
+    .bar i { display: block; height: 100%; width: 40%; background: linear-gradient(90deg, var(--accent-2), var(--accent)); border-radius: inherit; transition: width .4s; }
+    .quiz h3 { font-size: 21px; margin-bottom: 18px; }
+    .opts { display: grid; gap: 10px; }
+    .opt {
+      display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+      padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg);
+      font: 500 15px/1.35 var(--body); color: var(--text); cursor: pointer; transition: border-color .15s, background .15s;
+    }
+    .opt:hover { border-color: var(--muted); }
+    .opt .k { flex: none; width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; font-size: 13px; font-weight: 600; background: var(--bg-2); }
+    .opt.right { border-color: #2fa36b; background: color-mix(in srgb, #2fa36b 12%, var(--bg)); }
+    .opt.right .k { background: #2fa36b; color: #fff; }
+    .opt.wrong { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--bg)); }
+    .opt.wrong .k { background: var(--accent); color: #fff; }
+    .explain { margin-top: 16px; font-size: 14px; color: var(--muted); padding: 12px 14px; border-radius: 12px; background: var(--bg-2); display: none; }
+    .explain.show { display: block; animation: fade .3s forwards; opacity: 0; }
+
+    /* Steps */
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; counter-reset: s; }
+    .step { padding: 30px 28px; border-radius: var(--radius); border: 1px dashed var(--border); background: var(--surface); }
+    .step::before { counter-increment: s; content: counter(s); font: 400 64px/1 var(--hand); color: var(--accent); display: block; margin-bottom: 10px; }
+    .step h3 { font-size: 20px; margin-bottom: 8px; }
+    .step p { color: var(--muted); font-size: 15px; }
+
+    /* Privacy */
+    .privacy {
+      display: grid; grid-template-columns: auto 1fr; gap: clamp(20px, 4vw, 40px); align-items: center;
+      padding: clamp(28px, 5vw, 52px); border-radius: 26px;
+      background: linear-gradient(135deg, #1b1c20, #26201f); color: #f3f1ed;
+    }
+    .privacy .lock { width: clamp(64px, 9vw, 96px); height: clamp(64px, 9vw, 96px); border-radius: 24px; display: grid; place-items: center; background: linear-gradient(135deg, var(--accent-2), var(--accent)); }
+    .privacy .lock svg { width: 46%; height: 46%; color: #fff; }
+    .privacy h2 { font-size: clamp(26px, 3.4vw, 38px); margin-bottom: 12px; }
+    .privacy p { color: #c9c6c0; max-width: 60ch; }
+
+    /* FAQ */
+    .faq { max-width: 780px; margin: 0 auto; display: grid; gap: 12px; }
+    details { border: 1px solid var(--border); border-radius: 14px; background: var(--surface); padding: 0 22px; transition: border-color .2s; }
+    details[open] { border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); }
+    summary { list-style: none; cursor: pointer; padding: 20px 0; font-weight: 600; font-size: 17px; display: flex; justify-content: space-between; gap: 16px; align-items: center; }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; font-size: 24px; font-weight: 400; color: var(--muted); transition: transform .2s; }
+    details[open] summary::after { transform: rotate(45deg); }
+    details p { color: var(--muted); padding-bottom: 20px; }
+
+    /* CTA */
+    .cta { text-align: center; padding: clamp(80px, 11vw, 140px) 0; position: relative; }
+    .cta h2 { font-size: clamp(36px, 5.6vw, 64px); font-weight: 800; max-width: 14em; margin: 0 auto 18px; }
+    .cta p { color: var(--muted); font-size: 18px; margin-bottom: 32px; }
+    .cta .hand { font-size: 1.1em; }
+
+    footer { border-top: 1px solid var(--border); padding: 32px 0 calc(32px + env(safe-area-inset-bottom)); font-size: 14px; color: var(--muted); }
+    footer .wrap { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+    footer nav { display: flex; gap: 22px; flex-wrap: wrap; }
+    footer a { text-decoration: none; }
+    footer a:hover { color: var(--text); }
+
+    /* Reveal */
+    .reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s ease; }
+    .reveal.in { opacity: 1; transform: none; }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 960px) {
+      .hero .wrap, .split { grid-template-columns: 1fr; }
+      .hero-visual { max-width: 560px; margin: 0 auto; width: 100%; }
+      .grid { grid-template-columns: repeat(2, 1fr); }
+      .nav-links { display: none; }
+    }
+    @media (max-width: 640px) {
+      .grid, .steps { grid-template-columns: 1fr; }
+      .strip .wrap { grid-template-columns: repeat(2, 1fr); }
+      .stat:nth-child(3) { border-left: 0; }
+      .stat:nth-child(n+3) { border-top: 1px solid var(--border); }
+      .privacy { grid-template-columns: 1fr; }
+      .ai-chip { right: 8px; bottom: 14px; }
+      .device { transform: none; padding: 10px; border-radius: 22px; }
+      .hero-cta .btn { flex: 1 1 100%; }
+      .nav .btn-sm { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+      .reveal { opacity: 1; transform: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Icon sprite -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
+    <symbol id="i-shape" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="7.5" r="4.5"/><path d="M13 13h8v8h-8z"/><path d="m3 21 4-7 4 7z"/></symbol>
+    <symbol id="i-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 10 5-10 5L2 7z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></symbol>
+    <symbol id="i-pdf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15h6"/><path d="M9 18h4"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9l-.8-1.2A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.2A10 10 0 0 1 12 4c7 0 10 8 10 8a13 13 0 0 1-1.7 2.7"/><path d="M6.6 6.6A13 13 0 0 0 2 12s3 8 10 8a9.7 9.7 0 0 0 5.4-1.6"/><path d="m2 2 20 20"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10a7 7 0 0 1-14 0"/><path d="M12 17v5"/></symbol>
+    <symbol id="i-split" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 3v18"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c.4 4.6 2.4 6.6 7 7-4.6.4-6.6 2.4-7 7-.4-4.6-2.4-6.6-7-7 4.6-.4 6.6-2.4 7-7Zm6 11c.2 2.3 1.2 3.3 3.5 3.5-2.3.2-3.3 1.2-3.5 3.5-.2-2.3-1.2-3.3-3.5-3.5 2.3-.2 3.3-1.2 3.5-3.5Z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+    <symbol id="i-wifi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 2 20 20"/><path d="M8.5 16.4a5 5 0 0 1 7 0"/><path d="M5 12.9a10 10 0 0 1 5.2-2.7"/><path d="M19 12.9a10 10 0 0 0-2.3-1.6"/><path d="M2 8.8a15 15 0 0 1 4.2-2.6"/><path d="M22 8.8A15 15 0 0 0 10.7 5"/><path d="M12 20h.01"/></symbol>
+    <symbol id="i-device" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  </svg>
+
+  <header class="nav" id="nav">
+    <div class="wrap">
+      <a class="brand" href="#inicio" aria-label="Trazo, inicio"><img src="icon.svg" alt="" />Trazo</a>
+      <nav aria-label="Principal">
+        <ul class="nav-links">
+          <li><a href="#funciones">Funciones</a></li>
+          <li><a href="#ia">IA para estudiar</a></li>
+          <li><a href="#instalar">Instalar</a></li>
+          <li><a href="#preguntas">Preguntas</a></li>
+        </ul>
+      </nav>
+      <div class="nav-actions">
+        <button class="icon-btn" id="theme" type="button" aria-label="Cambiar tema claro u oscuro">
+          <svg><use href="#i-moon" /></svg>
+        </button>
+        <a class="btn btn-primary btn-sm" href="./">Abrir Trazo</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="inicio">
+    <!-- HERO -->
+    <section class="hero">
+      <div class="wrap">
+        <div>
+          <span class="eyebrow"><svg width="16" height="16"><use href="#i-spark" /></svg> Cuaderno digital con IA</span>
+          <h1>Tus apuntes a mano, <span class="underline">más listos<svg viewBox="0 0 300 20" preserveAspectRatio="none" aria-hidden="true"><path d="M4 14 C 70 4, 150 4, 296 10" /></svg></span>.</h1>
+          <p class="lead">Escribe con el Apple Pencil o con el dedo como en papel, convierte tu letra en texto limpio y repasa con resúmenes, cuestionarios y tarjetas generados a partir de tus propias notas.</p>
+          <div class="hero-cta">
+            <a class="btn btn-primary" href="./">Empezar gratis <svg width="18" height="18"><use href="#i-arrow" /></svg></a>
+            <a class="btn btn-ghost" href="#funciones">Ver funciones</a>
+          </div>
+          <div class="hero-meta">
+            <span><svg><use href="#i-device" /></svg> iPhone, iPad y ordenador</span>
+            <span><svg><use href="#i-wifi" /></svg> Funciona sin conexión</span>
+            <span><svg><use href="#i-lock" /></svg> Sin cuentas</span>
+          </div>
+        </div>
+
+        <div class="hero-visual">
+          <div style="position:relative">
+            <div class="device" role="img" aria-label="Página de un cuaderno de Trazo con apuntes de biología escritos a mano">
+              <div class="screen">
+                <div class="toolbar" aria-hidden="true">
+                  <span class="dot" style="background:#17181b"></span>
+                  <span class="dot" style="background:#e5484d"></span>
+                  <span class="dot" style="background:#3b6cf6"></span>
+                  <span class="dot" style="background:#ffd54a"></span>
+                  <span class="sp"></span>
+                  <span class="tool"></span><span class="tool"></span><span class="tool"></span>
+                </div>
+                <div class="page">
+                  <svg viewBox="0 0 400 260" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                    <!-- highlighter -->
+                    <path class="ink draw" d="M58 34 L 228 34" stroke="#ffd54a" stroke-opacity=".55" stroke-width="16" style="--len:180;--d:.6s;--delay:.2s" />
+                    <text x="60" y="42" font-size="27" font-weight="700" style="--delay:.3s">La fotosíntesis</text>
+                    <text x="60" y="80" font-size="20" style="--delay:.9s">Luz + CO₂ + H₂O</text>
+                    <!-- arrow -->
+                    <path class="ink draw" d="M190 74 L 236 74 M226 66 L 237 74 L 226 82" stroke="#3b6cf6" stroke-width="2.6" style="--len:80;--d:.6s;--delay:1.3s" />
+                    <text x="246" y="80" font-size="20" style="--delay:1.7s">glucosa + O₂</text>
+                    <!-- circle (auto shape) -->
+                    <ellipse class="ink draw" cx="300" cy="74" rx="62" ry="17" stroke="#e5484d" stroke-width="2.4" style="--len:270;--d:.9s;--delay:2s" />
+                    <text x="60" y="122" font-size="19" style="--delay:2.3s">• Ocurre en los cloroplastos</text>
+                    <text x="60" y="148" font-size="19" style="--delay:2.6s">• Fase luminosa y fase oscura</text>
+                    <!-- leaf sketch -->
+                    <path class="ink draw" d="M300 220 C 270 190, 285 150, 345 140 C 350 195, 330 220, 300 220 Z M300 220 C 315 190, 330 165, 345 140" stroke="#2fa36b" stroke-width="2.6" style="--len:330;--d:1.2s;--delay:2.8s" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div class="ai-chip" aria-hidden="true">
+              <span class="spark"><svg><use href="#i-spark" /></svg></span>
+              <div><b>Cuestionario listo</b>10 preguntas creadas a partir de esta página</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STRIP -->
+    <div class="strip">
+      <div class="wrap">
+        <div class="stat"><strong>8</strong><span>tipos de pluma</span></div>
+        <div class="stat"><strong>9</strong><span>plantillas de papel</span></div>
+        <div class="stat"><strong>3</strong><span>capas por página</span></div>
+        <div class="stat"><strong>0</strong><span>cuentas que crear</span></div>
+      </div>
+    </div>
+
+    <!-- FEATURES -->
+    <section class="section" id="funciones">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <span class="eyebrow">Funciones</span>
+          <h2>Todo lo de un buen cuaderno. Y lo que el papel no puede hacer.</h2>
+          <p>Pensado para tomar apuntes en clase, preparar exámenes y estudiar con calma, en cualquier pantalla.</p>
+        </div>
+        <div class="grid">
+          <article class="card reveal">
+            <div class="ic"><svg><use href="#i-pen" /></svg></div>
+            <h3>Escritura natural</h3>
+            <p>Ocho plumas, desde estilográfica hasta fluorescente, que responden a la presión del Apple Pencil. Modo «solo lápiz» para apoyar la mano.</p>
+          </article>
+          <article class="card reveal">
+            <div class="ic"><svg><use href="#i-shape" /></svg></div>
+            <h3>Formas perfectas</h3>
+            <p>Dibuja un círculo, un rectángulo o una flecha, mantén el trazo un instante y se convierte en una forma limpia.</p>
+          </article>
+          <article class="card reveal">
+            <div class="ic"><svg><use href="#i-text" /></svg></div>
+            <h3>De letra a texto</h3>
+            <p>Escribe a mano y, al parar, tu letra se transforma en texto limpio en el mismo sitio, con las faltas evidentes corregidas.</p>
+          </article>
+          <article class="card reveal">
+            <div class="ic"><svg><use href="#i-pdf" /></svg></div>
+            <h3>Anota sobre PDF</h3>
+            <p>Importa PDFs e imágenes y escribe encima. Amplía la página hacia un lado para tener espacio junto a las diapositivas. Exporta a PDF o PNG.</p>
+          </article>
+          <article class="card reveal">
+            <div class="ic"><svg><use href="#i-layers" /></svg></div>
+            <h3>Capas para practicar</h3>
+            <p>Tres capas por página que puedes ocultar o vaciar. Resuelve el mismo ejercicio varias veces sin borrar el enunciado.</p>
+          </article>
+          <article class="card reveal">
+            <div class="ic"><svg><use href="#i-eye" /></svg></div>
+            <h3>Ocultar para memorizar</h3>
+            <p>Tapa definiciones o fechas y tócalas para descubrirlas. También hay pluma que desaparece y puntero láser para presentar.</p>
+          </article>
+          <article class="card reveal">
+            <div class="ic"><svg><use href="#i-folder" /></svg></div>
+            <h3>Biblioteca ordenada</h3>
+            <p>Carpetas, favoritos, búsqueda y portadas de colores. Cuadrícula de páginas para reordenar, duplicar o saltar de una a otra.</p>
+          </article>
+          <article class="card reveal">
+            <div class="ic"><svg><use href="#i-split" /></svg></div>
+            <h3>Dos páginas a la vez</h3>
+            <p>Paneles dobles, ventana flotante con imagen en imagen y documentos asociados para consultar otro cuaderno sin perder el sitio.</p>
+          </article>
+          <article class="card reveal">
+            <div class="ic"><svg><use href="#i-mic" /></svg></div>
+            <h3>Graba la clase</h3>
+            <p>Grabación de voz con transcripción en vivo, calculadora científica, temporizador y navegador integrado a mano.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- AI -->
+    <section class="section ai" id="ia">
+      <div class="wrap split">
+        <div class="reveal">
+          <span class="eyebrow"><svg width="16" height="16"><use href="#i-spark" /></svg> IA con Claude</span>
+          <div class="section-head" style="margin-bottom:0">
+            <h2>Estudia con tus propios apuntes.</h2>
+            <p>La IA lee tu letra manuscrita y la convierte en material de repaso. Sin copiar ni pegar.</p>
+          </div>
+          <ul class="checklist">
+            <li><span class="tick"><svg><use href="#i-check" /></svg></span><div><b>Resúmenes</b><span>De una página o del cuaderno entero, también de grabaciones y textos pegados.</span></div></li>
+            <li><span class="tick"><svg><use href="#i-check" /></svg></span><div><b>Cuestionarios tipo test</b><span>Interactivos y con la explicación de cada respuesta.</span></div></li>
+            <li><span class="tick"><svg><use href="#i-check" /></svg></span><div><b>Tarjetas de memoria</b><span>Se giran con un toque para repasar en cualquier momento.</span></div></li>
+            <li><span class="tick"><svg><use href="#i-check" /></svg></span><div><b>Pluma IA</b><span>Rodea un ejercicio o una fórmula, pregunta y añade la respuesta a la página.</span></div></li>
+          </ul>
+        </div>
+
+        <div class="quiz reveal" id="quiz" aria-live="polite">
+          <div class="quiz-top"><span>Cuestionario · Biología</span><span>Pregunta 4 de 10</span></div>
+          <div class="bar"><i id="quiz-bar"></i></div>
+          <h3>¿Dónde tiene lugar la fotosíntesis en las células vegetales?</h3>
+          <div class="opts">
+            <button class="opt" type="button" data-ok="0"><span class="k">A</span>En las mitocondrias</button>
+            <button class="opt" type="button" data-ok="1"><span class="k">B</span>En los cloroplastos</button>
+            <button class="opt" type="button" data-ok="0"><span class="k">C</span>En el núcleo</button>
+            <button class="opt" type="button" data-ok="0"><span class="k">D</span>En los ribosomas</button>
+          </div>
+          <p class="explain" id="explain"><strong>Correcto: cloroplastos.</strong> Contienen clorofila, que capta la luz para transformar CO₂ y agua en glucosa y oxígeno.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- INSTALL -->
+    <section class="section" id="instalar">
+      <div class="wrap">
+        <div class="section-head center reveal">
+          <span class="eyebrow">Instalar</span>
+          <h2>Lista en tres toques.</h2>
+          <p>Trazo es una app web instalable. No pasa por la App Store y se actualiza sola.</p>
+        </div>
+        <div class="steps">
+          <div class="step reveal"><h3>Abre Trazo en Safari</h3><p>En el iPhone o el iPad, entra en la dirección de la app desde Safari. En el ordenador sirve cualquier navegador moderno.</p></div>
+          <div class="step reveal"><h3>Añádela al inicio</h3><p>Pulsa <strong>Compartir</strong> y después <strong>Añadir a pantalla de inicio</strong>.</p></div>
+          <div class="step reveal"><h3>Empieza a escribir</h3><p>Ábrela desde el icono: se ve a pantalla completa, como cualquier otra app, y funciona sin conexión.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRIVACY -->
+    <section class="wrap reveal" aria-labelledby="priv-title">
+      <div class="privacy">
+        <div class="lock"><svg><use href="#i-lock" /></svg></div>
+        <div>
+          <h2 id="priv-title">Tus cuadernos son tuyos.</h2>
+          <p>Todo se guarda en tu propio dispositivo: sin registro, sin servidores intermedios. Si usas la IA, tu clave de API se queda en el dispositivo y las peticiones van directamente del navegador a Anthropic. Puedes proteger cada cuaderno con contraseña y hacer copias de seguridad cuando quieras.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section" id="preguntas">
+      <div class="wrap">
+        <div class="section-head center reveal">
+          <span class="eyebrow">Preguntas frecuentes</span>
+          <h2>Lo que suele preguntarse.</h2>
+        </div>
+        <div class="faq reveal">
+          <details>
+            <summary>¿Necesito un Apple Pencil?</summary>
+            <p>No. Puedes escribir con el dedo, con un ratón o con cualquier lápiz. Con el Apple Pencil las plumas varían el grosor según la presión, y en Ajustes puedes activar el modo en el que el dedo solo desplaza y hace zoom.</p>
+          </details>
+          <details>
+            <summary>¿Cómo funciona la IA y qué necesito?</summary>
+            <p>Las funciones de IA usan Claude. Añade tu clave de API en Ajustes; se guarda solo en tu dispositivo. El resto de la app funciona sin ella.</p>
+          </details>
+          <details>
+            <summary>¿Se sincronizan mis cuadernos entre dispositivos?</summary>
+            <p>No hay sincronización en la nube. Para pasar cuadernos de un dispositivo a otro, usa la copia de seguridad completa desde Ajustes.</p>
+          </details>
+          <details>
+            <summary>¿Funciona sin internet?</summary>
+            <p>Sí. Una vez instalada, puedes abrirla, escribir y organizar tus cuadernos sin conexión. Solo las funciones de IA necesitan internet.</p>
+          </details>
+          <details>
+            <summary>¿La contraseña cifra mis datos?</summary>
+            <p>La contraseña impide abrir el cuaderno dentro de la app, pero no cifra los datos guardados en el dispositivo.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta">
+      <div class="wrap reveal">
+        <h2>Tu próximo cuaderno empieza con un <span class="hand">trazo</span>.</h2>
+        <p>Gratis, sin registro y listo en segundos.</p>
+        <a class="btn btn-primary" href="./">Abrir Trazo <svg width="18" height="18"><use href="#i-arrow" /></svg></a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <a class="brand" href="#inicio" style="font-size:17px"><img src="icon.svg" alt="" style="width:26px;height:26px" />Trazo</a>
+      <nav aria-label="Pie de página">
+        <a href="#funciones">Funciones</a>
+        <a href="#ia">IA</a>
+        <a href="#instalar">Instalar</a>
+        <a href="#preguntas">Preguntas</a>
+      </nav>
+      <span>© <span id="year">2026</span> Trazo</span>
+    </div>
+  </footer>
+
+  <script>
+    // Sticky header border
+    const nav = document.getElementById("nav");
+    const onScroll = () => nav.classList.toggle("scrolled", window.scrollY > 8);
+    addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+
+    // Theme toggle (remembered per browser)
+    const root = document.documentElement;
+    const themeBtn = document.getElementById("theme");
+    const isDark = () => root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    const paintIcon = () => themeBtn.querySelector("use").setAttribute("href", isDark() ? "#i-sun" : "#i-moon");
+    try { const t = localStorage.getItem("trazo-landing-theme"); if (t) root.dataset.theme = t; } catch (e) {}
+    paintIcon();
+    themeBtn.addEventListener("click", () => {
+      root.dataset.theme = isDark() ? "light" : "dark";
+      try { localStorage.setItem("trazo-landing-theme", root.dataset.theme); } catch (e) {}
+      paintIcon();
+    });
+
+    // Measure hero ink strokes so the draw animation matches their length
+    document.querySelectorAll(".ink.draw").forEach((p) => {
+      try { p.style.setProperty("--len", Math.ceil(p.getTotalLength()) + 2); } catch (e) {}
+    });
+
+    // Reveal on scroll
+    const io = "IntersectionObserver" in window && new IntersectionObserver((entries) => {
+      entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
+    }, { threshold: 0.12, rootMargin: "0px 0px -40px 0px" });
+    document.querySelectorAll(".reveal").forEach((el) => (io ? io.observe(el) : el.classList.add("in")));
+
+    // Interactive quiz demo
+    const opts = document.querySelectorAll(".opt");
+    opts.forEach((btn) => btn.addEventListener("click", () => {
+      opts.forEach((o) => o.classList.remove("right", "wrong"));
+      document.querySelector('.opt[data-ok="1"]').classList.add("right");
+      if (btn.dataset.ok !== "1") btn.classList.add("wrong");
+      document.getElementById("explain").classList.add("show");
+      document.getElementById("quiz-bar").style.width = "50%";
+    }));
+
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
