@@ -523,6 +523,40 @@
       .wiz-nav .btn { flex: 1; padding: 0 16px; }
       .bstep h3 { font-size: 23px; }
     }
+    /* Tarjeta regalo */
+    .gift { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(40px, 6vw, 88px); align-items: center; }
+    .gcard-wrap { display: grid; justify-items: center; }
+    .gtilt { width: min(100%, 440px); }
+    .gcard { position: relative; width: 100%; aspect-ratio: 1.6; transform-style: preserve-3d; transition: transform 1s cubic-bezier(.2,.8,.2,1); cursor: pointer; animation: floaty 6s ease-in-out infinite; }
+    .gcard:focus-visible { outline: none; }
+    .gcard:focus-visible .gface { outline: 2px solid var(--accent); outline-offset: 4px; }
+    .gcard.flip { transform: rotateY(180deg); }
+    @keyframes floaty { 50% { translate: 0 -10px; } }
+    .gface { position: absolute; inset: 0; border-radius: 22px; padding: clamp(20px, 4vw, 30px); overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; color: #f8f1ee; display: flex; flex-direction: column; justify-content: space-between; background: radial-gradient(120% 90% at 85% 0%, rgba(217, 164, 143, .5), transparent 55%), linear-gradient(140deg, #5a3a4d, #2a1823); box-shadow: 0 40px 80px -30px rgba(61, 36, 51, .65), inset 0 1px 0 rgba(255, 255, 255, .15); }
+    .gface::before { content: ""; position: absolute; right: -60px; bottom: -60px; width: 220px; height: 220px; border-radius: 50%; border: 1px solid rgba(217, 164, 143, .35); box-shadow: 0 0 0 24px rgba(217, 164, 143, .06); pointer-events: none; }
+    .gface::after { content: ""; position: absolute; inset: -50%; background: linear-gradient(115deg, transparent 42%, rgba(255, 255, 255, .16) 50%, transparent 58%); animation: shine 6s ease-in-out infinite; pointer-events: none; }
+    @keyframes shine { from { transform: translateX(-55%); } to { transform: translateX(55%); } }
+    .gback { transform: rotateY(180deg); }
+    .gtop, .gbottom { position: relative; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .gmark { width: 42px; height: 42px; border-radius: 50%; border: 1px solid rgba(248, 241, 238, .5); display: grid; place-items: center; font: italic 400 22px/1 var(--serif); }
+    .glabel { font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: #d9a48f; font-weight: 600; }
+    .gamount { position: relative; font: 400 clamp(44px, 7vw, 68px)/1 var(--serif); letter-spacing: -.02em; }
+    .gsvc { position: relative; font: italic 400 clamp(24px, 3.6vw, 32px)/1.15 var(--serif); }
+    .gname { font: 500 clamp(22px, 3vw, 28px)/1.2 var(--serif); }
+    .gmsg { margin-top: 6px; font: italic 400 16px/1.4 var(--serif); color: rgba(248, 241, 238, .85); }
+    .gbottom { align-items: flex-end; font-size: 12px; color: rgba(248, 241, 238, .7); }
+    .ghint { margin-top: 22px; font-size: 13px; color: var(--muted); }
+    .gform { display: grid; gap: 16px; }
+    .seg { display: inline-flex; padding: 4px; border-radius: 999px; background: var(--bg-2); border: 1px solid var(--border); justify-self: start; }
+    .seg button { border: 0; background: none; padding: 10px 18px; border-radius: 999px; font: 600 14px var(--sans); color: var(--muted); cursor: pointer; }
+    .seg button[aria-pressed="true"] { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
+    .amounts { display: flex; flex-wrap: wrap; gap: 8px; }
+    .amounts .tab { min-width: 72px; font-variant-numeric: tabular-nums; }
+    .amounts .tab[aria-pressed="true"] { background: var(--cta); color: var(--cta-fg); border-color: var(--cta); }
+    .field select { width: 100%; padding: 13px 15px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font: 16px/1.4 var(--sans); }
+    .gform .btn { justify-self: start; }
+    @media (max-width: 1020px) { .gift { grid-template-columns: 1fr; } .gcard-wrap { order: -1; } }
+    @media (max-width: 640px) { .gform .btn { justify-self: stretch; } }
     .mbar { display: none; }
     @media (max-width: 1020px) { .tips { grid-template-columns: 1fr; max-width: 640px; } }
     @media (max-width: 640px) {
@@ -578,6 +612,7 @@
           <li><a href="#nosotros">Nosotros</a></li>
           <li><a href="#servicios">Servicios</a></li>
           <li><a href="#tarifas">Tarifas</a></li>
+          <li><a href="#regalo">Regalo</a></li>
           <li><a href="#opiniones">Opiniones</a></li>
           <li><a href="#visitanos">Contacto</a></li>
         </ul>
@@ -596,6 +631,7 @@
       <li><a href="#nosotros">Nosotros</a></li>
       <li><a href="#servicios">Servicios</a></li>
       <li><a href="#tarifas">Tarifas</a></li>
+      <li><a href="#regalo">Regalo</a></li>
       <li><a href="#opiniones">Opiniones</a></li>
       <li><a href="#visitanos">Contacto</a></li>
     </ul>
@@ -768,6 +804,52 @@
       </div>
     </section>
 
+    <!-- TARJETA REGALO -->
+    <section class="section" id="regalo">
+      <div class="wrap gift">
+        <div class="gcard-wrap reveal">
+          <div class="gtilt" data-tilt="8">
+            <div class="gcard" id="gcard" tabindex="0" role="button" aria-label="Vista previa de la tarjeta regalo. Pulsa para darle la vuelta">
+              <div class="gface gfront">
+                <div class="gtop"><span class="gmark"></span><span class="glabel">Tarjeta regalo</span></div>
+                <div class="gamount" id="g-amount">50 €</div>
+                <div class="gbottom"><span>Celia · Peluquería &amp; estética</span><span>Coín</span></div>
+              </div>
+              <div class="gface gback">
+                <div class="gtop"><span class="glabel">Para</span><span class="gmark"></span></div>
+                <div><div class="gname" id="g-to">Alguien especial</div><p class="gmsg" id="g-msg">Un regalo para cuidarte.</p></div>
+                <div class="gbottom"><span id="g-from">De: …</span><span>Válida en el salón</span></div>
+              </div>
+            </div>
+          </div>
+          <p class="ghint">Toca la tarjeta para darle la vuelta</p>
+        </div>
+        <div class="reveal">
+          <span class="eyebrow">Tarjeta regalo</span>
+          <div class="head" style="margin-bottom:28px">
+            <h2>Regala <em>un momento para cuidarse</em></h2>
+            <p>Para cumpleaños, el Día de la Madre o porque sí. Elige un importe o un servicio, personalízala y pídela por WhatsApp.</p>
+          </div>
+          <form class="gform" id="gform" novalidate>
+            <div class="seg" id="g-seg" role="group" aria-label="Tipo de regalo">
+              <button type="button" data-t="importe" aria-pressed="true">Un importe</button>
+              <button type="button" data-t="servicio" aria-pressed="false">Un servicio</button>
+            </div>
+            <div class="amounts" id="g-importes"></div>
+            <div class="field" id="g-otro-f" hidden><label for="g-otro">Importe en euros</label><input id="g-otro" type="number" min="10" step="5" inputmode="numeric" placeholder="60" /></div>
+            <div class="field" id="g-svc-f" hidden><label for="g-svc">Servicio</label><select id="g-svc"></select></div>
+            <div class="fields">
+              <div class="field"><label for="g-para">Para</label><input id="g-para" placeholder="Quién la recibe" autocomplete="off" /></div>
+              <div class="field"><label for="g-de">De</label><input id="g-de" placeholder="Tu nombre" autocomplete="name" /></div>
+              <div class="field full"><label for="g-mensaje">Dedicatoria <span style="font-weight:400;color:var(--muted)">(opcional)</span></label><input id="g-mensaje" maxlength="90" placeholder="¡Feliz cumpleaños!" autocomplete="off" /></div>
+            </div>
+            <a class="btn btn-brand" id="g-send" href="#" target="_blank" rel="noopener" aria-disabled="true"><svg class="i"><use href="#i-wa" /></svg> Pedir por WhatsApp</a>
+            <p class="form-note" id="g-note"></p>
+          </form>
+        </div>
+      </div>
+    </section>
+
     <!-- OPINIONES -->
     <section class="section" id="opiniones">
       <div class="wrap">
@@ -861,6 +943,7 @@
           <ul>
             <li><a href="#servicios">Servicios</a></li>
             <li><a href="#tarifas">Tarifas</a></li>
+            <li><a href="#regalo">Regalo</a></li>
             <li><a href="#reservar">Reservar cita</a></li>
             <li><a href="#preguntas">Preguntas frecuentes</a></li>
           </ul>
@@ -999,7 +1082,9 @@
       },
       // Reservas automáticas en Google Calendar: pega aquí la URL de la aplicación web (termina en /exec).
       // Vacío = las reservas se envían por WhatsApp. Ver la carpeta reservas-celia/INSTRUCCIONES.md
-      reservasURL: "https://script.google.com/macros/s/AKfycbxyVMSzSw1GMRM-TWLu8H9tAv7FeejEK41qF3z76jcNS7ZDqTWb_DIEcRociR07BOZPOg/exec",
+      // Desactivado de momento (las reservas van por WhatsApp). Para activarlo, pega entre las comillas:
+      // https://script.google.com/macros/s/AKfycbxyVMSzSw1GMRM-TWLu8H9tAv7FeejEK41qF3z76jcNS7ZDqTWb_DIEcRociR07BOZPOg/exec
+      reservasURL: "",
       diasReserva: 60,                      // días que se pueden elegir en la reserva (igual que diasMax en la agenda)
       intervaloMin: 30,                     // cada cuántos minutos se ofrece una hora
 
@@ -1009,7 +1094,7 @@
         { p: "¿Qué pasa si no puedo venir?", r: "Avísanos con al menos 24 horas de antelación por WhatsApp o por teléfono para que podamos dar tu hora a otra persona." },
         { p: "¿Cómo puedo pagar?", r: "En efectivo, con tarjeta o con Bizum." },
         { p: "¿Hacéis prueba para novias?", r: "Sí. Recomendamos hacer la prueba de peinado entre uno y dos meses antes de la boda, con fotos de referencia y, si puedes, con el tocado." },
-        { p: "¿Tenéis tarjetas regalo?", r: "Sí, para cualquier servicio o importe. Pídela en el salón o escríbenos y te la preparamos." },
+        { p: "¿Tenéis tarjetas regalo?", r: "Sí, de cualquier importe o para un servicio concreto. Puedes pedirla en la sección «Tarjeta regalo» de esta web o en el salón." },
       ],
 
       consejos: [
@@ -1032,6 +1117,8 @@
           "Hidrata con mascarilla dos veces por semana.",
         ]},
       ],
+
+      regalo: { importes: [25, 50, 75, 100] },   // importes rápidos de la tarjeta regalo (en €)
 
       tituloFinal: "¿Te apetece *un cambio*? Reserva hoy tu cita.",
       redes: { instagram: "", facebook: "", tiktok: "" },   // ✏️ enlaces a tus perfiles, p. ej. "https://instagram.com/peluqueriacelia"
@@ -1471,6 +1558,62 @@
 
     // Preguntas
     $("#faq").innerHTML = N.preguntas.map((q) => `<details><summary>${esc(q.p)}</summary><p>${esc(q.r)}</p></details>`).join("");
+
+    // Tarjeta regalo: vista previa en directo y pedido por WhatsApp
+    (function gift() {
+      const R = N.regalo || { importes: [25, 50, 75, 100] };
+      let tipo = "importe", importe = R.importes[1] || R.importes[0], otro = false;
+      const card = $("#gcard");
+      $$(".gmark").forEach((m) => (m.textContent = N.inicial));
+      $("#g-importes").innerHTML = R.importes.map((v) => `<button type="button" class="tab" data-v="${v}">${euro(v)}</button>`).join("") + `<button type="button" class="tab" data-v="otro">Otro</button>`;
+      $("#g-svc").innerHTML = N.servicios.map((sv) => `<optgroup label="${esc(sv.nombre)}">${sv.tarifas.map((t) => `<option>${esc(t.nombre)}</option>`).join("")}</optgroup>`).join("");
+      const valor = () => (otro ? parseInt($("#g-otro").value, 10) || 0 : importe);
+      function render() {
+        $$("#g-seg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.t === tipo)));
+        $("#g-importes").hidden = tipo !== "importe";
+        $$("#g-importes .tab").forEach((b) => b.setAttribute("aria-pressed", String(otro ? b.dataset.v === "otro" : +b.dataset.v === importe)));
+        $("#g-otro-f").hidden = !(tipo === "importe" && otro);
+        $("#g-svc-f").hidden = tipo !== "servicio";
+        const v = valor(), svc = $("#g-svc").value;
+        const amt = $("#g-amount");
+        amt.className = tipo === "importe" ? "gamount" : "gsvc";
+        amt.textContent = tipo === "importe" ? (v ? euro(v) : "— €") : svc;
+        const para = $("#g-para").value.trim(), de = $("#g-de").value.trim(), msg = $("#g-mensaje").value.trim();
+        $("#g-to").textContent = para || "Alguien especial";
+        $("#g-from").textContent = "De: " + (de || "…");
+        $("#g-msg").textContent = msg || "Un regalo para cuidarte.";
+        const falta = [];
+        if (tipo === "importe" && v < 10) falta.push("un importe (mínimo 10 €)");
+        if (!para) falta.push("para quién es");
+        if (!de) falta.push("de quién es");
+        const ok = !falta.length;
+        const texto = [
+          `Hola, ${N.nombre}. Quiero una tarjeta regalo:`, "",
+          tipo === "importe" ? `• Importe: ${euro(v)}` : `• Servicio: ${svc}`,
+          `• Para: ${para}`, `• De: ${de}`,
+          ...(msg ? [`• Dedicatoria: ${msg}`] : []),
+          "", "¿Cómo la pago y la recojo?",
+        ].join("\n");
+        const a = $("#g-send");
+        a.setAttribute("aria-disabled", String(!ok));
+        a.href = ok ? `https://wa.me/${N.whatsapp}?text=${encodeURIComponent(texto)}` : "#";
+        $("#g-note").textContent = ok
+          ? "Se abrirá WhatsApp con tu pedido ya escrito. Te diremos cómo pagarla y recogerla."
+          : "Falta indicar " + falta.join(", ").replace(/, ([^,]*)$/, " y $1") + ".";
+      }
+      const front = () => card.classList.remove("flip");
+      $("#g-seg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { tipo = b.dataset.t; front(); render(); } });
+      $("#g-importes").addEventListener("click", (e) => {
+        const b = e.target.closest(".tab"); if (!b) return;
+        otro = b.dataset.v === "otro"; if (!otro) importe = +b.dataset.v;
+        front(); render(); if (otro) $("#g-otro").focus();
+      });
+      ["#g-otro", "#g-svc"].forEach((sel) => ["input", "change"].forEach((ev) => $(sel).addEventListener(ev, () => { front(); render(); })));
+      ["#g-para", "#g-de", "#g-mensaje"].forEach((sel) => { $(sel).addEventListener("input", render); $(sel).addEventListener("focus", () => card.classList.add("flip")); });
+      card.addEventListener("click", () => card.classList.toggle("flip"));
+      card.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); card.classList.toggle("flip"); } });
+      render();
+    })();
 
     // Consejos
     $("#tips").innerHTML = N.consejos.map((c, i) => `<article class="tip reveal" data-tilt="4" style="--d:${i * 100}ms"><span class="k">${esc(c.etiqueta)}</span><h3>${esc(c.titulo)}</h3><p>${esc(c.texto)}</p><ul>${c.puntos.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></article>`).join("");
