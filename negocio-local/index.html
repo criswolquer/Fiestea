@@ -22,7 +22,7 @@
       Todo el contenido de la página se genera a partir de ahí.
    2. Colores: --brand y --accent, justo debajo.
    3. Fotos: ponlas en una carpeta "fotos/" junto a este archivo y escribe
-      su nombre en NEGOCIO (fotoPortada, fotoNosotros, galeria).
+      su nombre en NEGOCIO (fotoNosotros, galeria).
    4. Cambia también <title> y la descripción de arriba (lo que muestra Google).
   =====================================================================
   -->
@@ -79,9 +79,9 @@
     .eyebrow::before { content: ""; width: 26px; height: 1px; background: currentColor; }
     :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
     section { scroll-margin-top: 76px; }
-    .section { padding-block: clamp(80px, 11vw, 136px); overflow-x: clip; }
+    .section { padding-block: clamp(96px, 12vw, 168px); overflow-x: clip; }
     .head { max-width: 640px; margin-bottom: clamp(40px, 5vw, 60px); }
-    .head h2 { font-size: clamp(36px, 5vw, 58px); margin: 16px 0 16px; }
+    .head h2 { font-size: clamp(40px, 5.6vw, 72px); margin: 18px 0 18px; letter-spacing: -.025em; }
     .head p { color: var(--muted); font-size: 18px; max-width: 54ch; }
     .head.center { text-align: center; margin-inline: auto; }
     .head.center .eyebrow::after { content: ""; width: 26px; height: 1px; background: currentColor; }
@@ -103,7 +103,7 @@
     .btn[aria-disabled="true"] { opacity: .45; pointer-events: none; box-shadow: none; }
 
     /* ---------- Cabecera ---------- */
-    .nav { position: fixed; inset: 0 0 auto; z-index: 50; padding-top: env(safe-area-inset-top, 0px); transition: background .3s, box-shadow .3s, color .3s; color: var(--on-brand); }
+    .nav { position: fixed; inset: 0 0 auto; z-index: 50; padding-top: env(safe-area-inset-top, 0px); transition: background .3s, box-shadow .3s; color: var(--text); }
     .nav.solid { background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(16px) saturate(150%); -webkit-backdrop-filter: blur(16px) saturate(150%); box-shadow: 0 1px 0 var(--border); color: var(--text); }
     .nav .wrap { height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
     .logo { font: 500 26px/1 var(--serif); text-decoration: none; display: flex; align-items: baseline; gap: 12px; letter-spacing: -.01em; }
@@ -115,41 +115,38 @@
     .menu-btn { display: none; width: 44px; height: 44px; border-radius: 50%; border: 1px solid currentColor; background: transparent; color: inherit; cursor: pointer; place-items: center; opacity: .8; }
 
     /* ---------- Portada ---------- */
-    .hero { position: relative; display: flex; align-items: flex-end; color: var(--on-brand); background: var(--brand-deep); overflow: hidden; padding-block: 160px clamp(56px, 7vw, 96px); min-height: 640px; }
-    .hero-bg { position: absolute; inset: 0; background-size: cover; background-position: center; }
-    .hero-bg::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(30, 14, 24, .3) 0%, rgba(30, 14, 24, .5) 50%, rgba(30, 14, 24, .92) 100%); }
-    .hero-bg.placeholder { background: radial-gradient(50% 60% at 78% 30%, rgba(217, 164, 143, .32), transparent 70%), radial-gradient(40% 50% at 8% 100%, rgba(150, 90, 125, .35), transparent 70%), linear-gradient(160deg, var(--brand) 0%, var(--brand-deep) 70%); }
-    .hero-3d { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: 0; transition: opacity 1.6s ease; }
-    .hero-3d.ready { opacity: 1; }
-    .hero .wrap { position: relative; z-index: 1; display: grid; grid-template-columns: 1.5fr 1fr; gap: 48px; align-items: end; }
-    .hero h1 { font-size: clamp(48px, 7.4vw, 100px); font-weight: 400; margin: 22px 0 24px; perspective: 700px; }
-    .hero h1 em { color: var(--accent); }
+    .hero { position: relative; overflow: hidden; padding-block: 128px clamp(72px, 9vw, 128px); background: radial-gradient(50% 55% at 76% 48%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 72%), radial-gradient(40% 50% at 0% 100%, color-mix(in srgb, var(--brand-2) 10%, transparent), transparent 70%), var(--bg); }
+    .hero .wrap { display: grid; grid-template-columns: 1.05fr 1fr; gap: clamp(24px, 4vw, 64px); align-items: center; }
+    .hero h1 { font-size: clamp(54px, 7.4vw, 112px); line-height: .98; letter-spacing: -.035em; margin: 28px 0 30px; perspective: 700px; }
     .hero h1 .w { display: inline-block; transform-origin: 50% 100%; animation: rise 1.1s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--i) * 70ms + .15s); }
     @keyframes rise { from { opacity: 0; transform: translateY(.4em) rotateX(-70deg); } }
-    .hero .eyebrow { color: var(--accent); }
-    .hero .lead { font-size: clamp(17px, 1.6vw, 19px); max-width: 34em; color: rgba(248, 241, 238, .82); }
-    .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 36px; }
-    .hero .lead, .hero-cta, .status, .hero-card { animation: up 1s cubic-bezier(.2,.8,.2,1) both; }
-    .hero .lead { animation-delay: .55s; } .hero-cta { animation-delay: .7s; } .status { animation-delay: .85s; } .hero-card { animation-delay: .95s; }
+    .hero .lead { font-size: clamp(17px, 1.5vw, 19px); max-width: 30em; color: var(--muted); }
+    .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 40px; }
+    .hero .lead, .hero-cta { animation: up 1s cubic-bezier(.2,.8,.2,1) both; }
+    .hero .lead { animation-delay: .55s; } .hero-cta { animation-delay: .7s; }
     @keyframes up { from { opacity: 0; transform: translateY(22px); } }
-    .status { display: inline-flex; align-items: center; gap: 10px; margin-top: 28px; font-size: 14px; color: rgba(248, 241, 238, .8); }
-    .dot { width: 8px; height: 8px; border-radius: 50%; background: #9a8d94; }
-    .dot.open { background: #63d394; box-shadow: 0 0 0 4px rgba(99, 211, 148, .22); animation: pulse 2.4s infinite; }
-    @keyframes pulse { 50% { box-shadow: 0 0 0 8px rgba(99, 211, 148, 0); } }
-    .hero-card { justify-self: end; width: 100%; max-width: 360px; padding: 26px 26px 18px; border-radius: 20px; background: rgba(248, 241, 238, .07); border: 1px solid rgba(248, 241, 238, .16); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
-    .hero-card h3 { font-size: 22px; margin-bottom: 8px; }
-    .hero-card .row { display: flex; gap: 14px; align-items: flex-start; padding: 13px 0; border-top: 1px solid rgba(248, 241, 238, .12); font-size: 15px; }
-    .hero-card .row:first-of-type { border-top: 0; }
-    .hero-card .row a { text-decoration: none; }
-    .hero-card .row svg { margin-top: 2px; color: var(--accent); width: 18px; height: 18px; }
+    .btn-ghost { background: transparent; color: var(--text); border-color: color-mix(in srgb, var(--text) 18%, transparent); }
+    .btn-ghost:hover { background: var(--surface); }
 
-    /* ---------- Cinta de servicios ---------- */
-    .ribbon { background: var(--brand); color: var(--on-brand); overflow: hidden; }
-    .ribbon-track { display: flex; width: max-content; animation: marquee 60s linear infinite; }
-    .ribbon:hover .ribbon-track { animation-play-state: paused; }
-    .ribbon span { font: italic 400 22px/1 var(--serif); padding: 22px 0; white-space: nowrap; display: inline-flex; align-items: center; }
-    .ribbon span::after { content: "✦"; font-style: normal; font-size: 12px; color: var(--accent); margin: 0 30px; }
-    @keyframes marquee { to { transform: translateX(-50%); } }
+    .stage { position: relative; aspect-ratio: 1 / 1.08; max-width: 100%; --px: 0; --py: 0; }
+    .stage::before { content: ""; position: absolute; left: 22%; right: 22%; bottom: 5%; height: 8%; border-radius: 50%; background: radial-gradient(closest-side, rgba(61, 36, 51, .22), transparent); filter: blur(8px); }
+    .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 1.4s ease; }
+    .stage canvas.ready { opacity: 1; }
+    .fcard { position: absolute; z-index: 1; display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-radius: 18px; background: color-mix(in srgb, var(--surface) 70%, transparent); border: 1px solid color-mix(in srgb, var(--surface) 60%, transparent); backdrop-filter: blur(16px) saturate(150%); -webkit-backdrop-filter: blur(16px) saturate(150%); box-shadow: 0 20px 44px -18px rgba(61, 36, 51, .35); font-size: 14px; line-height: 1.35; color: var(--text); text-decoration: none; transform: translate(calc(var(--px) * var(--depth, 20px)), calc(var(--py) * var(--depth, 20px))); animation: up 1s cubic-bezier(.2,.8,.2,1) backwards, bob 7s ease-in-out infinite; }
+    a.fcard:hover { box-shadow: 0 24px 50px -16px rgba(61, 36, 51, .45); }
+    .fcard b { display: block; font-weight: 600; }
+    .fcard small { display: block; color: var(--muted); font-size: 12.5px; }
+    .fcard .ic { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; background: var(--brand); color: var(--accent); flex: none; }
+    .fcard .ic svg { width: 18px; height: 18px; }
+    .fcard .price { font: 500 22px/1.1 var(--serif); }
+    .fcard > svg.i { width: 16px; height: 16px; color: var(--accent-strong); }
+    .fc-1 { top: 9%; left: -2%; --depth: 24px; animation-delay: .9s, 0s; }
+    .fc-2 { top: 46%; right: -2%; --depth: 40px; animation-delay: 1.05s, -2.5s; }
+    .fc-3 { bottom: 8%; left: 4%; --depth: 16px; animation-delay: 1.2s, -5s; }
+    @keyframes bob { 50% { translate: 0 -10px; } }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: #9a8d94; flex: none; }
+    .dot.open { background: #34b06e; box-shadow: 0 0 0 4px rgba(52, 176, 110, .2); animation: pulse 2.4s infinite; }
+    @keyframes pulse { 50% { box-shadow: 0 0 0 8px rgba(52, 176, 110, 0); } }
 
     /* ---------- Nosotros ---------- */
     .about { display: grid; grid-template-columns: 1fr 1.05fr; gap: clamp(40px, 7vw, 96px); align-items: center; }
@@ -348,7 +345,7 @@
       .links, .nav .btn-sm { display: none; }
       .menu-btn { display: grid; }
       .hero .wrap, .about, .visit, .booking, .faq-wrap { grid-template-columns: 1fr; }
-      .hero-card { justify-self: start; }
+      .stage { width: min(100%, 520px); margin-inline: auto; }
       .services, .reviews { grid-template-columns: repeat(2, 1fr); }
       .steps { grid-template-columns: repeat(2, 1fr); row-gap: 44px; }
       .pricelist { grid-template-columns: 1fr; }
@@ -357,12 +354,14 @@
       .gallery { grid-template-columns: repeat(3, 1fr); }
       .foot { grid-template-columns: 1fr 1fr; }
       .foot > :first-child { grid-column: 1 / -1; }
-      .hero-3d.ready { opacity: .45; }
     }
     @media (max-width: 640px) {
       .services, .reviews, .steps, .values, .fields { grid-template-columns: 1fr; }
       .values { gap: 22px; }
-      .hero { padding-top: 130px; min-height: 0; }
+      .hero { padding-top: 112px; }
+      .fcard { padding: 10px 14px; font-size: 13px; gap: 10px; }
+      .fcard .ic { width: 32px; height: 32px; }
+      .fcard .price { font-size: 19px; }
       .hero-cta .btn { flex: 1 1 100%; }
       .map { min-height: 300px; }
       .gallery { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 160px; }
@@ -439,29 +438,24 @@
   <main id="inicio">
     <!-- PORTADA -->
     <section class="hero">
-      <div class="hero-bg" id="hero-bg"></div>
-      <canvas class="hero-3d" id="hero-3d" aria-hidden="true"></canvas>
       <div class="wrap">
         <div>
           <span class="eyebrow" data-k="categoria"></span>
           <h1 id="hero-title"></h1>
           <p class="lead" data-k="descripcion"></p>
           <div class="hero-cta">
-            <a class="btn btn-accent" href="#reservar">Reservar cita <svg class="i"><use href="#i-arrow" /></svg></a>
-            <a class="btn btn-light" href="#tarifas">Ver tarifas</a>
+            <a class="btn btn-brand" href="#reservar">Reservar cita <svg class="i"><use href="#i-arrow" /></svg></a>
+            <a class="btn btn-ghost" href="#tarifas">Ver tarifas</a>
           </div>
-          <div class="status"><span class="dot" id="status-dot"></span><span id="status-text">Consultando horario…</span></div>
         </div>
-        <aside class="hero-card" data-tilt="8" aria-label="Datos de contacto">
-          <h3>El salón</h3>
-          <div class="row"><svg class="i"><use href="#i-pin" /></svg><a data-href="maps" target="_blank" rel="noopener" href="#" data-k="direccion"></a></div>
-          <div class="row"><svg class="i"><use href="#i-phone" /></svg><a data-href="tel" href="#" data-k="telefono"></a></div>
-          <div class="row"><svg class="i"><use href="#i-clock" /></svg><span id="today-hours"></span></div>
-        </aside>
+        <div class="stage" id="stage">
+          <canvas id="hero-3d" aria-hidden="true"></canvas>
+          <div class="fcard fc-1"><span class="dot" id="status-dot"></span><div><b id="status-text">Consultando horario…</b><small id="today-hours"></small></div></div>
+          <a class="fcard fc-2" href="#tarifas"><span class="ic"><svg><use href="#i-scissors" /></svg></span><div><small id="fc-name"></small><span class="price num" id="fc-price"></span></div></a>
+          <a class="fcard fc-3" href="#reservar"><span class="ic"><svg><use href="#i-cal" /></svg></span><div><b>Reserva online</b><small>Día y hora en un minuto</small></div><svg class="i"><use href="#i-arrow" /></svg></a>
+        </div>
       </div>
     </section>
-
-    <div class="ribbon" aria-hidden="true"><div class="ribbon-track" id="ribbon"></div></div>
 
     <!-- NOSOTROS -->
     <section class="section" id="nosotros">
@@ -686,7 +680,6 @@
       direccion: "Calle Mayor 12, 28001 Tu Ciudad",   // ✏️
       datosLegales: "",                     // ✏️ p. ej. "Celia García López · NIF 00000000X"
 
-      fotoPortada: "",                      // p. ej. "fotos/portada.jpg"
       fotoNosotros: "",                     // p. ej. "fotos/celia.jpg"
       galeria: [],                          // p. ej. ["fotos/trabajo1.jpg", "fotos/trabajo2.jpg"]
 
@@ -835,16 +828,11 @@
 
     // Fotos
     const setPhoto = (el, src) => (src ? (el.style.backgroundImage = `url("${src}")`) : el.classList.add("placeholder"));
-    setPhoto($("#hero-bg"), N.fotoPortada);
     setPhoto($("#about-photo"), N.fotoNosotros);
     if (N.galeria.length) {
       $("#galeria").hidden = false;
       $("#gallery").innerHTML = N.galeria.map((src) => `<figure style="background-image:url('${esc(src)}')"></figure>`).join("");
     }
-
-    // Cinta
-    const ribbonItems = N.servicios.flatMap((s) => s.tarifas.slice(0, 2).map((t) => t.nombre));
-    $("#ribbon").innerHTML = [...ribbonItems, ...ribbonItems].map((t) => `<span>${esc(t)}</span>`).join("");
 
     // Valores
     $("#values").innerHTML = N.valores.map((v) => `<div><svg class="i"><use href="#i-${v.icono}"/></svg><b>${esc(v.titulo)}</b><span>${esc(v.texto)}</span></div>`).join("");
@@ -1010,6 +998,9 @@
     const hoy = dias[now.getDay()];
     $("#hours").innerHTML = orden.map((d) => `<tr class="${d === hoy ? "today" : ""}"><td>${nombresDia[d]}</td><td>${fmt(N.horario[d] || [])}</td></tr>`).join("");
     $("#today-hours").textContent = "Hoy: " + fmt(N.horario[hoy] || []);
+    const destacado = N.servicios[0];
+    $("#fc-name").textContent = destacado.nombre;
+    $("#fc-price").textContent = "desde " + euro(Math.min(...destacado.tarifas.map((t) => t.precio)));
     $("#foot-hours").innerHTML = orden.map((d) => `<li>${nombresDia[d].slice(0, 3)}. ${fmt(N.horario[d] || [])}</li>`).join("");
     (function estado() {
       const t = now.getHours() * 60 + now.getMinutes();
@@ -1088,65 +1079,99 @@
       });
     }
 
-    // Escena 3D de la portada (Three.js): aros y perlas en oro rosa, movimiento lento
+    // Escena 3D de la portada (Three.js): unas tijeras de oro rosa como protagonista
     (function hero3D() {
-      const canvas = $("#hero-3d");
+      const canvas = $("#hero-3d"), stage = $("#stage");
       if (!canvas || !window.THREE) return;
       const T = window.THREE;
       let renderer;
       try { renderer = new T.WebGLRenderer({ canvas, antialias: true, alpha: true }); } catch (e) { return; }
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       renderer.outputEncoding = T.sRGBEncoding;
+      renderer.toneMapping = T.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.05;
       const scene = new T.Scene();
-      const camera = new T.PerspectiveCamera(35, 1, 0.1, 100);
-      camera.position.set(0, 0, 14);
-      scene.add(new T.HemisphereLight(0xfff0ea, 0x2a1520, 1.0));
-      const key = new T.DirectionalLight(0xffffff, 1.5); key.position.set(5, 6, 8); scene.add(key);
-      const rim = new T.PointLight(0xe8b4a0, 2.4, 40); rim.position.set(-6, -3, 6); scene.add(rim);
-      const fill = new T.PointLight(0xb0709a, 1.5, 40); fill.position.set(9, -4, 2); scene.add(fill);
-      const rose = new T.MeshStandardMaterial({ color: 0xe0a995, metalness: 0.85, roughness: 0.2 });
-      const pearl = new T.MeshStandardMaterial({ color: 0xf1ddd8, metalness: 0.25, roughness: 0.3 });
-      const plum = new T.MeshStandardMaterial({ color: 0x9b5a7c, metalness: 0.5, roughness: 0.28 });
-      const group = new T.Group(); scene.add(group);
-      const items = [];
-      const add = (geo, mat, x, y, z, s) => {
-        const m = new T.Mesh(geo, mat);
-        m.position.set(x, y, z); m.scale.setScalar(s);
-        m.userData = { y, phase: Math.random() * Math.PI * 2, sx: (Math.random() - 0.5) * 0.4, sy: 0.1 + Math.random() * 0.25 };
-        group.add(m); items.push(m);
+      const camera = new T.PerspectiveCamera(30, 1, 0.1, 100);
+      camera.position.set(0, 0, 13);
+
+      // Estudio fotográfico virtual: da al metal reflejos suaves
+      const env = new T.Scene();
+      const skyGeo = new T.SphereGeometry(20, 32, 16);
+      const pos = skyGeo.attributes.position, cols = [];
+      const top = new T.Color(0xfff3ee), bottom = new T.Color(0x3d2433), c = new T.Color();
+      for (let i = 0; i < pos.count; i++) { c.copy(bottom).lerp(top, (pos.getY(i) / 20 + 1) / 2); cols.push(c.r, c.g, c.b); }
+      skyGeo.setAttribute("color", new T.Float32BufferAttribute(cols, 3));
+      env.add(new T.Mesh(skyGeo, new T.MeshBasicMaterial({ side: T.BackSide, vertexColors: true })));
+      const panel = (w, h, color, x, y, z) => {
+        const m = new T.Mesh(new T.PlaneGeometry(w, h), new T.MeshBasicMaterial({ color, side: T.DoubleSide }));
+        m.position.set(x, y, z); m.lookAt(0, 0, 0); env.add(m);
       };
-      const ball = new T.SphereGeometry(0.5, 48, 48);
-      add(new T.TorusGeometry(1.3, 0.36, 48, 140), rose, 3.6, 1.4, 0, 1);
-      add(new T.TorusKnotGeometry(0.7, 0.19, 200, 24, 2, 3), plum, 6.2, -1.2, -2, 1);
-      add(ball, pearl, 1.8, -0.8, 1.5, 0.8);
-      add(ball, pearl, 6.8, 2.8, -2.5, 0.6);
-      add(ball, rose, 4.6, -3.2, 0.5, 0.42);
-      add(new T.TorusGeometry(0.5, 0.11, 24, 80), rose, 1.2, 3.1, -1.5, 1);
-      const hero = canvas.parentElement;
+      panel(12, 6, new T.Color(5, 5, 5), 0, 10, 6);
+      panel(6, 14, new T.Color(3.2, 2.6, 2.4), -12, 0, 4);
+      panel(5, 12, new T.Color(2.2, 1.6, 2), 12, 2, -2);
+      const pmrem = new T.PMREMGenerator(renderer);
+      scene.environment = pmrem.fromScene(env, 0.04).texture;
+
+      const gold = new T.MeshStandardMaterial({ color: 0xdc9f8a, metalness: 1, roughness: 0.2 });
+      const satin = new T.MeshStandardMaterial({ color: 0xc98a74, metalness: 1, roughness: 0.34 });
+      const pearl = new T.MeshStandardMaterial({ color: 0xf6e9e4, metalness: 0.1, roughness: 0.25 });
+
+      // Media tijera: hoja, brazo curvo y anilla (sg = 1 derecha, -1 izquierda)
+      const makeHalf = (sg) => {
+        const g = new T.Group();
+        const sh = new T.Shape();
+        sh.moveTo(-0.13 * sg, -0.1);
+        sh.quadraticCurveTo(0.24 * sg, 0.35, 0.15 * sg, 1.7);
+        sh.quadraticCurveTo(0.09 * sg, 2.6, 0, 3.2);
+        sh.quadraticCurveTo(-0.07 * sg, 2.0, -0.13 * sg, 0.6);
+        sh.lineTo(-0.13 * sg, -0.1);
+        const blade = new T.Mesh(new T.ExtrudeGeometry(sh, { depth: 0.05, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02, bevelSegments: 4, curveSegments: 24 }), gold);
+        blade.position.z = -0.025;
+        g.add(blade);
+        const arm = new T.QuadraticBezierCurve3(new T.Vector3(0, 0, 0), new T.Vector3(0.05 * sg, -0.9, 0), new T.Vector3(0.5 * sg, -1.42, 0));
+        g.add(new T.Mesh(new T.TubeGeometry(arm, 40, 0.085, 16, false), gold));
+        const ring = new T.Mesh(new T.TorusGeometry(0.44, 0.085, 24, 90), satin);
+        ring.position.set(0.72 * sg, -1.85, 0); ring.scale.set(1, 1.18, 1);
+        g.add(ring);
+        return g;
+      };
+      const A = makeHalf(1), B = makeHalf(-1);
+      A.position.z = 0.045; B.position.z = -0.045;
+      const screw = new T.Mesh(new T.CylinderGeometry(0.1, 0.1, 0.24, 32), satin);
+      screw.rotation.x = Math.PI / 2;
+      const scissors = new T.Group();
+      scissors.add(A, B, screw);
+      scissors.position.y = -0.55;
+      const rig = new T.Group();
+      rig.add(scissors);
+      rig.rotation.z = -0.6;
+      scene.add(rig);
+
+      const pearls = [[-2.3, -1.9, -1, 0.34], [2.3, 2.3, -2, 0.22], [1.9, -2.6, 0.5, 0.16]].map(([x, y, z, r], i) => {
+        const m = new T.Mesh(new T.SphereGeometry(r, 40, 40), pearl);
+        m.position.set(x, y, z); m.userData = { y, ph: i * 2 };
+        scene.add(m); return m;
+      });
+
       const layout = () => {
-        const w = hero.clientWidth, h = hero.clientHeight;
+        const w = stage.clientWidth, h = stage.clientHeight;
         renderer.setSize(w, h, false);
         camera.aspect = w / h; camera.updateProjectionMatrix();
-        const mobile = w < 1020;
-        group.scale.setScalar(mobile ? 0.55 : 1);
-        group.position.set(mobile ? -2.4 : 0, mobile ? 2.7 : 0, 0);
-        items.forEach((m, i) => (m.visible = !mobile || [0, 1, 3].includes(i)));
       };
       let px = 0, py = 0, tx = 0, ty = 0, running = false, visible = true;
       const t0 = performance.now();
       addEventListener("pointermove", (e) => { tx = e.clientX / innerWidth - 0.5; ty = e.clientY / innerHeight - 0.5; }, { passive: true });
       const frame = (now) => {
-        const t = (now - t0) / 1000;
-        px += (tx - px) * 0.04; py += (ty - py) * 0.04;
-        const s = Math.min(scrollY / innerHeight, 1.5);
-        group.rotation.y = px * 0.3 + s * 0.5;
-        group.rotation.x = py * 0.2 + s * 0.15;
-        items.forEach((m) => {
-          const u = m.userData;
-          m.position.y = u.y + Math.sin(t * 0.6 + u.phase) * 0.2;
-          m.rotation.x = t * u.sx + u.phase;
-          m.rotation.y = t * u.sy;
-        });
+        const t = reduceMotion ? 0 : (now - t0) / 1000;
+        px += (tx - px) * 0.05; py += (ty - py) * 0.05;
+        const open = 0.1 + 0.1 * (0.5 + 0.5 * Math.sin(t * 1.3));
+        A.rotation.z = open; B.rotation.z = -open;
+        rig.rotation.y = Math.sin(t * 0.35) * 0.45 + px * 0.6;
+        rig.rotation.x = py * 0.35 + Math.sin(t * 0.5) * 0.06;
+        rig.position.y = Math.sin(t * 0.8) * 0.12;
+        pearls.forEach((m) => (m.position.y = m.userData.y + Math.sin(t * 0.7 + m.userData.ph) * 0.15));
+        stage.style.setProperty("--px", px.toFixed(3));
+        stage.style.setProperty("--py", py.toFixed(3));
         renderer.render(scene, camera);
         if (running) requestAnimationFrame(frame);
       };
@@ -1156,7 +1181,7 @@
       canvas.classList.add("ready");
       addEventListener("resize", () => { layout(); if (!running) frame(performance.now()); });
       document.addEventListener("visibilitychange", () => (document.hidden ? stop() : start()));
-      if ("IntersectionObserver" in window) new IntersectionObserver(([e]) => { visible = e.isIntersecting; visible ? start() : stop(); }).observe(hero);
+      if ("IntersectionObserver" in window) new IntersectionObserver(([e]) => { visible = e.isIntersecting; visible ? start() : stop(); }).observe(stage);
       start();
     })();
 
