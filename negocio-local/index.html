@@ -557,6 +557,19 @@
     .gform .btn { justify-self: start; }
     @media (max-width: 1020px) { .gift { grid-template-columns: 1fr; } .gcard-wrap { order: -1; } }
     @media (max-width: 640px) { .gform .btn { justify-self: stretch; } }
+    .salon-box { margin-top: 6px; padding: 20px; border-radius: 18px; border: 1px dashed var(--accent-strong); background: var(--accent-soft); display: grid; gap: 12px; }
+    .salon-box p { font-size: 14px; color: var(--muted); }
+    .salon-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .gift-open { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; overflow: auto; padding: calc(24px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); background: radial-gradient(60% 55% at 50% 45%, rgba(217, 164, 143, .35), transparent 70%), rgba(30, 14, 24, .94); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: #f8f1ee; animation: goIn .5s ease; }
+    @keyframes goIn { from { opacity: 0; } }
+    .go-inner { width: min(100%, 520px); text-align: center; display: grid; justify-items: center; gap: 14px; }
+    .gift-open .eyebrow { color: #d9a48f; }
+    .gift-open .eyebrow::before { display: none; }
+    .gift-open h2 { font-size: clamp(30px, 6vw, 46px); }
+    .go-card { width: min(100%, 440px); margin-top: 12px; }
+    .gift-open .ghint { margin-top: 6px; color: rgba(248, 241, 238, .6); }
+    .go-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 6px; }
+    .go-note { font-size: 13px; color: rgba(248, 241, 238, .65); }
     .mbar { display: none; }
     @media (max-width: 1020px) { .tips { grid-template-columns: 1fr; max-width: 640px; } }
     @media (max-width: 640px) {
@@ -845,6 +858,20 @@
             </div>
             <a class="btn btn-brand" id="g-send" href="#" target="_blank" rel="noopener" aria-disabled="true"><svg class="i"><use href="#i-wa" /></svg> Pedir por WhatsApp</a>
             <p class="form-note" id="g-note"></p>
+            <div class="salon-box" id="salon-box" hidden>
+              <b>Modo salón · Crear la tarjeta para enviar</b>
+              <p>Cuando la clienta haya pagado, rellena arriba el regalo, para quién y de quién. Después copia el enlace o descarga la imagen.</p>
+              <div class="fields">
+                <div class="field"><label for="g-code">Código</label><input id="g-code" autocomplete="off" /></div>
+                <div class="field"><label for="g-vence">Válida hasta</label><input id="g-vence" type="date" /></div>
+              </div>
+              <div class="salon-actions">
+                <button class="btn btn-brand btn-sm" type="button" id="g-copy">Copiar enlace del regalo</button>
+                <a class="btn btn-line btn-sm" id="g-wa-link" href="#" target="_blank" rel="noopener">Enviar enlace por WhatsApp</a>
+                <button class="btn btn-line btn-sm" type="button" id="g-png">Descargar imagen</button>
+              </div>
+              <p class="form-note" id="g-salon-note">Apunta el código en tu lista de tarjetas para saber cuáles están usadas.</p>
+            </div>
           </form>
         </div>
       </div>
@@ -956,6 +983,34 @@
       </div>
     </div>
   </footer>
+
+  <!-- Pantalla que ve quien recibe el enlace de regalo -->
+  <div class="gift-open" id="gift-open" hidden role="dialog" aria-modal="true" aria-labelledby="go-title">
+    <div class="go-inner">
+      <span class="eyebrow" id="go-eyebrow">Tienes un regalo</span>
+      <h2 id="go-title"></h2>
+      <div class="gtilt go-card" data-tilt="10">
+        <div class="gcard flip" id="go-card" tabindex="0" role="button" aria-label="Tarjeta regalo. Pulsa para darle la vuelta">
+          <div class="gface gfront">
+            <div class="gtop"><span class="gmark"></span><span class="glabel">Tarjeta regalo</span></div>
+            <div class="gamount" id="go-amount"></div>
+            <div class="gbottom"><span id="go-code"></span><span id="go-vence"></span></div>
+          </div>
+          <div class="gface gback">
+            <div class="gtop"><span class="glabel">Para</span><span class="gmark"></span></div>
+            <div><div class="gname" id="go-to"></div><p class="gmsg" id="go-msg"></p></div>
+            <div class="gbottom"><span id="go-from"></span><span>Celia · Coín</span></div>
+          </div>
+        </div>
+      </div>
+      <p class="ghint">Toca la tarjeta para darle la vuelta</p>
+      <div class="go-actions">
+        <a class="btn btn-accent" href="#reservar" id="go-book">Reservar mi cita</a>
+        <button class="btn btn-light" type="button" id="go-close">Ver la web</button>
+      </div>
+      <p class="go-note">Enseña esta tarjeta en el salón al venir a tu cita.</p>
+    </div>
+  </div>
 
   <!-- Barra de acciones en el móvil -->
   <nav class="mbar" aria-label="Acciones rápidas">
@@ -1613,6 +1668,114 @@
       card.addEventListener("click", () => card.classList.toggle("flip"));
       card.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); card.classList.toggle("flip"); } });
       render();
+
+      // --- Enviar la tarjeta: enlace de regalo e imagen (modo salón: añade ?salon a la dirección) ---
+      const qs = new URLSearchParams(location.search);
+      const pad = (n) => String(n).padStart(2, "0");
+      const fechaES = (ymdTxt) => { const [y, m, d] = ymdTxt.split("-").map(Number); return `${pad(d)}/${pad(m)}/${y}`; };
+      if (qs.has("salon")) {
+        $("#salon-box").hidden = false;
+        $("#g-code").value = "CEL-" + Array.from({ length: 4 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.floor(Math.random() * 32)]).join("");
+        const v = new Date(); v.setFullYear(v.getFullYear() + 1);
+        $("#g-vence").value = `${v.getFullYear()}-${pad(v.getMonth() + 1)}-${pad(v.getDate())}`;
+      }
+      const datos = () => ({
+        tipo, importe: valor(), servicio: $("#g-svc").value,
+        para: $("#g-para").value.trim(), de: $("#g-de").value.trim(), msg: $("#g-mensaje").value.trim(),
+        code: $("#g-code").value.trim(), vence: $("#g-vence").value,
+      });
+      const listo = (g) => g.para && g.de && (g.tipo === "servicio" || g.importe >= 10);
+      const enlace = (g) => {
+        const u = new URL(location.origin + location.pathname);
+        u.searchParams.set("regalo", "1");
+        u.searchParams.set("p", g.para); u.searchParams.set("d", g.de);
+        if (g.msg) u.searchParams.set("m", g.msg);
+        if (g.tipo === "importe") u.searchParams.set("i", g.importe); else u.searchParams.set("s", g.servicio);
+        if (g.code) u.searchParams.set("c", g.code);
+        if (g.vence) u.searchParams.set("v", g.vence);
+        return u.toString();
+      };
+      function salon() {
+        if ($("#salon-box").hidden) return;
+        const g = datos(), ok = listo(g);
+        const wa = $("#g-wa-link");
+        wa.setAttribute("aria-disabled", String(!ok));
+        wa.href = ok ? `https://wa.me/?text=${encodeURIComponent(`🎁 ${g.para}, ¡tienes un regalo de ${g.de} en ${N.nombre}! Ábrelo aquí: ${enlace(g)}`)}` : "#";
+        $("#g-copy").disabled = !ok; $("#g-png").disabled = !ok;
+        if (!ok) $("#g-salon-note").textContent = "Rellena arriba el regalo, para quién y de quién.";
+        else $("#g-salon-note").textContent = `Apunta el código ${g.code || "(sin código)"} en tu lista de tarjetas para saber cuáles están usadas.`;
+      }
+      ["input", "change", "click"].forEach((ev) => $("#gform").addEventListener(ev, () => setTimeout(salon)));
+      salon();
+      $("#g-copy").addEventListener("click", async () => {
+        const url = enlace(datos());
+        try { await navigator.clipboard.writeText(url); $("#g-salon-note").textContent = "Enlace copiado. Pégalo en WhatsApp para la clienta."; }
+        catch (e) { $("#g-salon-note").textContent = url; }
+      });
+
+      // Imagen de la tarjeta (1200 × 750) para imprimir o mandar
+      async function imagen(g) {
+        try { await Promise.all(['400 150px "Fraunces"', 'italic 400 60px "Fraunces"', '600 26px "Inter"'].map((f) => document.fonts.load(f))); } catch (e) {}
+        const W = 1200, H = 750, cv = document.createElement("canvas");
+        cv.width = W; cv.height = H;
+        const x = cv.getContext("2d");
+        x.beginPath(); x.roundRect ? x.roundRect(0, 0, W, H, 56) : x.rect(0, 0, W, H); x.clip();
+        const bg = x.createLinearGradient(0, 0, W, H); bg.addColorStop(0, "#5a3a4d"); bg.addColorStop(1, "#2a1823");
+        x.fillStyle = bg; x.fillRect(0, 0, W, H);
+        const glow = x.createRadialGradient(W * 0.85, 0, 0, W * 0.85, 0, 760); glow.addColorStop(0, "rgba(217,164,143,.5)"); glow.addColorStop(1, "rgba(217,164,143,0)");
+        x.fillStyle = glow; x.fillRect(0, 0, W, H);
+        x.strokeStyle = "rgba(217,164,143,.35)"; x.lineWidth = 2; x.beginPath(); x.arc(W - 40, H - 40, 300, 0, Math.PI * 2); x.stroke();
+        x.strokeStyle = "rgba(217,164,143,.12)"; x.beginPath(); x.arc(W - 40, H - 40, 360, 0, Math.PI * 2); x.stroke();
+        x.strokeStyle = "rgba(248,241,238,.5)"; x.beginPath(); x.arc(126, 126, 46, 0, Math.PI * 2); x.stroke();
+        x.fillStyle = "#f8f1ee"; x.textAlign = "center"; x.textBaseline = "middle"; x.font = 'italic 400 54px "Fraunces", Georgia, serif'; x.fillText(N.inicial, 126, 128);
+        x.textBaseline = "alphabetic";
+        if ("letterSpacing" in x) x.letterSpacing = "7px";
+        x.textAlign = "right"; x.fillStyle = "#d9a48f"; x.font = '600 24px "Inter", Arial, sans-serif'; x.fillText("TARJETA REGALO", W - 80, 136);
+        if ("letterSpacing" in x) x.letterSpacing = "0px";
+        x.textAlign = "left"; x.fillStyle = "#f8f1ee";
+        if (g.tipo === "importe") { x.font = '400 160px "Fraunces", Georgia, serif'; x.fillText(euro(g.importe), 76, 390); }
+        else { x.font = 'italic 400 76px "Fraunces", Georgia, serif'; x.fillText(g.servicio, 80, 370); }
+        x.font = '500 50px "Fraunces", Georgia, serif'; x.fillText("Para " + g.para, 80, 500);
+        if (g.msg) { x.fillStyle = "rgba(248,241,238,.85)"; x.font = 'italic 400 34px "Fraunces", Georgia, serif'; x.fillText(g.msg.slice(0, 60), 80, 556); }
+        x.fillStyle = "rgba(248,241,238,.75)"; x.font = '500 26px "Inter", Arial, sans-serif';
+        x.fillText("De: " + g.de, 80, 680);
+        x.textAlign = "right";
+        x.fillText([g.code, g.vence ? "Válida hasta " + fechaES(g.vence) : ""].filter(Boolean).join(" · "), W - 80, 680);
+        x.fillStyle = "rgba(248,241,238,.55)"; x.font = '500 22px "Inter", Arial, sans-serif';
+        x.fillText(`${N.nombre} · ${N.etiquetaLogo} · ${N.direccion.split(",").slice(-2).join(",").trim()}`, W - 80, 186);
+        return cv.toDataURL("image/png");
+      }
+      $("#g-png").addEventListener("click", async () => {
+        const g = datos(); if (!listo(g)) return;
+        const a = document.createElement("a");
+        a.href = await imagen(g);
+        a.download = `tarjeta-regalo-${(g.code || g.para).replace(/[^\w-]+/g, "-")}.png`;
+        document.body.append(a); a.click(); a.remove();
+        $("#g-salon-note").textContent = "Imagen descargada. Puedes imprimirla o mandarla por WhatsApp.";
+      });
+
+      // Quien abre el enlace de regalo ve su tarjeta
+      if (qs.get("regalo")) {
+        const g = { para: qs.get("p") || "", de: qs.get("d") || "", msg: qs.get("m") || "", importe: parseInt(qs.get("i"), 10) || 0, servicio: qs.get("s") || "", code: qs.get("c") || "", vence: qs.get("v") || "" };
+        $("#go-eyebrow").textContent = g.para ? `Para ${g.para}` : "Tienes un regalo";
+        $("#go-title").textContent = g.de ? `${g.de} te regala un momento en ${N.nombre}` : `Un regalo para ti en ${N.nombre}`;
+        const amt = $("#go-amount");
+        amt.className = g.servicio ? "gsvc" : "gamount";
+        amt.textContent = g.servicio || euro(g.importe);
+        $("#go-to").textContent = g.para || "Para ti";
+        $("#go-msg").textContent = g.msg || "Un regalo para cuidarte.";
+        $("#go-from").textContent = g.de ? "De: " + g.de : "";
+        $("#go-code").textContent = g.code ? "Código " + g.code : "";
+        $("#go-vence").textContent = /^\d{4}-\d{2}-\d{2}$/.test(g.vence) ? "Válida hasta " + fechaES(g.vence) : "Válida en el salón";
+        const box = $("#gift-open"), gc = $("#go-card");
+        box.hidden = false; document.body.style.overflow = "hidden";
+        setTimeout(() => gc.classList.remove("flip"), reduceMotion ? 0 : 1600);
+        gc.addEventListener("click", () => gc.classList.toggle("flip"));
+        gc.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); gc.classList.toggle("flip"); } });
+        const cerrar = () => { box.hidden = true; document.body.style.overflow = ""; };
+        $("#go-close").addEventListener("click", cerrar);
+        $("#go-book").addEventListener("click", cerrar);
+      }
     })();
 
     // Consejos
