@@ -160,21 +160,31 @@
     .values span { font-size: 14px; color: var(--muted); }
     .values svg { color: var(--accent-strong); width: 24px; height: 24px; }
 
-    /* ---------- Servicios ---------- */
+    /* ---------- Servicios: tarjetas que giran en 3D ---------- */
     .services-bg { background: var(--bg-2); }
-    .services { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 22px; overflow: hidden; }
-    .service { position: relative; background: var(--surface); padding: 36px 32px 32px; display: flex; flex-direction: column; gap: 12px; min-width: 0; transition: background .35s; }
-    .service:hover { background: color-mix(in srgb, var(--accent-soft) 55%, var(--surface)); }
-    .service .ic { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--border); color: var(--accent-strong); margin-bottom: 8px; transition: transform .6s cubic-bezier(.2,.8,.2,1), background .35s, color .35s, border-color .35s; }
-    .service:hover .ic { transform: rotateY(180deg); background: var(--brand); color: var(--accent); border-color: var(--brand); }
-    .service .ic svg { width: 26px; height: 26px; }
-    .service h3 { font-size: 26px; }
-    .service p { color: var(--muted); font-size: 15px; flex: 1; }
-    .service .from { display: flex; justify-content: space-between; align-items: center; padding-top: 16px; margin-top: 8px; border-top: 1px solid var(--border); font-size: 14px; color: var(--muted); }
-    .service .from b { font: 500 18px var(--serif); color: var(--text); }
-    .service .from a { color: var(--accent-strong); font-weight: 600; text-decoration: none; display: inline-flex; gap: 6px; align-items: center; }
-    .service .from a svg { width: 16px; height: 16px; transition: transform .2s; }
-    .service .from a:hover svg { transform: translateX(3px); }
+    .services { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+    .flip { perspective: 1400px; min-height: 360px; }
+    .flip-inner { position: relative; min-height: inherit; height: 100%; transform-style: preserve-3d; transition: transform 1s cubic-bezier(.2,.8,.2,1); }
+    .flip.on .flip-inner { transform: rotateY(180deg); }
+    @media (hover: hover) and (pointer: fine) { .flip:hover .flip-inner { transform: rotateY(180deg); } }
+    .face { position: absolute; inset: 0; border-radius: 22px; padding: 34px 30px 28px; display: flex; flex-direction: column; gap: 12px; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+    .front { background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
+    .back { background: linear-gradient(150deg, var(--brand), var(--brand-deep)); color: var(--on-brand); transform: rotateY(180deg); box-shadow: var(--shadow); }
+    .back::before { content: ""; position: absolute; right: -70px; top: -70px; width: 200px; height: 200px; border-radius: 50%; border: 1px solid rgba(217, 164, 143, .3); box-shadow: 0 0 0 26px rgba(217, 164, 143, .05); pointer-events: none; }
+    .front .ic { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-strong); margin-bottom: 10px; }
+    .front .ic svg { width: 27px; height: 27px; }
+    .front h3 { font-size: 28px; }
+    .front p { color: var(--muted); font-size: 15px; flex: 1; }
+    .front .foot-row { display: flex; justify-content: space-between; align-items: center; padding-top: 16px; border-top: 1px solid var(--border); font-size: 14px; color: var(--muted); }
+    .front .foot-row b { font: 500 19px var(--serif); color: var(--text); }
+    .turn { border: 0; background: none; padding: 0; color: var(--accent-strong); font-weight: 600; font-size: 14px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+    .turn svg { width: 16px; height: 16px; }
+    .back h3 { font-size: 26px; margin-bottom: 4px; }
+    .back ul { list-style: none; margin: 0; padding: 0; flex: 1; }
+    .back li { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(248, 241, 238, .12); font-size: 14.5px; }
+    .back li span:last-child { font: 500 17px var(--serif); white-space: nowrap; color: var(--accent); }
+    .back .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; }
+    .back .turn { color: rgba(248, 241, 238, .7); }
 
     /* ---------- Método ---------- */
     .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; counter-reset: s; }
@@ -212,6 +222,9 @@
     .booking-bg .head p { color: rgba(248, 241, 238, .72); }
     .booking-bg .eyebrow { color: var(--accent); }
     .booking-bg h2 em { color: var(--accent); }
+    .booking-3d { position: absolute; top: clamp(32px, 5vw, 72px); right: 0; width: min(48%, 600px); height: 400px; pointer-events: none; opacity: 0; transition: opacity 1.4s ease; }
+    .booking-3d.ready { opacity: 1; }
+    .booking-bg .wrap { position: relative; z-index: 1; }
     .booking { position: relative; display: grid; grid-template-columns: 1.45fr 1fr; gap: 28px; align-items: start; }
     .panel { background: var(--surface); color: var(--text); border-radius: 22px; padding: clamp(22px, 3vw, 34px); box-shadow: var(--shadow); min-width: 0; }
     .bstep + .bstep { margin-top: 30px; padding-top: 28px; border-top: 1px solid var(--border); }
@@ -346,7 +359,9 @@
       .menu-btn { display: grid; }
       .hero .wrap, .about, .visit, .booking, .faq-wrap { grid-template-columns: 1fr; }
       .stage { width: min(100%, 520px); margin-inline: auto; }
+      .booking-3d { display: none; }
       .services, .reviews { grid-template-columns: repeat(2, 1fr); }
+      .flip { min-height: 380px; }
       .steps { grid-template-columns: repeat(2, 1fr); row-gap: 44px; }
       .pricelist { grid-template-columns: 1fr; }
       .photo { max-width: 460px; }
@@ -523,6 +538,7 @@
 
     <!-- RESERVA -->
     <section class="section booking-bg" id="reservar">
+      <canvas class="booking-3d" id="booking-3d" aria-hidden="true"></canvas>
       <div class="wrap">
         <div class="head reveal">
           <span class="eyebrow">Reserva online</span>
@@ -670,14 +686,14 @@
     const NEGOCIO = {
       nombre: "Celia",
       etiquetaLogo: "Peluquería & estética",
-      categoria: "Peluquería y estética · Tu Ciudad",            // ✏️ ciudad
+      categoria: "Peluquería y estética",
       tituloPortada: "Tu pelo, *en las mejores manos*.",          // lo que va entre *asteriscos* sale destacado
       descripcion: "Cortes, color, peinados para tus días especiales y tratamientos, con el tiempo y la atención que mereces.",
 
       telefono: "+34 615 24 04 67",
       whatsapp: "34615240467",              // solo números, con prefijo del país
       email: "hola@celia.es",               // ✏️
-      direccion: "Calle Mayor 12, 28001 Tu Ciudad",   // ✏️
+      direccion: "Calle Cristóbal Colón, 10",   // ✏️ añade el código postal y la localidad
       datosLegales: "",                     // ✏️ p. ej. "Celia García López · NIF 00000000X"
 
       fotoNosotros: "",                     // p. ej. "fotos/celia.jpg"
@@ -837,13 +853,22 @@
     // Valores
     $("#values").innerHTML = N.valores.map((v) => `<div><svg class="i"><use href="#i-${v.icono}"/></svg><b>${esc(v.titulo)}</b><span>${esc(v.texto)}</span></div>`).join("");
 
-    // Servicios
+    // Servicios: tarjeta con giro 3D (delante descripción, detrás precios)
     $("#services").innerHTML = N.servicios.map((s, i) => {
       const min = Math.min(...s.tarifas.map((t) => t.precio));
-      return `<article class="service" data-tilt="5">
-        <span class="ic"><svg><use href="#i-${s.icono}"/></svg></span>
-        <h3>${esc(s.nombre)}</h3><p>${esc(s.texto)}</p>
-        <div class="from"><span>desde <b class="num">${euro(min)}</b></span><a href="#tarifas" data-cat="${i}">Ver tarifas <svg><use href="#i-arrow"/></svg></a></div>
+      return `<article class="flip">
+        <div class="flip-inner">
+          <div class="face front">
+            <span class="ic"><svg><use href="#i-${s.icono}"/></svg></span>
+            <h3>${esc(s.nombre)}</h3><p>${esc(s.texto)}</p>
+            <div class="foot-row"><span>desde <b class="num">${euro(min)}</b></span><button class="turn" type="button" aria-label="Ver precios de ${esc(s.nombre)}">Ver precios <svg><use href="#i-arrow"/></svg></button></div>
+          </div>
+          <div class="face back">
+            <h3>${esc(s.nombre)}</h3>
+            <ul>${s.tarifas.slice(0, 4).map((t) => `<li><span>${esc(t.nombre)}</span><span class="num">${t.desde ? "desde " : ""}${euro(t.precio)}</span></li>`).join("")}</ul>
+            <div class="row"><button class="turn" type="button">Volver</button><a class="btn btn-accent btn-sm" href="#tarifas" data-cat="${i}">Reservar</a></div>
+          </div>
+        </div>
       </article>`;
     }).join("");
 
@@ -869,7 +894,11 @@
       }).join("");
     };
     $("#tabs").addEventListener("click", (e) => { const b = e.target.closest(".tab"); if (b) { tab = +b.dataset.i; renderPrices(); } });
-    $("#services").addEventListener("click", (e) => { const a = e.target.closest("[data-cat]"); if (a) { tab = +a.dataset.cat; renderPrices(); } });
+    $("#services").addEventListener("click", (e) => {
+      const f = e.target.closest(".flip"); if (!f) return;
+      if (e.target.closest(".turn")) f.classList.toggle("on");
+      const a = e.target.closest("[data-cat]"); if (a) { tab = +a.dataset.cat; renderPrices(); }
+    });
     $("#pricelist").addEventListener("click", (e) => { const b = e.target.closest(".add"); if (b) toggle(b.dataset.id); });
 
     // Reserva
@@ -1079,22 +1108,19 @@
       });
     }
 
-    // Escena 3D de la portada (Three.js): unas tijeras de oro rosa como protagonista
-    (function hero3D() {
-      const canvas = $("#hero-3d"), stage = $("#stage");
-      if (!canvas || !window.THREE) return;
+    // ---------- Escenas 3D (Three.js) ----------
+    // Estudio común: luz de estudio fotográfico para que el metal tenga reflejos suaves
+    function makeStudio(canvas, fov, z) {
       const T = window.THREE;
       let renderer;
-      try { renderer = new T.WebGLRenderer({ canvas, antialias: true, alpha: true }); } catch (e) { return; }
+      try { renderer = new T.WebGLRenderer({ canvas, antialias: true, alpha: true }); } catch (e) { return null; }
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       renderer.outputEncoding = T.sRGBEncoding;
       renderer.toneMapping = T.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.05;
       const scene = new T.Scene();
-      const camera = new T.PerspectiveCamera(30, 1, 0.1, 100);
-      camera.position.set(0, 0, 13);
-
-      // Estudio fotográfico virtual: da al metal reflejos suaves
+      const camera = new T.PerspectiveCamera(fov, 1, 0.1, 100);
+      camera.position.set(0, 0, z);
       const env = new T.Scene();
       const skyGeo = new T.SphereGeometry(20, 32, 16);
       const pos = skyGeo.attributes.position, cols = [];
@@ -1102,77 +1128,42 @@
       for (let i = 0; i < pos.count; i++) { c.copy(bottom).lerp(top, (pos.getY(i) / 20 + 1) / 2); cols.push(c.r, c.g, c.b); }
       skyGeo.setAttribute("color", new T.Float32BufferAttribute(cols, 3));
       env.add(new T.Mesh(skyGeo, new T.MeshBasicMaterial({ side: T.BackSide, vertexColors: true })));
-      const panel = (w, h, color, x, y, z) => {
+      const panel = (w, h, color, x, y, zz) => {
         const m = new T.Mesh(new T.PlaneGeometry(w, h), new T.MeshBasicMaterial({ color, side: T.DoubleSide }));
-        m.position.set(x, y, z); m.lookAt(0, 0, 0); env.add(m);
+        m.position.set(x, y, zz); m.lookAt(0, 0, 0); env.add(m);
       };
       panel(12, 6, new T.Color(5, 5, 5), 0, 10, 6);
       panel(6, 14, new T.Color(3.2, 2.6, 2.4), -12, 0, 4);
       panel(5, 12, new T.Color(2.2, 1.6, 2), 12, 2, -2);
       const pmrem = new T.PMREMGenerator(renderer);
       scene.environment = pmrem.fromScene(env, 0.04).texture;
-
-      const gold = new T.MeshStandardMaterial({ color: 0xdc9f8a, metalness: 1, roughness: 0.2 });
-      const satin = new T.MeshStandardMaterial({ color: 0xc98a74, metalness: 1, roughness: 0.34 });
-      const pearl = new T.MeshStandardMaterial({ color: 0xf6e9e4, metalness: 0.1, roughness: 0.25 });
-
-      // Media tijera: hoja, brazo curvo y anilla (sg = 1 derecha, -1 izquierda)
-      const makeHalf = (sg) => {
-        const g = new T.Group();
-        const sh = new T.Shape();
-        sh.moveTo(-0.13 * sg, -0.1);
-        sh.quadraticCurveTo(0.24 * sg, 0.35, 0.15 * sg, 1.7);
-        sh.quadraticCurveTo(0.09 * sg, 2.6, 0, 3.2);
-        sh.quadraticCurveTo(-0.07 * sg, 2.0, -0.13 * sg, 0.6);
-        sh.lineTo(-0.13 * sg, -0.1);
-        const blade = new T.Mesh(new T.ExtrudeGeometry(sh, { depth: 0.05, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02, bevelSegments: 4, curveSegments: 24 }), gold);
-        blade.position.z = -0.025;
-        g.add(blade);
-        const arm = new T.QuadraticBezierCurve3(new T.Vector3(0, 0, 0), new T.Vector3(0.05 * sg, -0.9, 0), new T.Vector3(0.5 * sg, -1.42, 0));
-        g.add(new T.Mesh(new T.TubeGeometry(arm, 40, 0.085, 16, false), gold));
-        const ring = new T.Mesh(new T.TorusGeometry(0.44, 0.085, 24, 90), satin);
-        ring.position.set(0.72 * sg, -1.85, 0); ring.scale.set(1, 1.18, 1);
-        g.add(ring);
-        return g;
+      pmrem.dispose();
+      const mats = {
+        gold: new T.MeshStandardMaterial({ color: 0xdc9f8a, metalness: 1, roughness: 0.2 }),
+        satin: new T.MeshStandardMaterial({ color: 0xc98a74, metalness: 1, roughness: 0.34 }),
+        pearl: new T.MeshStandardMaterial({ color: 0xf6e9e4, metalness: 0.1, roughness: 0.25 }),
       };
-      const A = makeHalf(1), B = makeHalf(-1);
-      A.position.z = 0.045; B.position.z = -0.045;
-      const screw = new T.Mesh(new T.CylinderGeometry(0.1, 0.1, 0.24, 32), satin);
-      screw.rotation.x = Math.PI / 2;
-      const scissors = new T.Group();
-      scissors.add(A, B, screw);
-      scissors.position.y = -0.55;
-      const rig = new T.Group();
-      rig.add(scissors);
-      rig.rotation.z = -0.6;
-      scene.add(rig);
+      return { T, renderer, scene, camera, mats };
+    }
 
-      const pearls = [[-2.3, -1.9, -1, 0.34], [2.3, 2.3, -2, 0.22], [1.9, -2.6, 0.5, 0.16]].map(([x, y, z, r], i) => {
-        const m = new T.Mesh(new T.SphereGeometry(r, 40, 40), pearl);
-        m.position.set(x, y, z); m.userData = { y, ph: i * 2 };
-        scene.add(m); return m;
-      });
-
+    // Bucle de animación que solo corre mientras la escena se ve
+    let pointerX = 0, pointerY = 0;
+    addEventListener("pointermove", (e) => { pointerX = e.clientX / innerWidth - 0.5; pointerY = e.clientY / innerHeight - 0.5; }, { passive: true });
+    function runScene(box, canvas, st, update) {
       const layout = () => {
-        const w = stage.clientWidth, h = stage.clientHeight;
-        renderer.setSize(w, h, false);
-        camera.aspect = w / h; camera.updateProjectionMatrix();
+        const w = box.clientWidth, h = box.clientHeight;
+        if (!w || !h) return;
+        st.renderer.setSize(w, h, false);
+        st.camera.aspect = w / h; st.camera.updateProjectionMatrix();
       };
-      let px = 0, py = 0, tx = 0, ty = 0, running = false, visible = true;
+      let running = false, visible = true;
+      const state = { px: 0, py: 0 };
       const t0 = performance.now();
-      addEventListener("pointermove", (e) => { tx = e.clientX / innerWidth - 0.5; ty = e.clientY / innerHeight - 0.5; }, { passive: true });
       const frame = (now) => {
         const t = reduceMotion ? 0 : (now - t0) / 1000;
-        px += (tx - px) * 0.05; py += (ty - py) * 0.05;
-        const open = 0.1 + 0.1 * (0.5 + 0.5 * Math.sin(t * 1.3));
-        A.rotation.z = open; B.rotation.z = -open;
-        rig.rotation.y = Math.sin(t * 0.35) * 0.45 + px * 0.6;
-        rig.rotation.x = py * 0.35 + Math.sin(t * 0.5) * 0.06;
-        rig.position.y = Math.sin(t * 0.8) * 0.12;
-        pearls.forEach((m) => (m.position.y = m.userData.y + Math.sin(t * 0.7 + m.userData.ph) * 0.15));
-        stage.style.setProperty("--px", px.toFixed(3));
-        stage.style.setProperty("--py", py.toFixed(3));
-        renderer.render(scene, camera);
+        state.px += (pointerX - state.px) * 0.05; state.py += (pointerY - state.py) * 0.05;
+        update(t, state);
+        st.renderer.render(st.scene, st.camera);
         if (running) requestAnimationFrame(frame);
       };
       const start = () => { if (!running && visible && !document.hidden && !reduceMotion) { running = true; requestAnimationFrame(frame); } };
@@ -1181,8 +1172,103 @@
       canvas.classList.add("ready");
       addEventListener("resize", () => { layout(); if (!running) frame(performance.now()); });
       document.addEventListener("visibilitychange", () => (document.hidden ? stop() : start()));
-      if ("IntersectionObserver" in window) new IntersectionObserver(([e]) => { visible = e.isIntersecting; visible ? start() : stop(); }).observe(stage);
+      if ("IntersectionObserver" in window) new IntersectionObserver(([e]) => { visible = e.isIntersecting; visible ? start() : stop(); }).observe(box);
       start();
+    }
+
+    // Portada: unas tijeras de oro rosa como protagonista
+    (function heroScissors() {
+      const canvas = $("#hero-3d"), stage = $("#stage");
+      if (!canvas || !window.THREE) return;
+      const st = makeStudio(canvas, 30, 13);
+      if (!st) return;
+      const { T, scene, mats } = st;
+      const makeHalf = (sg) => {
+        const g = new T.Group();
+        const sh = new T.Shape();
+        sh.moveTo(-0.13 * sg, -0.1);
+        sh.quadraticCurveTo(0.24 * sg, 0.35, 0.15 * sg, 1.7);
+        sh.quadraticCurveTo(0.09 * sg, 2.6, 0, 3.2);
+        sh.quadraticCurveTo(-0.07 * sg, 2.0, -0.13 * sg, 0.6);
+        sh.lineTo(-0.13 * sg, -0.1);
+        const blade = new T.Mesh(new T.ExtrudeGeometry(sh, { depth: 0.05, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02, bevelSegments: 4, curveSegments: 24 }), mats.gold);
+        blade.position.z = -0.025;
+        g.add(blade);
+        const arm = new T.QuadraticBezierCurve3(new T.Vector3(0, 0, 0), new T.Vector3(0.05 * sg, -0.9, 0), new T.Vector3(0.5 * sg, -1.42, 0));
+        g.add(new T.Mesh(new T.TubeGeometry(arm, 40, 0.085, 16, false), mats.gold));
+        const ring = new T.Mesh(new T.TorusGeometry(0.44, 0.085, 24, 90), mats.satin);
+        ring.position.set(0.72 * sg, -1.85, 0); ring.scale.set(1, 1.18, 1);
+        g.add(ring);
+        return g;
+      };
+      const A = makeHalf(1), B = makeHalf(-1);
+      A.position.z = 0.045; B.position.z = -0.045;
+      const screw = new T.Mesh(new T.CylinderGeometry(0.1, 0.1, 0.24, 32), mats.satin);
+      screw.rotation.x = Math.PI / 2;
+      const scissors = new T.Group();
+      scissors.add(A, B, screw);
+      scissors.position.y = -0.55;
+      const rig = new T.Group();
+      rig.add(scissors);
+      rig.rotation.z = -0.6;
+      scene.add(rig);
+      const pearls = [[-2.3, -1.9, -1, 0.34], [2.3, 2.3, -2, 0.22], [1.9, -2.6, 0.5, 0.16]].map(([x, y, z, r], i) => {
+        const m = new T.Mesh(new T.SphereGeometry(r, 40, 40), mats.pearl);
+        m.position.set(x, y, z); m.userData = { y, ph: i * 2 };
+        scene.add(m); return m;
+      });
+      runScene(stage, canvas, st, (t, s) => {
+        const open = 0.1 + 0.1 * (0.5 + 0.5 * Math.sin(t * 1.3));
+        A.rotation.z = open; B.rotation.z = -open;
+        rig.rotation.y = Math.sin(t * 0.35) * 0.45 + s.px * 0.6;
+        rig.rotation.x = s.py * 0.35 + Math.sin(t * 0.5) * 0.06;
+        rig.position.y = Math.sin(t * 0.8) * 0.12;
+        pearls.forEach((m) => (m.position.y = m.userData.y + Math.sin(t * 0.7 + m.userData.ph) * 0.15));
+        stage.style.setProperty("--px", s.px.toFixed(3));
+        stage.style.setProperty("--py", s.py.toFixed(3));
+      });
+    })();
+
+    // Reserva: un peine de oro rosa flotando (solo en pantallas anchas)
+    (function bookingComb() {
+      const canvas = $("#booking-3d");
+      if (!canvas || !window.THREE || !canvas.clientWidth) return;
+      const st = makeStudio(canvas, 30, 12);
+      if (!st) return;
+      const { T, scene, mats } = st;
+      const comb = new T.Group();
+      const sh = new T.Shape();
+      const L = 2.2, H = 0.55, r = 0.26;
+      sh.moveTo(-L + r, 0); sh.lineTo(L - r, 0); sh.quadraticCurveTo(L, 0, L, r); sh.lineTo(L, H - r);
+      sh.quadraticCurveTo(L, H, L - r, H); sh.lineTo(-L + r, H); sh.quadraticCurveTo(-L, H, -L, H - r);
+      sh.lineTo(-L, r); sh.quadraticCurveTo(-L, 0, -L + r, 0);
+      const spine = new T.Mesh(new T.ExtrudeGeometry(sh, { depth: 0.12, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.04, bevelSegments: 4, curveSegments: 16 }), mats.gold);
+      spine.position.z = -0.06;
+      comb.add(spine);
+      const n = 30;
+      for (let i = 0; i < n; i++) {
+        const coarse = i < n / 2;
+        const len = 1.25 - Math.abs(i - (n - 1) / 2) * 0.012;
+        const tooth = new T.Mesh(new T.BoxGeometry(coarse ? 0.075 : 0.05, len, 0.08), mats.satin);
+        tooth.position.set(-L + 0.2 + i * ((2 * L - 0.4) / (n - 1)), -len / 2 + 0.02, 0);
+        comb.add(tooth);
+      }
+      comb.position.y = 0.35;
+      const rig = new T.Group();
+      rig.add(comb);
+      rig.rotation.z = 0.32;
+      scene.add(rig);
+      const pearls = [[-2.6, 1.6, -1, 0.26], [2.5, -1.5, 0.5, 0.18]].map(([x, y, z, rr], i) => {
+        const m = new T.Mesh(new T.SphereGeometry(rr, 40, 40), mats.pearl);
+        m.position.set(x, y, z); m.userData = { y, ph: i * 3 };
+        scene.add(m); return m;
+      });
+      runScene(canvas, canvas, st, (t, s) => {
+        rig.rotation.y = Math.sin(t * 0.4) * 0.55 + s.px * 0.5;
+        rig.rotation.x = 0.35 + s.py * 0.3;
+        rig.position.y = Math.sin(t * 0.7) * 0.15;
+        pearls.forEach((m) => (m.position.y = m.userData.y + Math.sin(t * 0.7 + m.userData.ph) * 0.15));
+      });
     })();
 
     // Datos estructurados para Google (peluquería)
