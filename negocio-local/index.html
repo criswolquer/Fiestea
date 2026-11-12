@@ -467,6 +467,16 @@
     .dlg mark { background: var(--accent-soft); color: var(--accent-strong); padding: 0 4px; border-radius: 4px; }
     .dlg-x { position: absolute; top: 18px; right: 18px; width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; display: grid; place-items: center; }
 
+    .summary.is-done > :not(.done) { display: none; }
+    .done { display: grid; gap: 12px; text-align: center; justify-items: center; padding-block: 8px; }
+    .done-ic { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; background: var(--ok); color: #fff; animation: pop .5s cubic-bezier(.2,1.6,.4,1); }
+    .done-ic svg { width: 30px; height: 30px; }
+    .done h3 { font-size: 30px; margin: 6px 0 0; }
+    .done p { font-size: 16px; }
+    .done .done-sub { color: var(--muted); font-size: 14px; max-width: 34ch; }
+    .done .btn { width: 100%; }
+    @keyframes pop { from { transform: scale(.4); opacity: 0; } }
+    .booking.locked .panel:first-child { opacity: .5; pointer-events: none; }
     .mbar { display: none; }
     @media (max-width: 1020px) { .tips { grid-template-columns: 1fr; max-width: 640px; } }
     @media (max-width: 640px) {
@@ -506,6 +516,7 @@
     <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 8h16M4 16h16"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></symbol>
     <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
     <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
     <symbol id="i-ig" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17.5 6.5h.01"/></symbol>
     <symbol id="i-fb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></symbol>
@@ -638,7 +649,7 @@
         <div class="head reveal">
           <span class="eyebrow">Reserva online</span>
           <h2>Pide tu cita <em>en un minuto</em></h2>
-          <p>Elige servicios, día y hora. Te confirmamos la cita por WhatsApp en cuanto la revisemos.</p>
+          <p id="booking-lead">Elige servicios, día y hora. Te confirmamos la cita por WhatsApp en cuanto la revisemos.</p>
         </div>
         <div class="booking">
           <div class="panel">
@@ -659,6 +670,8 @@
               <div class="fields">
                 <div class="field"><label for="f-name">Nombre</label><input id="f-name" autocomplete="name" placeholder="Tu nombre" /></div>
                 <div class="field"><label for="f-phone">Teléfono</label><input id="f-phone" type="tel" autocomplete="tel" placeholder="600 000 000" /></div>
+                <div class="field full" id="email-field" hidden><label for="f-email">Email <span style="font-weight:400;color:var(--muted)">(opcional: te enviamos la confirmación y un recordatorio)</span></label><input id="f-email" type="email" autocomplete="email" placeholder="tu@email.com" /></div>
+                <input id="f-web" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" />
                 <div class="field full"><label for="f-note">Comentarios <span style="font-weight:400;color:var(--muted)">(opcional)</span></label><textarea id="f-note" placeholder="Por ejemplo: tengo el pelo largo y quiero cambiar de color"></textarea></div>
                 <label class="consent" for="f-ok"><input type="checkbox" id="f-ok" /><span>He leído y acepto la <button type="button" class="link" data-legal="privacidad">política de privacidad</button>.</span></label>
               </div>
@@ -670,7 +683,16 @@
             <ul class="sum-list" id="sum-list"></ul>
             <div class="sum-when"><svg class="i"><use href="#i-cal" /></svg><span id="sum-when">Elige día y hora</span></div>
             <div class="sum-total"><span id="sum-dur">Duración —</span><b id="sum-price">0 €</b></div>
+            <div class="done" id="done" hidden>
+              <span class="done-ic"><svg class="i"><use href="#i-check" /></svg></span>
+              <h3>¡Cita reservada!</h3>
+              <p id="done-when"></p>
+              <p class="done-sub" id="done-sub"></p>
+              <a class="btn btn-line" id="done-cal" href="#" target="_blank" rel="noopener"><svg class="i"><use href="#i-cal" /></svg> Apuntar en mi calendario</a>
+              <button class="btn btn-line" id="done-again" type="button">Pedir otra cita</button>
+            </div>
             <div class="sum-actions">
+              <button class="btn btn-brand" id="book-btn" type="button" hidden disabled><svg class="i"><use href="#i-check" /></svg> <span>Confirmar reserva</span></button>
               <a class="btn btn-brand" id="send-wa" href="#" target="_blank" rel="noopener" aria-disabled="true"><svg class="i"><use href="#i-wa" /></svg> Enviar por WhatsApp</a>
               <a class="btn btn-line" id="cal-link" href="#" target="_blank" rel="noopener" aria-disabled="true"><svg class="i"><use href="#i-cal" /></svg> Apuntar en mi calendario</a>
               <button class="btn btn-line" id="copy-msg" type="button" disabled><svg class="i"><use href="#i-copy" /></svg> <span>Copiar mensaje</span></button>
@@ -910,6 +932,9 @@
         sabado:    [["09:00", "14:00"]],
         domingo:   [],
       },
+      // Reservas automáticas en Google Calendar: pega aquí la URL de la aplicación web (termina en /exec).
+      // Vacío = las reservas se envían por WhatsApp. Ver la carpeta reservas-celia/INSTRUCCIONES.md
+      reservasURL: "",
       diasReserva: 21,                      // días que se pueden elegir en la reserva
       intervaloMin: 30,                     // cada cuántos minutos se ofrece una hora
 
@@ -1100,18 +1125,42 @@
       if (earliest && earliest + need > lastClose) return `Hoy ya no quedan horas: reservamos con al menos 1 hora de antelación y hoy cerramos a las ${toHHMM(lastClose)}.`;
       return `Ese día no hay un hueco seguido de ${dur(need)} antes del cierre.`;
     }
+    // Reservas automáticas (Google Calendar) si hay URL configurada
+    const ONLINE = /^https:\/\/script\.google\.com\//.test(N.reservasURL || "");
+    const ymdOf = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const slotCache = new Map();
+    let slotReq = 0, agendaFailed = false;
+    function drawSlots(list, need, earliest, extra) {
+      if (slot != null && !list.includes(slot)) { slot = null; update(); }
+      $("#slots").innerHTML = (extra || "") + (list.length
+        ? `<div class="slots">${list.map((m) => `<button class="slot" type="button" data-m="${m}" aria-pressed="${m === slot}">${toHHMM(m)}</button>`).join("")}</div>`
+        : `<p class="hint">${ONLINE && !agendaFailed ? `Ese día no quedan horas libres para una cita de ${dur(need)}.` : noSlotsReason(need, earliest)} Prueba otro día o escríbenos por WhatsApp.</p>`);
+    }
     function renderSlots() {
       const box = $("#slots");
       if (!day) { box.innerHTML = `<p class="hint">Elige primero un día.</p>`; return; }
       const need = Math.max(totalMin(), N.intervaloMin);
       const now = new Date();
       const earliest = day.getTime() === today.getTime() ? now.getHours() * 60 + now.getMinutes() + 60 : 0;
-      const list = [];
-      tramosDe(day).forEach(([a, b]) => { for (let m = toMin(a); m + need <= toMin(b); m += N.intervaloMin) if (m >= earliest) list.push(m); });
-      if (slot != null && !list.includes(slot)) slot = null;
-      box.innerHTML = list.length
-        ? `<div class="slots">${list.map((m) => `<button class="slot" type="button" data-m="${m}" aria-pressed="${m === slot}">${toHHMM(m)}</button>`).join("")}</div>`
-        : `<p class="hint">${noSlotsReason(need, earliest)} Prueba otro día o escríbenos por WhatsApp.</p>`;
+      const local = [];
+      tramosDe(day).forEach(([a, b]) => { for (let m = toMin(a); m + need <= toMin(b); m += N.intervaloMin) if (m >= earliest) local.push(m); });
+      if (!ONLINE) return drawSlots(local, need, earliest);
+      const key = ymdOf(day) + "|" + need;
+      if (slotCache.has(key)) return drawSlots(slotCache.get(key), need, earliest);
+      const req = ++slotReq;
+      box.innerHTML = `<p class="hint">Buscando horas libres en la agenda…</p>`;
+      fetch(`${N.reservasURL}?accion=huecos&fecha=${ymdOf(day)}&dur=${need}`)
+        .then((r) => r.json())
+        .then((r) => {
+          if (!r.ok) throw new Error(r.error);
+          const list = r.huecos.map(toMin);
+          slotCache.set(key, list); agendaFailed = false;
+          if (req === slotReq) drawSlots(list, need, earliest);
+        })
+        .catch(() => {
+          agendaFailed = true; update();
+          if (req === slotReq) drawSlots(local, need, earliest, `<p class="hint" style="margin-bottom:12px">No hemos podido consultar la agenda. Puedes pedir la cita por WhatsApp y te la confirmamos.</p>`);
+        });
     }
     $("#slots").addEventListener("click", (e) => {
       const b = e.target.closest(".slot"); if (!b) return;
@@ -1148,6 +1197,8 @@
       if (!day) missing.push("elegir un día");
       if (slot == null) missing.push("elegir una hora");
       if (!name) missing.push("escribir tu nombre");
+      const online = ONLINE && !agendaFailed;
+      if (online && phone.replace(/\D/g, "").length < 9) missing.push("escribir tu teléfono");
       if (!$("#f-ok").checked) missing.push("aceptar la política de privacidad");
       const ok = !missing.length;
       message = ok ? [
@@ -1169,10 +1220,66 @@
         const f = (d) => `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}T${String(d.getHours()).padStart(2, "0")}${String(d.getMinutes()).padStart(2, "0")}00`;
         cal.href = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent("Cita en " + N.nombre + " (pendiente de confirmar)")}&dates=${f(a)}/${f(b)}&details=${encodeURIComponent(items.map((t) => t.nombre).join(", "))}&location=${encodeURIComponent(N.direccion)}`;
       } else cal.href = "#";
+      const bk = $("#book-btn");
+      bk.hidden = !online; bk.disabled = !ok;
+      wa.classList.toggle("btn-brand", !online); wa.classList.toggle("btn-line", online);
+      wa.lastChild.textContent = online ? " O pídela por WhatsApp" : " Enviar por WhatsApp";
+      $("#copy-msg").hidden = online;
+      cal.hidden = online;
+      $("#email-field").hidden = !online;
+      $("#booking-lead").textContent = online
+        ? "Elige servicios, día y hora, y tu cita queda reservada al momento."
+        : "Elige servicios, día y hora. Te confirmamos la cita por WhatsApp en cuanto la revisemos.";
+      if (ok) $("#done-cal").href = cal.href.replace(encodeURIComponent(" (pendiente de confirmar)"), "");
       $("#sum-note").textContent = ok
-        ? "Se abrirá WhatsApp con tu solicitud ya escrita. La cita queda reservada cuando te la confirmemos."
+        ? (online ? "Pulsa «Confirmar reserva» y la cita quedará guardada al momento." : "Se abrirá WhatsApp con tu solicitud ya escrita. La cita queda reservada cuando te la confirmemos.")
         : "Para enviar la solicitud falta " + missing.join(", ").replace(/, ([^,]*)$/, " y $1") + ".";
     }
+    $("#book-btn").addEventListener("click", async () => {
+      const bk = $("#book-btn"), label = bk.querySelector("span"), note = $("#sum-note");
+      if (bk.disabled) return;
+      bk.disabled = true; label.textContent = "Reservando…";
+      const items = [...selected].map((id) => byId[id]);
+      const whenTxt = $("#sum-when").textContent;
+      const body = {
+        servicios: items.map((t) => t.nombre), dur: Math.max(totalMin(), N.intervaloMin),
+        precio: $("#sum-price").textContent, fecha: ymdOf(day), hora: toHHMM(slot),
+        nombre: $("#f-name").value.trim(), telefono: $("#f-phone").value.trim(),
+        email: $("#f-email").value.trim(), nota: $("#f-note").value.trim(), web: $("#f-web").value,
+      };
+      let r;
+      try {
+        r = await (await fetch(N.reservasURL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(body) })).json();
+      } catch (e) { r = { ok: false, error: "red" }; }
+      label.textContent = "Confirmar reserva";
+      if (r.ok) {
+        $("#done-when").textContent = whenTxt;
+        $("#done-sub").textContent = body.email
+          ? `Te hemos enviado la confirmación a ${body.email}. Si no puedes venir, avísanos con 24 horas por WhatsApp.`
+          : "Si no puedes venir, avísanos con 24 horas por WhatsApp.";
+        $(".summary").classList.add("is-done"); $("#done").hidden = false;
+        $(".booking").classList.add("locked");
+        slotCache.clear();
+        return;
+      }
+      bk.disabled = false;
+      note.classList.remove("sent");
+      if (r.error === "ocupado") {
+        note.textContent = "Esa hora se acaba de ocupar. Elige otra, por favor.";
+        slotCache.clear(); slot = null; renderSlots(); update();
+        note.textContent = "Esa hora se acaba de ocupar. Elige otra, por favor.";
+      } else if (r.error === "email") note.textContent = "Revisa el email: parece que no es correcto.";
+      else if (r.error === "limite") note.textContent = "Has hecho varias reservas seguidas. Si necesitas otra, escríbenos por WhatsApp.";
+      else note.textContent = "No hemos podido guardar la cita. Pídela por WhatsApp y te la confirmamos.";
+    });
+    $("#done-again").addEventListener("click", () => {
+      selected.clear(); $$("#svc-list input").forEach((c) => (c.checked = false));
+      day = null; slot = null; $$(".day").forEach((x) => x.setAttribute("aria-pressed", "false"));
+      $(".summary").classList.remove("is-done"); $("#done").hidden = true; $(".booking").classList.remove("locked");
+      renderPrices(); renderSlots(); update();
+      $("#reservar").scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" });
+    });
+    ["#f-email"].forEach((s) => $(s).addEventListener("input", update));
     $("#send-wa").addEventListener("click", () => {
       if ($("#send-wa").getAttribute("aria-disabled") === "true") return;
       const note = $("#sum-note");
@@ -1294,11 +1401,11 @@
         <h3>Propiedad intelectual</h3><p>Los textos, imágenes y diseño de esta web pertenecen a su titular o se usan con permiso. No se permite reproducirlos sin autorización.</p>`,
       privacidad: `<h2>Política de privacidad</h2>
         <h3>Responsable</h3><p>${pend(N.titular)} · NIF ${pend(N.nif)} · ${esc(N.direccion)} · ${esc(N.email || N.telefono)}</p>
-        <h3>Qué datos tratamos</h3><p>Los que nos envías al pedir cita o hacernos una consulta: nombre, teléfono, servicios elegidos, día y hora, y los comentarios que añadas.</p>
+        <h3>Qué datos tratamos</h3><p>Los que nos envías al pedir cita o hacernos una consulta: nombre, teléfono, email si lo indicas, servicios elegidos, día y hora, y los comentarios que añadas.</p>
         <h3>Para qué los usamos</h3><p>Para gestionar tu cita y responder a tus consultas. No usamos tus datos para enviarte publicidad sin tu permiso.</p>
         <h3>Base legal</h3><p>Tu consentimiento al enviarnos la solicitud y, si vienes al salón, la prestación del servicio que nos pides.</p>
         <h3>Cuánto tiempo los guardamos</h3><p>Mientras sea necesario para atenderte y durante los plazos que exija la ley.</p>
-        <h3>Con quién se comparten</h3><p>No cedemos tus datos a terceros salvo obligación legal. Las solicitudes se envían por WhatsApp, un servicio de WhatsApp Ireland Limited (Meta) con su propia política de privacidad.</p>
+        <h3>Con quién se comparten</h3><p>No cedemos tus datos a terceros salvo obligación legal. Las solicitudes por WhatsApp pasan por WhatsApp Ireland Limited (Meta)${N.reservasURL ? ", y las reservas online se guardan en el calendario de Google del salón (Google Ireland Limited)" : ""}, cada uno con su propia política de privacidad.</p>
         <h3>Tus derechos</h3><p>Puedes pedir el acceso, la rectificación, la supresión, la limitación o la oposición al tratamiento de tus datos, y su portabilidad, escribiendo a ${N.email ? esc(N.email) : "nuestro WhatsApp (" + esc(N.telefono) + ")"}. Si consideras que no hemos atendido bien tu petición, puedes reclamar ante la Agencia Española de Protección de Datos (aepd.es).</p>`,
       cookies: `<h2>Política de cookies</h2>
         <p>Esta web no instala cookies propias ni cookies de análisis o publicidad.</p>
