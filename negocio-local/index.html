@@ -8,7 +8,13 @@
   <meta name="theme-color" content="#3d2433" />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Celia · Peluquería y estética" />
-  <meta property="og:description" content="Cortes, color, novias, tratamientos, manicura y estética. Reserva tu cita online." />
+  <meta property="og:description" content="Cortes, color, novias, tratamientos, manicura y estética en Coín. Reserva tu cita online." />
+  <!-- Imagen al compartir: al publicar en tu dominio, cambia por la dirección completa, p. ej. https://tudominio.es/og-image.png -->
+  <meta property="og:image" content="og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:locale" content="es_ES" />
+  <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%233d2433'/%3E%3Ctext x='32' y='43' font-size='30' font-family='Georgia' fill='%23e3b5a2' text-anchor='middle'%3EC%3C/text%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -118,12 +124,12 @@
     .hero { position: relative; overflow: hidden; padding-block: 128px clamp(72px, 9vw, 128px); background: radial-gradient(50% 55% at 76% 48%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 72%), radial-gradient(40% 50% at 0% 100%, color-mix(in srgb, var(--brand-2) 10%, transparent), transparent 70%), var(--bg); }
     .hero .wrap { display: grid; grid-template-columns: 1.05fr 1fr; gap: clamp(24px, 4vw, 64px); align-items: center; }
     .hero h1 { font-size: clamp(54px, 7.4vw, 112px); line-height: .98; letter-spacing: -.035em; margin: 28px 0 30px; perspective: 700px; }
-    .hero h1 .w { display: inline-block; transform-origin: 50% 100%; animation: rise 1.1s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--i) * 70ms + .15s); }
+    .hero h1 .w { display: inline-block; transform-origin: 50% 100%; animation: rise 1.1s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--i) * 70ms + 1s); }
     @keyframes rise { from { opacity: 0; transform: translateY(.4em) rotateX(-70deg); } }
     .hero .lead { font-size: clamp(17px, 1.5vw, 19px); max-width: 30em; color: var(--muted); }
     .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 40px; }
     .hero .lead, .hero-cta { animation: up 1s cubic-bezier(.2,.8,.2,1) both; }
-    .hero .lead { animation-delay: .55s; } .hero-cta { animation-delay: .7s; }
+    .hero .lead { animation-delay: 1.4s; } .hero-cta { animation-delay: 1.55s; }
     @keyframes up { from { opacity: 0; transform: translateY(22px); } }
     .btn-ghost { background: transparent; color: var(--text); border-color: color-mix(in srgb, var(--text) 18%, transparent); }
     .btn-ghost:hover { background: var(--surface); }
@@ -140,9 +146,9 @@
     .fcard .ic svg { width: 18px; height: 18px; }
     .fcard .price { font: 500 22px/1.1 var(--serif); }
     .fcard > svg.i { width: 16px; height: 16px; color: var(--accent-strong); }
-    .fc-1 { top: 9%; left: -2%; --depth: 24px; animation-delay: .9s, 0s; }
-    .fc-2 { top: 46%; right: -2%; --depth: 40px; animation-delay: 1.05s, -2.5s; }
-    .fc-3 { bottom: 8%; left: 4%; --depth: 16px; animation-delay: 1.2s, -5s; }
+    .fc-1 { top: 9%; left: -2%; --depth: 24px; animation-delay: 1.75s, 0s; }
+    .fc-2 { top: 46%; right: -2%; --depth: 40px; animation-delay: 1.9s, -2.5s; }
+    .fc-3 { bottom: 8%; left: 4%; --depth: 16px; animation-delay: 2.05s, -5s; }
     @keyframes bob { 50% { translate: 0 -10px; } }
     .dot { width: 9px; height: 9px; border-radius: 50%; background: #9a8d94; flex: none; }
     .dot.open { background: #34b06e; box-shadow: 0 0 0 4px rgba(52, 176, 110, .2); animation: pulse 2.4s infinite; }
@@ -393,12 +399,89 @@
       .logo small { display: none; }
     }
     @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+      *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+      .loader { display: none; }
       .reveal.pre { opacity: 1; translate: none; rotate: none; }
+    }
+    /* ---------- Pulido: logo, entrada, botones, consejos, asistente, barra móvil, textos legales ---------- */
+    [hidden] { display: none !important; }
+    .logo { align-items: center; }
+    .logo .mark { width: 34px; height: 34px; border-radius: 50%; border: 1px solid currentColor; display: grid; place-items: center; font: italic 400 19px/1 var(--serif); opacity: .9; }
+    .btn { transition: transform .2s, background .2s, box-shadow .2s, opacity .2s, translate .35s cubic-bezier(.2,.8,.2,1); }
+
+    .loader { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; align-content: center; gap: 14px; background: var(--bg); pointer-events: none; animation: loaderOut .6s cubic-bezier(.7,0,.2,1) 1s forwards; }
+    .loader svg { width: 92px; height: 92px; overflow: visible; }
+    .loader circle { fill: none; stroke: var(--accent-strong); stroke-width: 1.4; stroke-dasharray: 290; stroke-dashoffset: 290; transform: rotate(-90deg); transform-origin: 50% 50%; animation: drawRing .9s cubic-bezier(.6,0,.2,1) .05s forwards; }
+    .loader text { font: italic 400 44px var(--serif); fill: var(--text); opacity: 0; animation: fadeIn .5s .45s forwards; }
+    .loader span { font: 600 10px/1 var(--sans); letter-spacing: .3em; text-transform: uppercase; color: var(--muted); opacity: 0; animation: fadeIn .5s .6s forwards; }
+    @keyframes drawRing { to { stroke-dashoffset: 0; } }
+    @keyframes fadeIn { to { opacity: 1; } }
+    @keyframes loaderOut { to { opacity: 0; visibility: hidden; } }
+
+    .tips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+    .tip { position: relative; padding: 34px 30px; border-radius: 22px; background: var(--surface); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+    .tip .k { font: italic 400 16px var(--serif); color: var(--accent-strong); }
+    .tip h3 { font-size: 26px; }
+    .tip p { color: var(--muted); font-size: 15px; }
+    .tip ul { margin: 4px 0 0; padding: 18px 0 0; border-top: 1px solid var(--border); list-style: none; display: grid; gap: 10px; font-size: 15px; }
+    .tip li { display: grid; grid-template-columns: 14px 1fr; gap: 10px; }
+    .tip li::before { content: ""; width: 6px; height: 6px; margin-top: 10px; border-radius: 50%; background: var(--accent); }
+
+    .consent { grid-column: 1 / -1; display: flex; gap: 10px; align-items: flex-start; font-size: 14px; color: var(--muted); cursor: pointer; }
+    .consent input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--brand); flex: none; }
+    .link { border: 0; background: none; padding: 0; color: inherit; font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+    .legal-links { display: inline-flex; flex-wrap: wrap; gap: 6px 14px; }
+    .legal-links .link { color: rgba(248, 241, 238, .7); }
+
+    .ask-btn { position: fixed; right: calc(20px + env(safe-area-inset-right, 0px)); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 60; display: inline-flex; align-items: center; gap: 10px; height: 54px; padding: 0 22px 0 18px; border-radius: 999px; border: 0; background: var(--brand); color: var(--on-brand); font-weight: 600; font-size: 15px; box-shadow: 0 16px 36px -12px rgba(61, 36, 51, .6); cursor: pointer; transition: transform .2s; }
+    .ask-btn:hover { transform: translateY(-2px); }
+    .ask-btn svg { color: var(--accent); }
+    .ask { position: fixed; right: calc(20px + env(safe-area-inset-right, 0px)); bottom: calc(88px + env(safe-area-inset-bottom, 0px)); z-index: 61; width: min(380px, calc(100vw - 32px)); height: min(540px, calc(100vh - 150px)); display: flex; flex-direction: column; border-radius: 22px; background: var(--surface); color: var(--text); border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden; animation: up .35s cubic-bezier(.2,.8,.2,1); }
+    .ask header { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 18px; background: var(--brand); color: var(--on-brand); }
+    .ask header b { font: 500 19px var(--serif); }
+    .ask header small { display: block; opacity: .7; font-size: 12.5px; }
+    .ask header button { width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(248, 241, 238, .3); background: none; color: inherit; cursor: pointer; display: grid; place-items: center; }
+    .ask-log { flex: 1; overflow: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; font-size: 14.5px; overscroll-behavior: contain; }
+    .msg { max-width: 88%; padding: 10px 14px; border-radius: 16px; line-height: 1.5; }
+    .msg.bot { align-self: flex-start; background: var(--bg-2); border-bottom-left-radius: 6px; }
+    .msg.user { align-self: flex-end; background: var(--brand); color: var(--on-brand); border-bottom-right-radius: 6px; }
+    .msg a { color: var(--accent-strong); font-weight: 600; }
+    .msg ul { margin: 6px 0; padding-left: 18px; }
+    .ask-chips { display: flex; gap: 6px; overflow-x: auto; padding: 0 16px 10px; }
+    .ask-chips button { flex: none; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); font-size: 13px; cursor: pointer; }
+    .ask-chips button:hover { border-color: var(--accent); }
+    .ask-form { display: flex; gap: 8px; padding: 12px 16px 16px; border-top: 1px solid var(--border); }
+    .ask-form input { flex: 1; min-width: 0; padding: 10px 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font: 16px var(--sans); }
+    .ask-form input:focus { outline: none; border-color: var(--accent); }
+
+    .dlg { width: min(720px, calc(100vw - 32px)); max-height: calc(100vh - 64px); padding: 0; border: 0; border-radius: 22px; background: var(--surface); color: var(--text); box-shadow: var(--shadow); overflow: auto; }
+    .dlg::backdrop { background: rgba(30, 14, 24, .55); backdrop-filter: blur(4px); }
+    .dlg-inner { position: relative; padding: clamp(26px, 4vw, 48px); }
+    .dlg h2 { font-size: clamp(30px, 4vw, 42px); margin: 0 48px 18px 0; }
+    .dlg h3 { font: 600 15px var(--sans); margin: 22px 0 6px; }
+    .dlg p { color: var(--muted); font-size: 15px; }
+    .dlg mark { background: var(--accent-soft); color: var(--accent-strong); padding: 0 4px; border-radius: 4px; }
+    .dlg-x { position: absolute; top: 18px; right: 18px; width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; display: grid; place-items: center; }
+
+    .mbar { display: none; }
+    @media (max-width: 1020px) { .tips { grid-template-columns: 1fr; max-width: 640px; } }
+    @media (max-width: 640px) {
+      .mbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 59; display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: 8px; padding: 10px max(12px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px)); background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-top: 1px solid var(--border); }
+      .mbar a { display: flex; align-items: center; justify-content: center; gap: 8px; height: 48px; border-radius: 14px; text-decoration: none; font-weight: 600; font-size: 14px; background: var(--bg-2); color: var(--text); }
+      .mbar a.primary { background: var(--brand); color: var(--on-brand); }
+      .mbar svg { width: 18px; height: 18px; }
+      body { padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)); }
+      .ask-btn { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); right: 16px; width: 52px; height: 52px; padding: 0; justify-content: center; }
+      .ask-btn span { display: none; }
+      .ask { right: 16px; bottom: calc(142px + env(safe-area-inset-bottom, 0px)); height: min(500px, calc(100vh - 200px)); }
     }
   </style>
 </head>
 <body>
+  <div class="loader" aria-hidden="true">
+    <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" /><text x="50" y="65" text-anchor="middle" id="loader-mark">C</text></svg>
+    <span id="loader-name">Celia</span>
+  </div>
   <!-- Iconos -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z"/></symbol>
@@ -428,7 +511,7 @@
 
   <header class="nav" id="nav">
     <div class="wrap">
-      <a class="logo" href="#inicio"><span data-k="nombre"></span><small data-k="etiquetaLogo"></small></a>
+      <a class="logo" href="#inicio"><span class="mark" data-k="inicial"></span><span data-k="nombre"></span><small data-k="etiquetaLogo"></small></a>
       <nav aria-label="Principal">
         <ul class="links">
           <li><a href="#nosotros">Nosotros</a></li>
@@ -573,6 +656,7 @@
                 <div class="field"><label for="f-name">Nombre</label><input id="f-name" autocomplete="name" placeholder="Tu nombre" /></div>
                 <div class="field"><label for="f-phone">Teléfono</label><input id="f-phone" type="tel" autocomplete="tel" placeholder="600 000 000" /></div>
                 <div class="field full"><label for="f-note">Comentarios <span style="font-weight:400;color:var(--muted)">(opcional)</span></label><textarea id="f-note" placeholder="Por ejemplo: tengo el pelo largo y quiero cambiar de color"></textarea></div>
+                <label class="consent" for="f-ok"><input type="checkbox" id="f-ok" /><span>He leído y acepto la <button type="button" class="link" data-legal="privacidad">política de privacidad</button>.</span></label>
               </div>
             </div>
           </div>
@@ -584,6 +668,7 @@
             <div class="sum-total"><span id="sum-dur">Duración —</span><b id="sum-price">0 €</b></div>
             <div class="sum-actions">
               <a class="btn btn-brand" id="send-wa" href="#" target="_blank" rel="noopener" aria-disabled="true"><svg class="i"><use href="#i-wa" /></svg> Enviar por WhatsApp</a>
+              <a class="btn btn-line" id="cal-link" href="#" target="_blank" rel="noopener" aria-disabled="true"><svg class="i"><use href="#i-cal" /></svg> Apuntar en mi calendario</a>
               <button class="btn btn-line" id="copy-msg" type="button" disabled><svg class="i"><use href="#i-copy" /></svg> <span>Copiar mensaje</span></button>
             </div>
             <p class="sum-note" id="sum-note"></p>
@@ -624,6 +709,18 @@
           <span class="map-note">Mapa ilustrativo</span>
           <a class="map-link" data-href="maps" href="#" target="_blank" rel="noopener"><svg class="i" style="width:16px;height:16px"><use href="#i-pin" /></svg> Cómo llegar</a>
         </div>
+      </div>
+    </section>
+
+    <!-- CONSEJOS -->
+    <section class="section services-bg" id="consejos">
+      <div class="wrap">
+        <div class="head reveal">
+          <span class="eyebrow">Consejos</span>
+          <h2>Cuida tu pelo <em>entre visitas</em></h2>
+          <p>Pequeños gestos para que el resultado dure más.</p>
+        </div>
+        <div class="tips" id="tips"></div>
       </div>
     </section>
 
@@ -680,12 +777,30 @@
       </div>
       <div class="legal">
         <span>© <span id="year"></span> <span data-k="nombre"></span> · <span data-k="etiquetaLogo"></span></span>
+        <span class="legal-links"><button type="button" class="link" data-legal="aviso">Aviso legal</button><button type="button" class="link" data-legal="privacidad">Privacidad</button><button type="button" class="link" data-legal="cookies">Cookies</button></span>
         <span data-k="datosLegales"></span>
       </div>
     </div>
   </footer>
 
-  <a class="wa" data-href="whatsapp" href="#" target="_blank" rel="noopener" aria-label="Escríbenos por WhatsApp"><svg><use href="#i-wa" /></svg></a>
+  <!-- Barra de acciones en el móvil -->
+  <nav class="mbar" aria-label="Acciones rápidas">
+    <a data-href="tel" href="#"><svg><use href="#i-phone" /></svg>Llamar</a>
+    <a data-href="whatsapp" href="#" target="_blank" rel="noopener"><svg><use href="#i-wa" /></svg>WhatsApp</a>
+    <a class="primary" href="#reservar"><svg><use href="#i-cal" /></svg>Reservar</a>
+  </nav>
+
+  <!-- Respuestas rápidas -->
+  <button class="ask-btn" id="ask-btn" type="button" aria-controls="ask" aria-expanded="false"><svg class="i"><use href="#i-chat" /></svg><span>¿Dudas?</span></button>
+  <section class="ask" id="ask" hidden aria-label="Respuestas rápidas">
+    <header><div><b>Respuestas rápidas</b><small>Horario, precios y citas</small></div><button type="button" id="ask-close" aria-label="Cerrar"><svg class="i" style="width:16px;height:16px"><use href="#i-x" /></svg></button></header>
+    <div class="ask-log" id="ask-log" aria-live="polite"></div>
+    <div class="ask-chips" id="ask-chips"></div>
+    <form class="ask-form" id="ask-form"><input id="ask-input" placeholder="Escribe tu pregunta" autocomplete="off" aria-label="Tu pregunta" /><button class="btn btn-brand btn-sm" type="submit">Enviar</button></form>
+  </section>
+
+  <!-- Textos legales -->
+  <dialog class="dlg" id="dlg"><div class="dlg-inner"><button type="button" class="dlg-x" id="dlg-x" aria-label="Cerrar"><svg class="i" style="width:16px;height:16px"><use href="#i-x" /></svg></button><div id="dlg-body"></div></div></dialog>
 
   <!-- Librería 3D (Three.js) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -706,6 +821,8 @@
       email: "hola@celia.es",               // ✏️
       direccion: "Calle Cristóbal Colón, 10, 29100 Coín, Málaga",
       datosLegales: "",                     // ✏️ p. ej. "Celia García López · NIF 00000000X"
+      titular: "",                          // ✏️ nombre y apellidos (o razón social) para el aviso legal
+      nif: "",                              // ✏️ NIF del titular
 
       fotoNosotros: "",                     // p. ej. "fotos/celia.jpg"
       galeria: [],                          // p. ej. ["fotos/trabajo1.jpg", "fotos/trabajo2.jpg"]
@@ -802,6 +919,27 @@
         { p: "¿Tenéis tarjetas regalo?", r: "Sí, para cualquier servicio o importe. Pídela en el salón o escríbenos y te la preparamos." },
       ],
 
+      consejos: [
+        { etiqueta: "Color", titulo: "Que el color dure más", texto: "El color pierde intensidad sobre todo en los primeros lavados.", puntos: [
+          "Espera 48 horas antes del primer lavado.",
+          "Usa champú sin sulfatos y agua templada, no caliente.",
+          "Aplica protector térmico antes del secador o la plancha.",
+          "Una mascarilla para cabello teñido una vez por semana.",
+        ]},
+        { etiqueta: "Novias", titulo: "Antes de tu prueba de novia", texto: "Una buena prueba hace que el día de la boda todo salga rodado.", puntos: [
+          "Reserva la prueba entre uno y dos meses antes.",
+          "Trae fotos de peinados que te gusten y del vestido.",
+          "Si llevas tocado o velo, tráelo a la prueba.",
+          "Ven con el pelo lavado el día anterior.",
+        ]},
+        { etiqueta: "Verano", titulo: "Pelo, sol y playa", texto: "El sol, la sal y el cloro resecan el pelo y apagan el color.", puntos: [
+          "Usa protector solar capilar en la playa y la piscina.",
+          "Aclara con agua dulce después de cada baño.",
+          "Evita recogidos muy tirantes con el pelo mojado.",
+          "Hidrata con mascarilla dos veces por semana.",
+        ]},
+      ],
+
       tituloFinal: "¿Te apetece *un cambio*? Reserva hoy tu cita.",
       redes: { instagram: "https://instagram.com/", facebook: "", tiktok: "" },   // ✏️ tus perfiles
     };
@@ -818,6 +956,7 @@
     const dur = (m) => (m >= 60 ? Math.floor(m / 60) + " h" + (m % 60 ? " " + (m % 60) + " min" : "") : m + " min");
     const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+    N.inicial = N.nombre.trim().charAt(0);
     // Textos simples
     $$("[data-k]").forEach((el) => { const v = N[el.dataset.k]; if (v != null) el.textContent = v; });
     $("#hero-title").innerHTML = em(N.tituloPortada);
@@ -974,6 +1113,7 @@
       update();
     });
     ["#f-name", "#f-phone", "#f-note"].forEach((s) => $(s).addEventListener("input", update));
+    $("#f-ok").addEventListener("change", update);
 
     let message = "";
     function update() {
@@ -997,10 +1137,11 @@
       $("#b4").classList.toggle("done", !!name);
 
       const missing = [];
-      if (!items.length) missing.push("un servicio");
-      if (!day) missing.push("un día");
-      if (slot == null) missing.push("una hora");
-      if (!name) missing.push("tu nombre");
+      if (!items.length) missing.push("elegir un servicio");
+      if (!day) missing.push("elegir un día");
+      if (slot == null) missing.push("elegir una hora");
+      if (!name) missing.push("escribir tu nombre");
+      if (!$("#f-ok").checked) missing.push("aceptar la política de privacidad");
       const ok = !missing.length;
       message = ok ? [
         `Hola, ${N.nombre}. Me gustaría pedir cita:`, "",
@@ -1013,9 +1154,17 @@
       wa.setAttribute("aria-disabled", String(!ok));
       wa.href = ok ? `https://wa.me/${N.whatsapp}?text=${encodeURIComponent(message)}` : "#";
       $("#copy-msg").disabled = !ok;
+      const cal = $("#cal-link");
+      cal.setAttribute("aria-disabled", String(!ok));
+      if (ok) {
+        const a = new Date(day); a.setMinutes(slot);
+        const b = new Date(a.getTime() + Math.max(tMin, 30) * 60000);
+        const f = (d) => `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}T${String(d.getHours()).padStart(2, "0")}${String(d.getMinutes()).padStart(2, "0")}00`;
+        cal.href = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent("Cita en " + N.nombre + " (pendiente de confirmar)")}&dates=${f(a)}/${f(b)}&details=${encodeURIComponent(items.map((t) => t.nombre).join(", "))}&location=${encodeURIComponent(N.direccion)}`;
+      } else cal.href = "#";
       $("#sum-note").textContent = ok
         ? "Se abrirá WhatsApp con tu solicitud ya escrita. La cita queda reservada cuando te la confirmemos."
-        : "Para enviar la solicitud falta elegir " + missing.join(", ").replace(/, ([^,]*)$/, " y $1") + ".";
+        : "Para enviar la solicitud falta " + missing.join(", ").replace(/, ([^,]*)$/, " y $1") + ".";
     }
     $("#copy-msg").addEventListener("click", async () => {
       const label = $("#copy-msg span");
@@ -1073,6 +1222,11 @@
     // Preguntas
     $("#faq").innerHTML = N.preguntas.map((q) => `<details><summary>${esc(q.p)}</summary><p>${esc(q.r)}</p></details>`).join("");
 
+    // Consejos
+    $("#tips").innerHTML = N.consejos.map((c, i) => `<article class="tip reveal" data-tilt="4" style="--d:${i * 100}ms"><span class="k">${esc(c.etiqueta)}</span><h3>${esc(c.titulo)}</h3><p>${esc(c.texto)}</p><ul>${c.puntos.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></article>`).join("");
+    $("#loader-mark").textContent = N.inicial;
+    $("#loader-name").textContent = N.nombre;
+
     // Redes
     const redIcon = { instagram: "ig", facebook: "fb", tiktok: "tt" };
     $("#social").innerHTML = Object.entries(N.redes).filter(([, u]) => u)
@@ -1116,6 +1270,91 @@
         el.addEventListener("pointerleave", () => { el.style.setProperty("--rx", "0deg"); el.style.setProperty("--ry", "0deg"); el.classList.remove("tilting"); });
       });
     }
+
+    // Textos legales (plantilla base: revisar con los datos del titular)
+    const pend = (v) => (v ? esc(v) : "<mark>[pendiente]</mark>");
+    const legalTexts = {
+      aviso: `<h2>Aviso legal</h2>
+        <p>En cumplimiento de la Ley 34/2002, de Servicios de la Sociedad de la Información y de Comercio Electrónico (LSSI-CE), se informa de los datos del titular de esta web.</p>
+        <h3>Titular</h3><p>${pend(N.titular)} · NIF ${pend(N.nif)}<br>${esc(N.direccion)}<br>Teléfono ${esc(N.telefono)} · ${esc(N.email)}</p>
+        <h3>Actividad</h3><p>Servicios de peluquería y estética.</p>
+        <h3>Uso de la web</h3><p>La información de esta web, incluidos horarios y precios, es orientativa y puede cambiar. Las citas pedidas desde la web quedan confirmadas solo cuando el salón responde confirmándolas.</p>
+        <h3>Propiedad intelectual</h3><p>Los textos, imágenes y diseño de esta web pertenecen a su titular o se usan con permiso. No se permite reproducirlos sin autorización.</p>`,
+      privacidad: `<h2>Política de privacidad</h2>
+        <h3>Responsable</h3><p>${pend(N.titular)} · NIF ${pend(N.nif)} · ${esc(N.direccion)} · ${esc(N.email)}</p>
+        <h3>Qué datos tratamos</h3><p>Los que nos envías al pedir cita o hacernos una consulta: nombre, teléfono, servicios elegidos, día y hora, y los comentarios que añadas.</p>
+        <h3>Para qué los usamos</h3><p>Para gestionar tu cita y responder a tus consultas. No usamos tus datos para enviarte publicidad sin tu permiso.</p>
+        <h3>Base legal</h3><p>Tu consentimiento al enviarnos la solicitud y, si vienes al salón, la prestación del servicio que nos pides.</p>
+        <h3>Cuánto tiempo los guardamos</h3><p>Mientras sea necesario para atenderte y durante los plazos que exija la ley.</p>
+        <h3>Con quién se comparten</h3><p>No cedemos tus datos a terceros salvo obligación legal. Las solicitudes se envían por WhatsApp, un servicio de WhatsApp Ireland Limited (Meta) con su propia política de privacidad.</p>
+        <h3>Tus derechos</h3><p>Puedes pedir el acceso, la rectificación, la supresión, la limitación o la oposición al tratamiento de tus datos, y su portabilidad, escribiendo a ${esc(N.email)}. Si consideras que no hemos atendido bien tu petición, puedes reclamar ante la Agencia Española de Protección de Datos (aepd.es).</p>`,
+      cookies: `<h2>Política de cookies</h2>
+        <p>Esta web no instala cookies propias ni cookies de análisis o publicidad.</p>
+        <h3>Servicios externos</h3><p>Para mostrar las tipografías y los efectos 3D, la web carga recursos de Google Fonts y de cdnjs (Cloudflare). Estos servicios pueden registrar datos técnicos de la conexión, como la dirección IP, según sus propias políticas.</p>
+        <p>Si en el futuro se añaden estadísticas o publicidad, te pediremos permiso antes de usarlas.</p>`,
+    };
+    const dlg = $("#dlg");
+    document.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-legal]"); if (!b) return;
+      e.preventDefault();
+      $("#dlg-body").innerHTML = legalTexts[b.dataset.legal];
+      if (dlg.showModal) dlg.showModal(); else dlg.setAttribute("open", "");
+    });
+    $("#dlg-x").addEventListener("click", () => (dlg.close ? dlg.close() : dlg.removeAttribute("open")));
+    dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); });
+
+    // Respuestas rápidas: contesta con los datos de esta página (sin servidor)
+    (function quickAnswers() {
+      const panel = $("#ask"), btn = $("#ask-btn"), logEl = $("#ask-log"), input = $("#ask-input");
+      const norm = (x) => x.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+      const stop = new Set(["que", "para", "con", "los", "las", "una", "uno", "del", "por", "como", "cuanto", "cuanta", "tiene", "teneis", "tenes", "hay", "mas", "esta", "este", "quiero", "puedo", "hola"]);
+      const say = (html, who) => { const d = document.createElement("div"); d.className = "msg " + who; d.innerHTML = html; logEl.append(d); logEl.scrollTop = logEl.scrollHeight; };
+      const answer = (q) => {
+        const n = norm(q);
+        const words = n.split(/[^a-z0-9]+/).filter((w) => w.length > 2 && !stop.has(w));
+        const has = (...k) => k.some((x) => n.includes(x));
+        const hits = Object.values(byId).filter((t) => words.some((w) => norm(t.nombre).split(/\s+/).some((p) => p.length > 3 && (p.startsWith(w) || w.startsWith(p)))));
+        if (hits.length && !has("horario", "abri", "abre")) return "Estos son los precios:<ul>" + hits.slice(0, 5).map((t) => `<li>${esc(t.nombre)}: <b>${t.desde ? "desde " : ""}${euro(t.precio)}</b> (${dur(t.min)})</li>`).join("") + `</ul><a href="#reservar" data-close>Reservar cita</a>`;
+        if (has("horario", "abri", "abre", "cerr", "hoy", "manana", "sabado", "domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "hora")) return `${esc($("#status-text").textContent)}.<br><br>` + orden.map((d) => `${nombresDia[d]}: ${fmt(N.horario[d] || [])}`).join("<br>");
+        if (has("donde", "direcc", "llegar", "ubica", "aparc", "calle", "mapa", "estais")) return `Estamos en <b>${esc(N.direccion)}</b>.<br><a href="${links.maps}" target="_blank" rel="noopener">Abrir en Google Maps</a>`;
+        let best = null, score = 0;
+        N.preguntas.forEach((f) => { const fw = norm(f.p + " " + f.r); const sc = words.filter((w) => fw.includes(w)).length; if (sc > score) { score = sc; best = f; } });
+        if (best && score >= 2) return esc(best.r);
+        if (has("precio", "cuesta", "cuanto", "tarifa", "vale")) return `Tienes todas las tarifas en <a href="#tarifas" data-close>Tarifas</a>. Si me dices el servicio, por ejemplo «balayage», te digo el precio.`;
+        if (has("cita", "reserv", "hueco", "pedir")) return `Puedes pedir cita en un minuto desde <a href="#reservar" data-close>Reservar cita</a>: eliges servicios, día y hora, y nos llega por WhatsApp.`;
+        if (best && score >= 1) return esc(best.r);
+        return `No tengo esa respuesta aquí. <a href="https://wa.me/${N.whatsapp}?text=${encodeURIComponent(q)}" target="_blank" rel="noopener">Pregúntanos por WhatsApp</a> y te contestamos enseguida.`;
+      };
+      const ask = (q) => { if (!q.trim()) return; say(esc(q), "user"); setTimeout(() => say(answer(q), "bot"), 250); };
+      say(`Hola, soy el asistente de ${esc(N.nombre)}. Pregúntame por el horario, los precios o cómo pedir cita.`, "bot");
+      $("#ask-chips").innerHTML = ["¿Abrís hoy?", "¿Cuánto cuesta un balayage?", "¿Dónde estáis?", "¿Cómo puedo pagar?", "Pedir cita"].map((c) => `<button type="button">${c}</button>`).join("");
+      $("#ask-chips").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) ask(b.textContent); });
+      $("#ask-form").addEventListener("submit", (e) => { e.preventDefault(); ask(input.value); input.value = ""; });
+      const setOpen = (o) => { panel.hidden = !o; btn.setAttribute("aria-expanded", String(o)); if (o && matchMedia("(pointer: fine)").matches) input.focus(); };
+      btn.addEventListener("click", () => setOpen(panel.hidden));
+      $("#ask-close").addEventListener("click", () => setOpen(false));
+      logEl.addEventListener("click", (e) => { if (e.target.closest("[data-close]")) setOpen(false); });
+      addEventListener("keydown", (e) => { if (e.key === "Escape" && !panel.hidden) setOpen(false); });
+    })();
+
+    // Botones «magnéticos»: se acercan un poco al puntero
+    if (matchMedia("(hover: hover) and (pointer: fine)").matches && !reduceMotion) {
+      $$(".btn").forEach((b) => {
+        b.addEventListener("pointermove", (e) => {
+          const r = b.getBoundingClientRect();
+          b.style.translate = `${(((e.clientX - r.left) / r.width) - 0.5) * 10}px ${(((e.clientY - r.top) / r.height) - 0.5) * 8}px`;
+        });
+        b.addEventListener("pointerleave", () => (b.style.translate = ""));
+      });
+    }
+
+    // Carga una escena solo cuando su sección está cerca de verse
+    const lazy = (sel, fn) => {
+      const el = $(sel);
+      if (!el || !("IntersectionObserver" in window)) return fn();
+      const o = new IntersectionObserver((es) => { if (es[0].isIntersecting) { o.disconnect(); fn(); } }, { rootMargin: "600px" });
+      o.observe(el);
+    };
 
     // ---------- Escenas 3D (Three.js) ----------
     // Estudio común: luz de estudio fotográfico para que el metal tenga reflejos suaves
@@ -1226,8 +1465,11 @@
         m.position.set(x, y, z); m.userData = { y, ph: i * 2 };
         scene.add(m); return m;
       });
+      let snip = 0, lastY = scrollY;
       runScene(stage, canvas, st, (t, s) => {
-        const open = 0.1 + 0.1 * (0.5 + 0.5 * Math.sin(t * 1.3));
+        snip += (Math.min(Math.abs(scrollY - lastY) * 0.02, 0.35) - snip) * 0.15; lastY = scrollY;
+        rig.rotation.z = -0.6 - Math.min(scrollY / 700, 1) * 0.5;
+        const open = 0.1 + 0.1 * (0.5 + 0.5 * Math.sin(t * 1.3)) + snip;
         A.rotation.z = open; B.rotation.z = -open;
         rig.rotation.y = Math.sin(t * 0.35) * 0.45 + s.px * 0.6;
         rig.rotation.x = s.py * 0.35 + Math.sin(t * 0.5) * 0.06;
@@ -1239,7 +1481,7 @@
     })();
 
     // Reserva: un peine de oro rosa flotando (solo en pantallas anchas)
-    (function bookingComb() {
+    lazy("#reservar", function bookingComb() {
       const canvas = $("#booking-3d");
       if (!canvas || !window.THREE || !canvas.clientWidth) return;
       const st = makeStudio(canvas, 30, 12);
@@ -1278,10 +1520,10 @@
         rig.position.y = Math.sin(t * 0.7) * 0.15;
         pearls.forEach((m) => (m.position.y = m.userData.y + Math.sin(t * 0.7 + m.userData.ph) * 0.15));
       });
-    })();
+    });
 
     // Visítanos: mapa 3D ilustrativo con el pin del salón
-    (function map3D() {
+    lazy("#visitanos", function map3D() {
       const box = $("#map"), canvas = $("#map-3d"), label = $("#map-label");
       if (!canvas || !window.THREE) return;
       const st = makeStudio(canvas, 35, 20);
@@ -1391,7 +1633,7 @@
         label.style.top = ((1 - anchor.y) / 2) * box.clientHeight + "px";
       });
       matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => { paint(); renderer.render(scene, camera); });
-    })();
+    });
 
     // Datos estructurados para Google (peluquería)
     const diasSchema = { lunes: "Monday", martes: "Tuesday", miercoles: "Wednesday", jueves: "Thursday", viernes: "Friday", sabado: "Saturday", domingo: "Sunday" };
