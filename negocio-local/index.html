@@ -250,7 +250,22 @@
     .svc input { width: 18px; height: 18px; accent-color: var(--brand); margin: 0; }
     .svc small { display: block; color: var(--muted); font-size: 13px; }
     .svc .p { font-weight: 600; white-space: nowrap; }
-    .days { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x mandatory; }
+    .cal { border: 1px solid var(--border); border-radius: 16px; padding: 14px; max-width: 420px; }
+    .cal-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+    .cal-head b { font: 500 20px var(--serif); }
+    .cal-nav { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; display: grid; place-items: center; }
+    .cal-nav svg { width: 16px; height: 16px; }
+    .cal-nav:hover:not(:disabled) { border-color: var(--accent); }
+    .cal-nav:disabled { opacity: .3; cursor: default; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; text-align: center; }
+    .cal-dow { font-size: 11px; font-weight: 600; letter-spacing: .08em; color: var(--muted); padding: 6px 0; }
+    .cal-day { position: relative; aspect-ratio: 1; min-width: 0; border-radius: 12px; border: 1px solid transparent; background: none; color: var(--text); font: 500 15px var(--sans); font-variant-numeric: tabular-nums; cursor: pointer; transition: background .2s, border-color .2s; }
+    .cal-day:hover:not(:disabled) { border-color: var(--accent); background: var(--bg); }
+    .cal-day:disabled { color: var(--muted); opacity: .35; cursor: default; }
+    .cal-day.today::after { content: ""; position: absolute; left: 50%; bottom: 5px; width: 4px; height: 4px; border-radius: 50%; background: var(--accent-strong); transform: translateX(-50%); }
+    .cal-day[aria-pressed="true"] { background: var(--cta); color: var(--cta-fg); border-color: var(--cta); }
+    .cal-day[aria-pressed="true"]::after { background: currentColor; }
+    .cal-note { margin-top: 10px; font-size: 12.5px; color: var(--muted); }
     .day { flex: none; width: 66px; padding: 10px 0; border-radius: 14px; border: 1px solid var(--border); background: var(--surface); text-align: center; cursor: pointer; scroll-snap-align: start; transition: border-color .2s, background .2s; }
     .day:hover:not(:disabled) { border-color: var(--accent); }
     .day small { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
@@ -469,14 +484,14 @@
     .dlg mark { background: var(--accent-soft); color: var(--accent-strong); padding: 0 4px; border-radius: 4px; }
     .dlg-x { position: absolute; top: 18px; right: 18px; width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; display: grid; place-items: center; }
 
-    .summary.is-done > :not(.done) { display: none; }
-    .done { display: grid; gap: 12px; text-align: center; justify-items: center; padding-block: 8px; }
+    .summary.is-done > :not(.booked) { display: none; }
+    .booked { display: grid; gap: 12px; text-align: center; justify-items: center; padding-block: 8px; }
     .done-ic { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; background: var(--ok); color: #fff; animation: pop .5s cubic-bezier(.2,1.6,.4,1); }
     .done-ic svg { width: 30px; height: 30px; }
-    .done h3 { font-size: 30px; margin: 6px 0 0; }
-    .done p { font-size: 16px; }
-    .done .done-sub { color: var(--muted); font-size: 14px; max-width: 34ch; }
-    .done .btn { width: 100%; }
+    .booked h3 { font-size: 30px; margin: 6px 0 0; }
+    .booked p { font-size: 16px; }
+    .booked .done-sub { color: var(--muted); font-size: 14px; max-width: 34ch; }
+    .booked .btn { width: 100%; }
     @keyframes pop { from { transform: scale(.4); opacity: 0; } }
     .booking.locked .panel:first-child { opacity: .5; pointer-events: none; }
     .mbar { display: none; }
@@ -661,7 +676,15 @@
             </div>
             <div class="bstep" id="b2">
               <h3><span class="n">2</span>Día</h3>
-              <div class="days" id="days"></div>
+              <div class="cal">
+                <div class="cal-head">
+                  <button class="cal-nav" type="button" id="cal-prev" aria-label="Mes anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+                  <b id="cal-title" aria-live="polite"></b>
+                  <button class="cal-nav" type="button" id="cal-next" aria-label="Mes siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+                </div>
+                <div class="cal-grid" id="days" role="group" aria-label="Elige un día"></div>
+                <p class="cal-note">Los días en gris están cerrados o fuera de plazo.</p>
+              </div>
             </div>
             <div class="bstep" id="b3">
               <h3><span class="n">3</span>Hora</h3>
@@ -685,7 +708,7 @@
             <ul class="sum-list" id="sum-list"></ul>
             <div class="sum-when"><svg class="i"><use href="#i-cal" /></svg><span id="sum-when">Elige día y hora</span></div>
             <div class="sum-total"><span id="sum-dur">Duración —</span><b id="sum-price">0 €</b></div>
-            <div class="done" id="done" hidden>
+            <div class="booked" id="done" hidden>
               <span class="done-ic"><svg class="i"><use href="#i-check" /></svg></span>
               <h3>¡Cita reservada!</h3>
               <p id="done-when"></p>
@@ -937,7 +960,7 @@
       // Reservas automáticas en Google Calendar: pega aquí la URL de la aplicación web (termina en /exec).
       // Vacío = las reservas se envían por WhatsApp. Ver la carpeta reservas-celia/INSTRUCCIONES.md
       reservasURL: "https://script.google.com/macros/s/AKfycbxyVMSzSw1GMRM-TWLu8H9tAv7FeejEK41qF3z76jcNS7ZDqTWb_DIEcRociR07BOZPOg/exec",
-      diasReserva: 21,                      // días que se pueden elegir en la reserva
+      diasReserva: 60,                      // días que se pueden elegir en la reserva (igual que diasMax en la agenda)
       intervaloMin: 30,                     // cada cuántos minutos se ofrece una hora
 
       // ✏️ Revisa que estas respuestas son ciertas para tu salón.
@@ -1109,17 +1132,35 @@
     const totalMin = () => [...selected].reduce((a, id) => a + byId[id].min, 0);
 
     const fmtDay = (d, o) => d.toLocaleDateString("es-ES", o);
-    $("#days").innerHTML = dates.map((d, i) => {
-      const closed = !tramosDe(d).length;
-      return `<button class="day" type="button" data-i="${i}" ${closed ? "disabled" : ""} aria-pressed="false" aria-label="${fmtDay(d, { weekday: "long", day: "numeric", month: "long" })}${closed ? ", cerrado" : ""}">
-        <small>${fmtDay(d, { weekday: "short" }).replace(".", "")}</small><b>${d.getDate()}</b><small>${fmtDay(d, { month: "short" }).replace(".", "")}</small></button>`;
-    }).join("");
+    const lastDate = dates[dates.length - 1];
+    let calMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    function renderCalendar() {
+      const y = calMonth.getFullYear(), m = calMonth.getMonth();
+      const mes = fmtDay(calMonth, { month: "long" });
+      $("#cal-title").textContent = mes.charAt(0).toUpperCase() + mes.slice(1) + " " + y;
+      $("#cal-prev").disabled = y === today.getFullYear() && m === today.getMonth();
+      $("#cal-next").disabled = new Date(y, m + 1, 1) > lastDate;
+      const lead = (new Date(y, m, 1).getDay() + 6) % 7;
+      const daysIn = new Date(y, m + 1, 0).getDate();
+      let html = ["L", "M", "X", "J", "V", "S", "D"].map((d) => `<span class="cal-dow" aria-hidden="true">${d}</span>`).join("");
+      html += "<span></span>".repeat(lead);
+      for (let n = 1; n <= daysIn; n++) {
+        const d = new Date(y, m, n);
+        const closed = !tramosDe(d).length, out = d < today || d > lastDate;
+        const sel = day && d.getTime() === day.getTime();
+        html += `<button class="cal-day${d.getTime() === today.getTime() ? " today" : ""}" type="button" data-t="${d.getTime()}" ${closed || out ? "disabled" : ""} aria-pressed="${!!sel}" aria-label="${fmtDay(d, { weekday: "long", day: "numeric", month: "long" })}${closed ? ", cerrado" : ""}">${n}</button>`;
+      }
+      $("#days").innerHTML = html;
+    }
+    $("#cal-prev").addEventListener("click", () => { calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() - 1, 1); renderCalendar(); });
+    $("#cal-next").addEventListener("click", () => { calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 1); renderCalendar(); });
     $("#days").addEventListener("click", (e) => {
-      const b = e.target.closest(".day"); if (!b || b.disabled) return;
-      day = dates[+b.dataset.i]; slot = null;
-      $$(".day").forEach((x) => x.setAttribute("aria-pressed", x === b));
+      const b = e.target.closest(".cal-day"); if (!b || b.disabled) return;
+      day = new Date(+b.dataset.t); slot = null;
+      $$(".cal-day").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
       renderSlots(); update();
     });
+    renderCalendar();
 
     // Explica por qué un día no tiene horas libres
     function noSlotsReason(need, earliest) {
@@ -1276,7 +1317,7 @@
     });
     $("#done-again").addEventListener("click", () => {
       selected.clear(); $$("#svc-list input").forEach((c) => (c.checked = false));
-      day = null; slot = null; $$(".day").forEach((x) => x.setAttribute("aria-pressed", "false"));
+      day = null; slot = null; renderCalendar();
       $(".summary").classList.remove("is-done"); $("#done").hidden = true; $(".booking").classList.remove("locked");
       renderPrices(); renderSlots(); update();
       $("#reservar").scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" });
