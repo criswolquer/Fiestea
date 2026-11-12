@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Celia · Peluquería y estética</title>
-  <meta name="description" content="Celia, peluquería y estética: cortes, color, peinados de novia, tratamientos capilares, manicura y estética. Reserva tu cita online." />
+  <title>Celia · Peluquería y estética en Coín</title>
+  <meta name="description" content="Celia, peluquería y estética en Coín (Málaga): cortes, color, peinados de novia, tratamientos capilares, manicura y estética. Reserva tu cita online." />
   <meta name="theme-color" content="#3d2433" />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Celia · Peluquería y estética" />
@@ -686,14 +686,14 @@
     const NEGOCIO = {
       nombre: "Celia",
       etiquetaLogo: "Peluquería & estética",
-      categoria: "Peluquería y estética",
+      categoria: "Peluquería y estética · Coín",
       tituloPortada: "Tu pelo, *en las mejores manos*.",          // lo que va entre *asteriscos* sale destacado
       descripcion: "Cortes, color, peinados para tus días especiales y tratamientos, con el tiempo y la atención que mereces.",
 
       telefono: "+34 615 24 04 67",
       whatsapp: "34615240467",              // solo números, con prefijo del país
       email: "hola@celia.es",               // ✏️
-      direccion: "Calle Cristóbal Colón, 10",   // ✏️ añade el código postal y la localidad
+      direccion: "Calle Cristóbal Colón, 10, 29100 Coín, Málaga",
       datosLegales: "",                     // ✏️ p. ej. "Celia García López · NIF 00000000X"
 
       fotoNosotros: "",                     // p. ej. "fotos/celia.jpg"
@@ -1277,7 +1277,7 @@
     ld.textContent = JSON.stringify({
       "@context": "https://schema.org", "@type": "HairSalon",
       name: N.nombre, description: N.descripcion, telephone: N.telefono, email: N.email,
-      address: { "@type": "PostalAddress", streetAddress: N.direccion },
+      address: { "@type": "PostalAddress", streetAddress: "Calle Cristóbal Colón, 10", postalCode: "29100", addressLocality: "Coín", addressRegion: "Málaga", addressCountry: "ES" },
       url: location.href, priceRange: "€€",
       openingHoursSpecification: Object.entries(N.horario).flatMap(([d, tr]) => tr.map(([a, b]) => ({ "@type": "OpeningHoursSpecification", dayOfWeek: diasSchema[d], opens: a, closes: b }))),
       sameAs: Object.values(N.redes).filter(Boolean),
