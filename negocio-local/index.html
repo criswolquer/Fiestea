@@ -494,6 +494,35 @@
     .booked .btn { width: 100%; }
     @keyframes pop { from { transform: scale(.4); opacity: 0; } }
     .booking.locked .panel:first-child { opacity: .5; pointer-events: none; }
+    /* Reserva por pasos */
+    .booking { scroll-margin-top: 92px; }
+    .wiz { list-style: none; margin: 0 0 14px; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .wiz button { width: 100%; display: flex; align-items: center; gap: 10px; border: 0; background: none; padding: 0; font: 600 13.5px var(--sans); color: var(--muted); cursor: pointer; text-align: left; }
+    .wiz span { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--border); font-size: 12px; transition: background .3s, color .3s, border-color .3s; }
+    .wiz li.on button { color: var(--text); }
+    .wiz li.on span { background: var(--cta); color: var(--cta-fg); border-color: var(--cta); }
+    .wiz li.ok span { background: var(--ok); color: #fff; border-color: var(--ok); }
+    .wiz-bar { height: 3px; border-radius: 3px; background: var(--bg-2); margin-bottom: 28px; overflow: hidden; }
+    .wiz-bar i { display: block; height: 100%; width: 33%; background: var(--accent); border-radius: inherit; transition: width .5s cubic-bezier(.2,.8,.2,1); }
+    .bstep[data-step] { margin-top: 0; padding-top: 0; border-top: 0; animation: up .45s cubic-bezier(.2,.8,.2,1); }
+    #b3 { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--border); }
+    .bstep h3 { font: 400 26px/1.2 var(--serif); letter-spacing: -.01em; text-transform: none; color: var(--text); margin-bottom: 18px; }
+    .svc-cats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .svc-cats .tab[aria-pressed="true"] { background: var(--cta); color: var(--cta-fg); border-color: var(--cta); }
+    .svc-cats .cnt { margin-left: 8px; display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--accent); color: var(--brand-deep); font-size: 11px; font-weight: 700; }
+    .svc-list { max-height: none; }
+    .svc-group { display: none; }
+    .svc { border-top: 0; }
+    .svc + .svc { border-top: 1px solid var(--border); }
+    .wiz-nav { display: flex; gap: 10px; margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--border); }
+    .wiz-nav #wiz-next { margin-left: auto; }
+    .wiz-nav .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+    @media (max-width: 1020px) { .booking:not(.step-3) .summary { display: none; } .summary { scroll-margin-top: 92px; } }
+    @media (max-width: 640px) {
+      .wiz button { flex-direction: column; text-align: center; gap: 6px; font-size: 12px; }
+      .wiz-nav .btn { flex: 1; padding: 0 16px; }
+      .bstep h3 { font-size: 23px; }
+    }
     .mbar { display: none; }
     @media (max-width: 1020px) { .tips { grid-template-columns: 1fr; max-width: 640px; } }
     @media (max-width: 640px) {
@@ -670,12 +699,19 @@
         </div>
         <div class="booking">
           <div class="panel">
-            <div class="bstep" id="b1">
-              <h3><span class="n">1</span>Servicios</h3>
+            <ol class="wiz" id="wiz" aria-label="Pasos de la reserva">
+              <li data-s="1"><button type="button"><span>1</span>Servicios</button></li>
+              <li data-s="2"><button type="button"><span>2</span>Día y hora</button></li>
+              <li data-s="3"><button type="button"><span>3</span>Tus datos</button></li>
+            </ol>
+            <div class="wiz-bar" aria-hidden="true"><i id="wiz-bar"></i></div>
+            <div class="bstep" id="b1" data-step="1">
+              <h3>¿Qué te hacemos?</h3>
+              <div class="svc-cats" id="svc-cats"></div>
               <div class="svc-list" id="svc-list"></div>
             </div>
-            <div class="bstep" id="b2">
-              <h3><span class="n">2</span>Día</h3>
+            <div class="bstep" id="b2" data-step="2">
+              <h3>Elige el día</h3>
               <div class="cal">
                 <div class="cal-head">
                   <button class="cal-nav" type="button" id="cal-prev" aria-label="Mes anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
@@ -686,20 +722,24 @@
                 <p class="cal-note">Los días en gris están cerrados o fuera de plazo.</p>
               </div>
             </div>
-            <div class="bstep" id="b3">
-              <h3><span class="n">3</span>Hora</h3>
+            <div class="bstep" id="b3" data-step="2">
+              <h3>Elige la hora</h3>
               <div id="slots"></div>
             </div>
-            <div class="bstep" id="b4">
-              <h3><span class="n">4</span>Tus datos</h3>
+            <div class="bstep" id="b4" data-step="3">
+              <h3>Tus datos</h3>
               <div class="fields">
                 <div class="field"><label for="f-name">Nombre</label><input id="f-name" autocomplete="name" placeholder="Tu nombre" /></div>
                 <div class="field"><label for="f-phone">Teléfono</label><input id="f-phone" type="tel" autocomplete="tel" placeholder="600 000 000" /></div>
                 <div class="field full" id="email-field" hidden><label for="f-email">Email <span style="font-weight:400;color:var(--muted)">(opcional: te enviamos la confirmación y un recordatorio)</span></label><input id="f-email" type="email" autocomplete="email" placeholder="tu@email.com" /></div>
                 <input id="f-web" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" />
                 <div class="field full"><label for="f-note">Comentarios <span style="font-weight:400;color:var(--muted)">(opcional)</span></label><textarea id="f-note" placeholder="Por ejemplo: tengo el pelo largo y quiero cambiar de color"></textarea></div>
-                <label class="consent" for="f-ok"><input type="checkbox" id="f-ok" /><span>He leído y acepto la <button type="button" class="link" data-legal="privacidad">política de privacidad</button>.</span></label>
+                <label class="consent" for="f-ok"><input type="checkbox" id="f-ok" /><span>He leído y acepto la <button type="button" class="link" data-legal="privacidad">política de privacidad</button></span></label>
               </div>
+            </div>
+            <div class="wiz-nav">
+              <button class="btn btn-line" type="button" id="wiz-back">Atrás</button>
+              <button class="btn btn-brand" type="button" id="wiz-next"><span>Continuar</span> <svg class="i"><use href="#i-arrow" /></svg></button>
             </div>
           </div>
 
@@ -1118,10 +1158,56 @@
     const dates = Array.from({ length: N.diasReserva }, (_, i) => { const d = new Date(today); d.setDate(d.getDate() + i); return d; });
     let day = null, slot = null;
 
-    $("#svc-list").innerHTML = N.servicios.map((s, ci) => `<div class="svc-group">${esc(s.nombre)}</div>` + s.tarifas.map((t, ti) => `
-      <label class="svc" for="svc-${ci}-${ti}"><input type="checkbox" id="svc-${ci}-${ti}" data-id="${ci}-${ti}" />
+    $("#svc-list").innerHTML = N.servicios.map((s, ci) => `<div class="svc-group" data-cat="${ci}">${esc(s.nombre)}</div>` + s.tarifas.map((t, ti) => `
+      <label class="svc" data-cat="${ci}" for="svc-${ci}-${ti}"><input type="checkbox" id="svc-${ci}-${ti}" data-id="${ci}-${ti}" />
         <span>${esc(t.nombre)}<small>${dur(t.min)}</small></span><span class="p num">${t.desde ? "desde " : ""}${euro(t.precio)}</span></label>`).join("")).join("");
     $("#svc-list").addEventListener("change", (e) => { if (e.target.dataset.id) toggle(e.target.dataset.id, e.target.checked); });
+
+    // Categorías de servicios (chips)
+    let cat = 0;
+    $("#svc-cats").innerHTML = N.servicios.map((sv, i) => `<button type="button" class="tab" data-c="${i}" aria-pressed="${i === 0}">${esc(sv.nombre)}<b class="cnt" hidden></b></button>`).join("");
+    function renderCats() {
+      $$("#svc-cats .tab").forEach((b) => {
+        const i = +b.dataset.c, n = [...selected].filter((id) => id.startsWith(i + "-")).length, cnt = b.querySelector(".cnt");
+        b.setAttribute("aria-pressed", String(i === cat)); cnt.hidden = !n; cnt.textContent = n;
+      });
+      $$("#svc-list [data-cat]").forEach((el) => (el.hidden = +el.dataset.cat !== cat));
+    }
+    $("#svc-cats").addEventListener("click", (e) => { const b = e.target.closest(".tab"); if (b) { cat = +b.dataset.c; renderCats(); } });
+
+    // Reserva por pasos: 1 servicios · 2 día y hora · 3 datos
+    let step = 1;
+    const stepOk = (n) => (n === 1 ? selected.size > 0 : n === 2 ? day != null && slot != null : true);
+    function wizRender() {
+      renderCats();
+      $$(".bstep[data-step]").forEach((b) => (b.hidden = +b.dataset.step !== step));
+      $$("#wiz li").forEach((li) => { const n = +li.dataset.s; li.classList.toggle("on", n === step); li.classList.toggle("ok", n < step); });
+      $("#wiz-bar").style.width = (step / 3) * 100 + "%";
+      $("#wiz-back").hidden = step === 1;
+      const nx = $("#wiz-next");
+      const narrow = matchMedia("(max-width: 1020px)").matches;
+      nx.hidden = step === 3 && !narrow; nx.disabled = !stepOk(step);
+      nx.querySelector("span").textContent = step === 3 ? "Revisar y confirmar" : step === 1
+        ? (selected.size ? `Continuar · ${selected.size} servicio${selected.size > 1 ? "s" : ""}` : "Elige un servicio")
+        : (stepOk(2) ? "Continuar" : "Elige día y hora");
+      $(".booking").classList.toggle("step-3", step === 3);
+    }
+    function goStep(n) {
+      step = n; wizRender();
+      const el = $("#reservar .booking"), top = el.getBoundingClientRect().top;
+      if (top < 0 || top > innerHeight * 0.5) el.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+    }
+    $("#wiz-next").addEventListener("click", () => {
+      if (step === 3) return $(".summary").scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+      if (stepOk(step)) goStep(step + 1);
+    });
+    addEventListener("resize", () => wizRender());
+    $("#wiz-back").addEventListener("click", () => goStep(step - 1));
+    $("#wiz").addEventListener("click", (e) => {
+      const li = e.target.closest("li"); if (!li) return;
+      const n = +li.dataset.s;
+      if (n < step || (n > step && [1, 2].slice(0, n - 1).every(stepOk))) goStep(n);
+    });
 
     function toggle(id, force) {
       const on = force ?? !selected.has(id);
@@ -1210,6 +1296,7 @@
       slot = +b.dataset.m;
       $$(".slot").forEach((x) => x.setAttribute("aria-pressed", x === b));
       update();
+      setTimeout(() => { if (step === 2 && stepOk(2)) goStep(3); }, 350);
     });
     ["#f-name", "#f-phone", "#f-note"].forEach((s) => $(s).addEventListener("input", update));
     $("#f-ok").addEventListener("change", update);
@@ -1277,6 +1364,7 @@
       $("#sum-note").textContent = ok
         ? (online ? "Pulsa «Confirmar reserva» y la cita quedará guardada al momento." : "Se abrirá WhatsApp con tu solicitud ya escrita. La cita queda reservada cuando te la confirmemos.")
         : "Para enviar la solicitud falta " + missing.join(", ").replace(/, ([^,]*)$/, " y $1") + ".";
+      wizRender();
     }
     $("#book-btn").addEventListener("click", async () => {
       const bk = $("#book-btn"), label = bk.querySelector("span"), note = $("#sum-note");
@@ -1317,7 +1405,7 @@
     });
     $("#done-again").addEventListener("click", () => {
       selected.clear(); $$("#svc-list input").forEach((c) => (c.checked = false));
-      day = null; slot = null; renderCalendar();
+      day = null; slot = null; step = 1; renderCalendar();
       $(".summary").classList.remove("is-done"); $("#done").hidden = true; $(".booking").classList.remove("locked");
       renderPrices(); renderSlots(); update();
       $("#reservar").scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" });
