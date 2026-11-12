@@ -937,6 +937,12 @@
       renderSlots(); update();
     });
 
+    // Explica por qué un día no tiene horas libres
+    function noSlotsReason(need, earliest) {
+      const lastClose = toMin(tramosDe(day).slice(-1)[0][1]);
+      if (earliest && earliest + need > lastClose) return `Hoy ya no quedan horas: reservamos con al menos 1 hora de antelación y hoy cerramos a las ${toHHMM(lastClose)}.`;
+      return `Ese día no hay un hueco seguido de ${dur(need)} antes del cierre.`;
+    }
     function renderSlots() {
       const box = $("#slots");
       if (!day) { box.innerHTML = `<p class="hint">Elige primero un día.</p>`; return; }
@@ -948,7 +954,7 @@
       if (slot != null && !list.includes(slot)) slot = null;
       box.innerHTML = list.length
         ? `<div class="slots">${list.map((m) => `<button class="slot" type="button" data-m="${m}" aria-pressed="${m === slot}">${toHHMM(m)}</button>`).join("")}</div>`
-        : `<p class="hint">Ese día no quedan horas para la duración de tu cita. Prueba otro día o escríbenos por WhatsApp.</p>`;
+        : `<p class="hint">${noSlotsReason(need, earliest)} Prueba otro día o escríbenos por WhatsApp.</p>`;
     }
     $("#slots").addEventListener("click", (e) => {
       const b = e.target.closest(".slot"); if (!b) return;
