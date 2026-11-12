@@ -160,7 +160,9 @@
     .about { display: grid; grid-template-columns: 1fr 1.05fr; gap: clamp(40px, 7vw, 96px); align-items: center; }
     .photo { position: relative; border-radius: 220px 220px 20px 20px; overflow: hidden; background-size: cover; background-position: center; aspect-ratio: 4 / 5; max-width: 100%; box-shadow: var(--shadow); }
     .photo.placeholder { background: radial-gradient(60% 45% at 50% 30%, rgba(217, 164, 143, .55), transparent 70%), linear-gradient(170deg, var(--brand-2), var(--brand-deep)); }
-    .photo.placeholder::after { content: "Tu foto aquí"; position: absolute; inset: auto 0 22px; text-align: center; font: italic 400 15px var(--serif); color: rgba(248,241,238,.6); }
+    .photo.placeholder::before { content: ""; position: absolute; left: 50%; top: 46%; width: 62%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; border: 1px solid rgba(248,241,238,.35); box-shadow: 0 0 0 26px rgba(248,241,238,.04), 0 0 0 52px rgba(248,241,238,.025); }
+    .photo.placeholder::after { content: attr(data-initial); position: absolute; left: 50%; top: 46%; transform: translate(-50%, -54%); font: italic 400 clamp(110px, 15vw, 190px)/1 var(--serif); color: var(--accent); }
+    .sum-note.sent { color: var(--ok); font-weight: 600; }
     .about .text { color: var(--muted); font-size: 17px; display: grid; gap: 16px; max-width: 58ch; }
     .signature { margin-top: 26px; font: italic 400 26px var(--serif); color: var(--accent-strong); }
     .values { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 40px; padding-top: 32px; border-top: 1px solid var(--border); }
@@ -820,7 +822,7 @@
 
       telefono: "+34 615 24 04 67",
       whatsapp: "34615240467",              // solo números, con prefijo del país
-      email: "hola@celia.es",               // ✏️
+      email: "",                           // ✏️ p. ej. "hola@peluqueriacelia.es" (vacío = no se muestra)
       direccion: "Calle Cristóbal Colón, 10, 29100 Coín, Málaga",
       datosLegales: "",                     // ✏️ p. ej. "Celia García López · NIF 00000000X"
       titular: "",                          // ✏️ nombre y apellidos (o razón social) para el aviso legal
@@ -894,9 +896,8 @@
       valoracion: null,
       // ✏️ Opiniones de EJEMPLO: cámbialas por reseñas reales antes de publicar.
       opiniones: [
-        { texto: "Por fin he encontrado una peluquería donde me escuchan. Salgo siempre encantada con el color.", autor: "Opinión de ejemplo", detalle: "Color" },
-        { texto: "Me peinaron para la boda de mi hermana y aguantó perfecto toda la noche.", autor: "Opinión de ejemplo", detalle: "Novias y eventos" },
-        { texto: "Trato cercano, ambiente agradable y muy profesionales. Totalmente recomendable.", autor: "Opinión de ejemplo", detalle: "Corte y peinado" },
+        // ✏️ Mientras esté vacío, la sección de opiniones no se muestra. Formato:
+        // { texto: "Salgo siempre encantada con el color.", autor: "María G.", detalle: "Reseña de Google" },
       ],
 
       // Horario: [apertura, cierre] en formato 24 h. Varios tramos: [["09:30","13:30"],["16:00","20:00"]]. Cerrado: [].
@@ -943,7 +944,7 @@
       ],
 
       tituloFinal: "¿Te apetece *un cambio*? Reserva hoy tu cita.",
-      redes: { instagram: "https://instagram.com/", facebook: "", tiktok: "" },   // ✏️ tus perfiles
+      redes: { instagram: "", facebook: "", tiktok: "" },   // ✏️ enlaces a tus perfiles, p. ej. "https://instagram.com/peluqueriacelia"
     };
 
     /* ================================================================
@@ -997,6 +998,10 @@
     // Fotos
     const setPhoto = (el, src) => (src ? (el.style.backgroundImage = `url("${src}")`) : el.classList.add("placeholder"));
     setPhoto($("#about-photo"), N.fotoNosotros);
+    $("#about-photo").dataset.initial = N.inicial;
+    // Ocultar lo que aún no tiene datos reales
+    if (!N.email) $$('[data-href="email"]').forEach((a) => (a.closest("li") || a).remove());
+    if (!N.opiniones.length) { $("#opiniones").hidden = true; $$('a[href="#opiniones"]').forEach((a) => (a.closest("li") || a).remove()); }
     if (N.galeria.length) {
       $("#galeria").hidden = false;
       $("#gallery").innerHTML = N.galeria.map((src) => `<figure style="background-image:url('${esc(src)}')"></figure>`).join("");
@@ -1168,6 +1173,11 @@
         ? "Se abrirá WhatsApp con tu solicitud ya escrita. La cita queda reservada cuando te la confirmemos."
         : "Para enviar la solicitud falta " + missing.join(", ").replace(/, ([^,]*)$/, " y $1") + ".";
     }
+    $("#send-wa").addEventListener("click", () => {
+      if ($("#send-wa").getAttribute("aria-disabled") === "true") return;
+      const note = $("#sum-note");
+      setTimeout(() => { note.textContent = "¡Listo! Pulsa enviar en WhatsApp y te confirmaremos la cita por ese mismo chat."; note.classList.add("sent"); }, 400);
+    });
     $("#copy-msg").addEventListener("click", async () => {
       const label = $("#copy-msg span");
       try { await navigator.clipboard.writeText(message); label.textContent = "Mensaje copiado"; }
@@ -1278,18 +1288,18 @@
     const legalTexts = {
       aviso: `<h2>Aviso legal</h2>
         <p>En cumplimiento de la Ley 34/2002, de Servicios de la Sociedad de la Información y de Comercio Electrónico (LSSI-CE), se informa de los datos del titular de esta web.</p>
-        <h3>Titular</h3><p>${pend(N.titular)} · NIF ${pend(N.nif)}<br>${esc(N.direccion)}<br>Teléfono ${esc(N.telefono)} · ${esc(N.email)}</p>
+        <h3>Titular</h3><p>${pend(N.titular)} · NIF ${pend(N.nif)}<br>${esc(N.direccion)}<br>Teléfono ${esc(N.telefono)}${N.email ? " · " + esc(N.email) : ""}</p>
         <h3>Actividad</h3><p>Servicios de peluquería y estética.</p>
         <h3>Uso de la web</h3><p>La información de esta web, incluidos horarios y precios, es orientativa y puede cambiar. Las citas pedidas desde la web quedan confirmadas solo cuando el salón responde confirmándolas.</p>
         <h3>Propiedad intelectual</h3><p>Los textos, imágenes y diseño de esta web pertenecen a su titular o se usan con permiso. No se permite reproducirlos sin autorización.</p>`,
       privacidad: `<h2>Política de privacidad</h2>
-        <h3>Responsable</h3><p>${pend(N.titular)} · NIF ${pend(N.nif)} · ${esc(N.direccion)} · ${esc(N.email)}</p>
+        <h3>Responsable</h3><p>${pend(N.titular)} · NIF ${pend(N.nif)} · ${esc(N.direccion)} · ${esc(N.email || N.telefono)}</p>
         <h3>Qué datos tratamos</h3><p>Los que nos envías al pedir cita o hacernos una consulta: nombre, teléfono, servicios elegidos, día y hora, y los comentarios que añadas.</p>
         <h3>Para qué los usamos</h3><p>Para gestionar tu cita y responder a tus consultas. No usamos tus datos para enviarte publicidad sin tu permiso.</p>
         <h3>Base legal</h3><p>Tu consentimiento al enviarnos la solicitud y, si vienes al salón, la prestación del servicio que nos pides.</p>
         <h3>Cuánto tiempo los guardamos</h3><p>Mientras sea necesario para atenderte y durante los plazos que exija la ley.</p>
         <h3>Con quién se comparten</h3><p>No cedemos tus datos a terceros salvo obligación legal. Las solicitudes se envían por WhatsApp, un servicio de WhatsApp Ireland Limited (Meta) con su propia política de privacidad.</p>
-        <h3>Tus derechos</h3><p>Puedes pedir el acceso, la rectificación, la supresión, la limitación o la oposición al tratamiento de tus datos, y su portabilidad, escribiendo a ${esc(N.email)}. Si consideras que no hemos atendido bien tu petición, puedes reclamar ante la Agencia Española de Protección de Datos (aepd.es).</p>`,
+        <h3>Tus derechos</h3><p>Puedes pedir el acceso, la rectificación, la supresión, la limitación o la oposición al tratamiento de tus datos, y su portabilidad, escribiendo a ${N.email ? esc(N.email) : "nuestro WhatsApp (" + esc(N.telefono) + ")"}. Si consideras que no hemos atendido bien tu petición, puedes reclamar ante la Agencia Española de Protección de Datos (aepd.es).</p>`,
       cookies: `<h2>Política de cookies</h2>
         <p>Esta web no instala cookies propias ni cookies de análisis o publicidad.</p>
         <h3>Servicios externos</h3><p>Para mostrar las tipografías y los efectos 3D, la web carga recursos de Google Fonts y de cdnjs (Cloudflare). Estos servicios pueden registrar datos técnicos de la conexión, como la dirección IP, según sus propias políticas.</p>
@@ -1642,7 +1652,7 @@
     const ld = document.createElement("script"); ld.type = "application/ld+json";
     ld.textContent = JSON.stringify({
       "@context": "https://schema.org", "@type": "HairSalon",
-      name: N.nombre, description: N.descripcion, telephone: N.telefono, email: N.email,
+      name: N.nombre, description: N.descripcion, telephone: N.telefono, email: N.email || undefined,
       address: { "@type": "PostalAddress", streetAddress: "Calle Cristóbal Colón, 10", postalCode: "29100", addressLocality: "Coín", addressRegion: "Málaga", addressCountry: "ES" },
       url: location.href, priceRange: "€€",
       openingHoursSpecification: Object.entries(N.horario).flatMap(([d, tr]) => tr.map(([a, b]) => ({ "@type": "OpeningHoursSpecification", dayOfWeek: diasSchema[d], opens: a, closes: b }))),
