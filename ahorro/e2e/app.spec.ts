@@ -79,7 +79,9 @@ test("mover dinero entre cuentas no es gasto", async ({ page }) => {
   const efectivo = await page.locator("#mv-to option", { hasText: "Efectivo" }).getAttribute("value");
   await page.locator("#mv-to").selectOption(efectivo!);
   await page.locator("dialog").getByLabel("Importe").fill("50");
-  await page.locator("dialog").getByRole("button", { name: "Mover", exact: true }).click();
+  await expect(page.locator("dialog").getByRole("button", { name: "Mover", exact: true })).toBeVisible();
+  // Se envía con Intro: en el navegador del servidor de CI el clic sobre la hoja animada es inestable.
+  await page.locator("dialog").getByLabel("Importe").press("Enter");
   await expect(page.getByText("Últimos traspasos")).toBeVisible();
   await expect(page.locator(".account", { hasText: "Efectivo" }).locator(".pot-amount")).toHaveText(/103,00\s€/);
   await page.goto("/#/"); await page.reload();
