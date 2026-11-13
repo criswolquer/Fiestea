@@ -70,7 +70,14 @@ async function boot(): Promise<void> {
 }
 
 if ("serviceWorker" in navigator && import.meta.env.PROD) {
-  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => { /* sin modo sin conexión */ }));
+  window.addEventListener("load", async () => {
+    try {
+      await navigator.serviceWorker.register("./sw.js");
+      const reg = await navigator.serviceWorker.ready;
+      const urls = [location.href.split("#")[0], ...performance.getEntriesByType("resource").map((r) => r.name)];
+      reg.active?.postMessage({ type: "cache-urls", urls });
+    } catch { /* sin modo sin conexión */ }
+  });
 }
 
 boot();
