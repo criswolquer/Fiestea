@@ -8,7 +8,8 @@
     "tokens": "node scripts/tokens.mjs",
     "dev": "npm run tokens && vite --host",
     "build": "npm run tokens && tsc && vite build",
-    "preview": "vite preview --host"
+    "preview": "vite preview --host",
+    "build:single": "npm run tokens && vite build --config vite.single.config.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",
