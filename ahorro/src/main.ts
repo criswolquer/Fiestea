@@ -4,6 +4,7 @@ import "./styles/app.css";
 import "./styles/design.css";
 import { route, render } from "./app/router";
 import { applyTheme } from "./app/util";
+import { enableCloud, startAutoSync } from "./data/cloud";
 import { closeFinishedMonths, getSettings, takeDueReminders } from "./data/repo";
 import { toast } from "./ui/components";
 import { designPage } from "./design";
@@ -52,6 +53,13 @@ async function boot(): Promise<void> {
   applyTheme(s.theme);
   window.addEventListener("hashchange", () => render(app));
   await render(app);
+  // Guardado en la nube: enlaza el dispositivo (la primera vez) y sincroniza solo.
+  startAutoSync(() => {
+    const path = location.hash.replace(/^#/, "").split("?")[0];
+    // No repintar mientras alguien escribe en un formulario.
+    if (!/^\/(nuevo|movimiento\/[^/]+\/editar|plan|ajustes|asistente|bienvenida)/.test(path)) render(app);
+  });
+  if (s.onboardedAt) enableCloud().catch(() => { /* sin conexión: se reintenta al volver a abrir */ });
   if (!s.onboardedAt) return;
   // Lo que en un servidor harían tareas programadas, aquí se hace al abrir la app.
   const recaps = await closeFinishedMonths();

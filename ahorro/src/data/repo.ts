@@ -379,7 +379,7 @@ export async function bumpUsage(kind: string): Promise<number> {
 export async function exportBackup(withPhotos: boolean): Promise<Blob> {
   const out: Record<string, unknown> = { app: "ahorro", version: 1, exportedAt: nowIso() };
   for (const s of db.STORES) {
-    if (s === "photos") continue;
+    if (s === "photos" || s === "outbox" || s === "meta") continue;
     out[s] = await db.entries(s);
   }
   if (withPhotos) {
@@ -395,6 +395,7 @@ export async function importBackup(file: File): Promise<{ transactions: number }
   if (data.app !== "ahorro") throw new Error("Ese archivo no es una copia de esta app.");
   const ops: db.Write[] = [];
   for (const s of db.STORES) {
+    if (s === "outbox" || s === "meta") continue;
     const rows = data[s] as [string, unknown][] | undefined;
     if (!Array.isArray(rows)) continue;
     for (const [k, v] of rows) ops.push(s === "photos" ? { store: s, key: k, value: await (await fetch(v as string)).blob() } : s === "usage" ? { store: s, key: k, value: v } : { store: s, value: v });
@@ -403,7 +404,7 @@ export async function importBackup(file: File): Promise<{ transactions: number }
   await db.write(ops);
   return { transactions: ((data.transactions as unknown[]) ?? []).length };
 }
-export const wipeAll = () => db.clearAll();
+export const wipeAll = () => db.clearAll({ includeMeta: true });
 function blobToDataUrl(b: Blob): Promise<string> {
   return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.onerror = () => rej(r.error); r.readAsDataURL(b); });
 }

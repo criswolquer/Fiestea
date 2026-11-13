@@ -3,10 +3,21 @@
 
 export type Store =
   | "settings" | "categories" | "transactions" | "photos" | "pots" | "potMovements"
-  | "monthPlans" | "notes" | "reminders" | "monthRecaps" | "reflections" | "assistantMessages" | "usage";
+  | "monthPlans" | "notes" | "reminders" | "monthRecaps" | "reflections" | "assistantMessages" | "usage"
+  | "outbox" | "meta";
 
 const DB_NAME = "ahorro";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
+
+/** Lo que se guarda en la nube. `usage` (contadores) se queda en el dispositivo. */
+export const SYNCED: Store[] = ["settings", "categories", "transactions", "photos", "pots", "potMovements",
+  "monthPlans", "notes", "reminders", "monthRecaps", "reflections", "assistantMessages"];
+export interface OutboxEntry { store: Store; key: string; at: string }
+export const outboxKey = (store: Store, key: string) => `${store}\u0000${key}`;
+
+let onLocalChange: (() => void) | null = null;
+/** La sincronización se apunta aquí para enterarse de cada cambio local. */
+export const setOnLocalChange = (fn: () => void) => { onLocalChange = fn; };
 
 const SCHEMA: Record<Store, { key?: string; indexes?: string[] }> = {
   settings: { key: "id" },
@@ -22,6 +33,8 @@ const SCHEMA: Record<Store, { key?: string; indexes?: string[] }> = {
   reflections: { key: "id", indexes: ["month"] },
   assistantMessages: { key: "id", indexes: ["createdAt"] },
   usage: {},
+  outbox: {},                                   // cambios pendientes de subir: clave = store + id
+  meta: {},                                     // estado de la sincronización
 };
 export const STORES = Object.keys(SCHEMA) as Store[];
 
@@ -87,8 +100,23 @@ export async function range<T>(s: Store, index: string, from: string, to: string
 
 export interface Write { store: Store; value?: unknown; key?: string; del?: boolean }
 
-/** Varias escrituras en una sola transacción: o se guardan todas o ninguna. */
-export async function write(ops: Write[]): Promise<void> {
+/** Varias escrituras en una sola transacción: o se guardan todas o ninguna.
+ *  Cada cambio de un almacén sincronizado se apunta en `outbox`, en la misma transacción,
+ *  salvo que venga de la nube (fromRemote). */
+export async function write(ops: Write[], opts: { fromRemote?: boolean } = {}): Promise<void> {
+  if (!opts.fromRemote) {
+    const at = new Date().toISOString();
+    const queued = ops.filter((o) => SYNCED.includes(o.store)).map((o) => {
+      const key = o.del || !SCHEMA[o.store].key ? o.key! : keyOf(o.store, o.value);
+      return { store: "outbox" as Store, key: outboxKey(o.store, key), value: { store: o.store, key, at } satisfies OutboxEntry };
+    });
+    ops = [...ops, ...queued];
+  }
+  await writeRaw(ops);
+  if (!opts.fromRemote && ops.some((o) => SYNCED.includes(o.store))) onLocalChange?.();
+}
+
+async function writeRaw(ops: Write[]): Promise<void> {
   const d = await open();
   if (!d) {
     for (const o of ops) {
@@ -110,12 +138,15 @@ export async function write(ops: Write[]): Promise<void> {
 
 export const put = (store: Store, value: unknown, key?: string) => write([{ store, value, key }]);
 export const del = (store: Store, key: string) => write([{ store, key, del: true }]);
+export const keyFor = (store: Store, value: unknown) => keyOf(store, value);
 
-export async function clearAll(): Promise<void> {
+/** Vacía los datos. `meta` (el enlace con la nube) solo se borra si se pide. */
+export async function clearAll(opts: { includeMeta?: boolean } = {}): Promise<void> {
+  const stores = STORES.filter((s) => opts.includeMeta || s !== "meta");
   const d = await open();
-  if (!d) { mem.clear(); return; }
-  const tx = d.transaction(STORES, "readwrite");
-  for (const s of STORES) tx.objectStore(s).clear();
+  if (!d) { stores.forEach((s) => mem.delete(s)); return; }
+  const tx = d.transaction(stores, "readwrite");
+  for (const s of stores) tx.objectStore(s).clear();
   await new Promise<void>((res, rej) => { tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error); });
 }
 

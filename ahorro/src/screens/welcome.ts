@@ -1,6 +1,8 @@
 // S01 Bienvenida + S02 tres preguntas. Se puede probar con datos de ejemplo antes de nada.
 import { ChartPie, Camera, Sparkles, type IconNode } from "lucide";
-import { ensureDefaultCategories, saveSettings } from "../data/repo";
+import { ensureDefaultCategories, getSettings, saveSettings } from "../data/repo";
+import { cloudConfigured, enableCloud } from "../data/cloud";
+import { joinSheet } from "./cloudui";
 import { loadDemo } from "../data/seed";
 import type { Settings } from "../data/types";
 import { button, toast } from "../ui/components";
@@ -37,7 +39,8 @@ export function welcomeScreen(): HTMLElement {
       body.append(dots(), h("span", { class: "welcome-icon" }, icon(s.icon, { size: 40 })), heading(s.title), h("p", { class: "welcome-text" }, s.text),
         h("div", { class: "welcome-actions" },
           button("Siguiente", { size: "lg", block: true, onClick: () => { step++; draw(); } }),
-          step === 0 ? button("Probar con datos de ejemplo", { variant: "ghost", block: true, onClick: demo }) : null));
+          step === 0 ? button("Probar con datos de ejemplo", { variant: "ghost", block: true, onClick: demo }) : null,
+          step === 0 && cloudConfigured() ? button("Ya la uso en otro móvil", { variant: "ghost", block: true, onClick: join }) : null));
     } else if (step < total) {
       const q = QUESTIONS[step - SLIDES.length];
       const fs = h("fieldset", { class: "options" }, h("legend", { class: "sr-only" }, q.title),
@@ -61,14 +64,21 @@ export function welcomeScreen(): HTMLElement {
     (body.querySelector("h1") as HTMLElement).focus();
   };
 
+  const linkCloud = () => enableCloud().catch(() => { /* se reintenta al abrir la app */ });
   const start = async () => {
     await ensureDefaultCategories();
     await saveSettings({ ...answers, onboardedAt: new Date().toISOString() });
+    linkCloud();
     go("#/primeros-pasos");
   };
   const demo = async () => {
-    try { await saveSettings(answers); await loadDemo(); toast("Datos de ejemplo cargados. Puedes borrarlos en Ajustes."); go("#/"); }
+    try { await saveSettings(answers); await loadDemo(); linkCloud(); toast("Datos de ejemplo cargados. Puedes borrarlos en Ajustes."); go("#/"); }
     catch (e) { toast(errorText(e), "danger"); }
+  };
+  const join = async () => {
+    if (!(await joinSheet())) return;
+    if ((await getSettings()).onboardedAt) go("#/");
+    else toast("Enlazado, pero aún no hay datos en la nube. Sigue con la bienvenida.", "info");
   };
 
   draw();

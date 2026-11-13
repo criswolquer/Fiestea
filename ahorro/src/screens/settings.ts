@@ -3,6 +3,8 @@ import { Download, Upload } from "lucide";
 import { getApiKey, setApiKey } from "../data/assistantLocal";
 import { isValidYmd } from "../data/dates";
 import { storageMode } from "../data/db";
+import { cloudConfigured, cloudStatus, deleteCloudData } from "../data/cloud";
+import { cloudSection } from "./cloudui";
 import { exportBackup, getSettings, importBackup, saveSettings, wipeAll } from "../data/repo";
 import type { Settings } from "../data/types";
 import { button, field, moneyField, parseMoney, segmented, setFieldError, toast } from "../ui/components";
@@ -76,8 +78,9 @@ export async function settingsScreen(): Promise<HTMLElement> {
     h("section", { class: "stack-sm" }, sectionTitle("Asistente"),
       h("p", { class: "muted" }, "Opcional. Con tu clave, el asistente responde preguntas sobre tus datos. Se envían a Anthropic tu apodo, tus cifras, categorías y conceptos; nunca tus fotos. Cada pregunta tiene un pequeño coste en tu cuenta."),
       keyForm),
+    await cloudSection(),
     h("section", { class: "stack-sm" }, sectionTitle("Tus datos"),
-      h("p", { class: "muted" }, `Todo se guarda en este dispositivo${mb ? ` (ahora ocupa unos ${mb} MB)` : ""}. Nada sale de aquí salvo lo que preguntes al asistente.`),
+      h("p", { class: "muted" }, `En este dispositivo ocupa unos ${mb ?? "0"} MB.${cloudConfigured() ? "" : " Nada sale de aquí salvo lo que preguntes al asistente."}`),
       storageMode() === "memory" ? h("p", { class: "field-msg error" }, "Este navegador no deja guardar datos: se perderán al cerrar.") : null,
       !standalone ? h("p", { class: "muted" }, "Consejo: añade la app a la pantalla de inicio (en iPhone: Compartir → Añadir a pantalla de inicio). Safari puede borrar los datos de webs sin instalar si no las usas en una semana.") : null,
       persisted === false && navigator.storage?.persist ? button("Pedir que no se borren mis datos", { variant: "secondary", onClick: async () => {
@@ -88,7 +91,9 @@ export async function settingsScreen(): Promise<HTMLElement> {
         button("Copia sin fotos", { variant: "ghost", icon: Download, onClick: () => backup(false) })),
       h("div", {}, restoreInput, h("label", { for: "restore", class: "btn btn-ghost btn-md" }, icon(Upload), h("span", {}, "Restaurar una copia"))),
       button("Borrar todos mis datos", { variant: "danger", onClick: async () => {
-        if (!(await confirmDialog("¿Borrar todo?", { ok: "Borrar todo", danger: true, detail: "Movimientos, fotos, huchas, notas y ajustes. No se puede deshacer. Si quieres, haz antes una copia." }))) return;
+        const linked = (await cloudStatus()).linked;
+        if (!(await confirmDialog("¿Borrar todo?", { ok: "Borrar todo", danger: true, detail: `Movimientos, fotos, huchas, notas y ajustes${linked ? ", aquí y en la nube (también desaparecen de tus otros móviles enlazados)" : ""}. No se puede deshacer. Si quieres, haz antes una copia.` }))) return;
+        try { await deleteCloudData(); } catch (e) { toast(`${errorText(e)} No se ha borrado nada.`, "danger"); return; }
         await wipeAll(); setApiKey(""); toast("Datos borrados"); location.hash = "#/bienvenida";
       } })),
     h("section", { class: "stack-sm" }, sectionTitle("Acerca de"),

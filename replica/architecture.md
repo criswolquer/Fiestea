@@ -87,6 +87,12 @@ Fórmulas (el recon no las veía; decisión propia):
 - Patrimonio = capital líquido + Σ de los saldos de las huchas.
 - Mes "en verde" = Ingresado > Gastado.
 
+## Actualización 2026-11-13: guardado en la nube sin cuentas
+
+Hecho con Supabase (usuarios anónimos + un «espacio» por persona + tabla genérica `records`),
+sin registro ni pagos. Detalle, pasos de configuración y pruebas en `replica/backend.md`.
+El esquema tipado de abajo queda para cuando haya cuentas, cobros o consultas en el servidor.
+
 ## Schema (fases 4-5)
 
 Tablas: 14 (`profiles`, `categories`, `transactions`, `pots`, `pot_movements`, `month_plans`, `notes`,

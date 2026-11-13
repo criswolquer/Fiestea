@@ -10,6 +10,7 @@ import { screen, sectionTitle } from "../app/layout";
 import { go, photoUrl } from "../app/util";
 import type { Query } from "../app/router";
 import { newTxButton } from "./txform";
+import { cloudBanner } from "./cloudui";
 import { firstStepsCard } from "./firststeps";
 
 
@@ -44,6 +45,7 @@ export async function homeScreen(_: string[], q: Query): Promise<HTMLElement> {
 
   const unseen = recaps.find((r) => !r.seenAt);
   const banners = h("div", { class: "stack-sm" },
+    await cloudBanner(),
     storageMode() === "memory" ? banner("Este navegador no deja guardar datos: lo que apuntes se perderá al cerrar.", "danger") : null,
     unseen ? banner(`Tu resumen de ${monthLabel(unseen.month, { year: false })} está listo.`, "success",
       h("a", { class: "btn btn-secondary btn-sm", href: `#/resumen/${unseen.month}?auto=1` }, "Verlo")) : null,
