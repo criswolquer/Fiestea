@@ -1,0 +1,53 @@
+feature,area,priority,original,clone,notes
+Registro con email,cuenta,must,yes,no,S03; el original también ofrece Apple y Google
+Tour guiado antes de crear cuenta,onboarding,should,yes,no,S01 (v2.2)
+Cuestionario inicial (objetivo / cómo llevas tus finanzas / ahorro deseado),onboarding,should,yes,no,S02; adapta el inicio
+Primeros pasos: capital inicial / ahorros / inversiones / categorías (se puede saltar),onboarding,must,yes,no,S04
+Inicio con balance del mes y 4 cifras (ingresado / gastado / ahorrado / invertido),inicio,must,yes,no,S06; el núcleo
+Cambiar de mes,inicio,must,yes,no,S06 selector de mes
+Añadir gasto o ingreso (importe / categoría / título / fecha / nota),transacciones,must,yes,no,S07; F02 en ~6 toques
+Foto en la transacción (cámara o galería) guardada solo en el dispositivo,transacciones,must,yes,no,S07; lo que diferencia al original
+Editar y borrar transacciones,transacciones,must,yes,no,S08 inferido
+Categorías personalizables (con tipo fijo / discrecional / deuda),categorías,must,yes,no,S09
+Gráfico donut de gastos e ingresos por categoría,análisis,must,yes,no,S09
+Barras de gasto por día,análisis,should,yes,no,S09
+Reparto fijo / discrecional / deuda,análisis,should,yes,no,S09
+Tocar categoría y ver sus movimientos con fotos,análisis,should,yes,no,S10 (v1.2.1)
+Límites de gasto por categoría con disponible,límites,must,yes,no,S11
+Aviso y ajuste proporcional si los límites no cuadran,límites,could,yes,no,S11 (v1.2)
+Capital total: ahorros e inversiones separados + capital líquido,patrimonio,must,yes,no,S12
+Aportes y retiradas a ahorro e inversión,patrimonio,must,yes,no,S13
+Metas de ahorro e inversión con aviso al cumplirlas,patrimonio,should,yes,no,S13 (v1.3)
+Planificación del mes en % o cantidad,planificación,must,yes,no,S14
+Comparar plan y realidad al final del mes,planificación,should,yes,no,S14 + S18
+Calendario del mes con movimientos por día,calendario,must,yes,no,S15
+Notas en un día del calendario,calendario,should,yes,no,S15
+Recordatorios únicos / semanales / mensuales,recordatorios,could,yes,no,S16; en web necesitan push
+Recap mensual tipo historias con fotos,recap,must,yes,no,S18; lo que se vende
+Preguntas de reflexión del recap,recap,should,yes,no,S18; generadas con IA en el original
+Hace un mes (recuerdo),recap,could,yes,no,S19 (v2.0)
+Rachas (días abriendo la app / movimientos con foto / meses en verde),rachas,could,yes,no,S20
+Asistente financiero con IA sobre tus datos,asistente,should,yes,no,S17; Premium; enviar solo resumen
+Saludo diario del asistente con datos reales,asistente,could,yes,no,S17 (v2.0)
+Dictado por voz (español e inglés),asistente,could,yes,no,Web Speech API; irregular en Safari
+Límite diario de mensajes al asistente (gratis),asistente,should,yes,no,contadores de uso
+Reporte mensual en PDF,reportes,should,yes,no,S21; Premium
+Suscripción mensual y anual con prueba gratis,pagos,must,yes,no,S05; Stripe en web en vez de Apple
+Límites del plan gratis y avisos para pasar a Premium,pagos,should,yes,no,topes exactos desconocidos
+Funciona sin conexión y sincroniza,plataforma,must,yes,no,IndexedDB + cola de sincronización
+Instalable como app (PWA),plataforma,must,no,no,sustituye a la app nativa
+Eliminar cuenta y borrar datos,cuenta,must,yes,no,S23; RGPD
+Perfil y ajustes (nombre / idioma / notificaciones / ayuda / feedback),cuenta,should,yes,no,S23
+Interfaz en inglés,cuenta,could,yes,no,el original es ES/EN; clon en español primero
+Notificaciones personalizadas con IA,notificaciones,could,yes,no,Web Push solo con PWA instalada en iOS
+Compartir la foto de un movimiento en historias,social,could,yes,no,Web Share API
+Inicio de sesión con Apple y Google,cuenta,could,yes,no,posible en web con tus propias apps OAuth
+Widgets de rachas en pantalla de inicio y bloqueo,plataforma,could,yes,skip,no existen en la web
+Atajo de iOS para crear transacción,plataforma,could,yes,skip,no existe en la web; acceso directo de la PWA como sustituto
+Pagos con compras dentro de la app de Apple,pagos,could,yes,skip,la web usa Stripe
+Mascota animada del asistente,marca,could,yes,skip,es de su marca; hacer una propia o ninguna
+Marca / logo / colores / tipografía / textos del original,marca,could,yes,skip,reservados por sus términos (§11)
+Sección de educación financiera,contenido,could,no,skip,en el original es "próximamente"; es contenido
+Boletín semanal / Instagram / YouTube,contenido,could,yes,skip,contenido y comunidad
+Conexión con bancos,integraciones,could,no,skip,el original no la tiene
+Sus usuarios y valoraciones,red,could,yes,skip,no se pueden clonar
