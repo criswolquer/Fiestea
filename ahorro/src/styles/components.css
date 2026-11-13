@@ -16,7 +16,7 @@ a { color: var(--accent); }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
 
 /* Botones */
-.btn {
+.btn { text-decoration: none;
   display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
   border: 1px solid transparent; border-radius: var(--radius-pill); cursor: pointer;
   font-size: var(--text-sm); font-weight: 600; line-height: 1; white-space: nowrap;
@@ -110,7 +110,7 @@ button.tile { cursor: pointer; }
 .limit-near .limit-left-value { color: var(--warning); }
 .limit-over .limit-left-value { color: var(--danger); }
 
-.tx-row { width: 100%; display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: var(--surface); border: 0; border-radius: var(--radius-md); text-align: left; cursor: pointer; }
+.tx-row { color: var(--text); text-decoration: none; width: 100%; display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: var(--surface); border: 0; border-radius: var(--radius-md); text-align: left; cursor: pointer; }
 .tx-thumb { width: 44px; height: 44px; border-radius: var(--radius-md); object-fit: cover; flex: none; }
 .tx-thumb-empty { display: grid; place-content: center; background: var(--surface-2); color: var(--text-muted); font-weight: 700; }
 .tx-main { flex: 1; display: grid; min-width: 0; }

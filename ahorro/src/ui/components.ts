@@ -34,13 +34,15 @@ export function button(
 /* Campos ----------------------------------------------------------------- */
 export function field(
   label: string,
-  o: { type?: string; value?: string; placeholder?: string; hint?: string; error?: string;
+  o: { type?: string; value?: string; placeholder?: string; hint?: string; error?: string; name?: string; required?: boolean;
+       maxlength?: number; min?: string; max?: string; autocomplete?: string;
        inputmode?: string; suffix?: string; big?: boolean; disabled?: boolean } = {},
 ): HTMLDivElement {
   const id = nextId("f");
   const hintId = o.hint || o.error ? `${id}-msg` : undefined;
   const input = h("input", {
-    id, type: o.type ?? "text", value: o.value, placeholder: o.placeholder,
+    id, type: o.type ?? "text", value: o.value, placeholder: o.placeholder, name: o.name, required: o.required,
+    maxlength: o.maxlength, min: o.min, max: o.max, autocomplete: o.autocomplete ?? "off",
     inputmode: o.inputmode, disabled: o.disabled,
     "aria-invalid": o.error ? "true" : undefined, "aria-describedby": hintId,
     class: `input${o.big ? " input-big" : ""}`,
@@ -48,12 +50,29 @@ export function field(
   return h("div", { class: `field${o.error ? " field-error" : ""}` },
     h("label", { for: id, class: "field-label" }, label),
     h("div", { class: "input-wrap" }, input, o.suffix ? h("span", { class: "input-suffix", "aria-hidden": "true" }, o.suffix) : null),
-    hintId ? h("p", { id: hintId, class: o.error ? "field-msg error" : "field-msg" }, o.error ?? o.hint) : null,
+    h("p", { id: hintId ?? `${id}-msg`, class: o.error ? "field-msg error" : "field-msg", hidden: !(o.hint || o.error), "data-hint": o.hint }, o.error ?? o.hint ?? ""),
   );
 }
 
+/** Marca un campo con error (o lo limpia con null) sin rehacerlo. */
+export function setFieldError(f: HTMLElement, msg: string | null): void {
+  const input = f.querySelector("input, textarea, select") as HTMLElement | null;
+  const p = f.querySelector(".field-msg") as HTMLElement | null;
+  if (!input || !p) return;
+  f.classList.toggle("field-error", !!msg);
+  if (msg) {
+    input.setAttribute("aria-invalid", "true");
+    input.setAttribute("aria-describedby", p.id);
+    p.textContent = msg; p.classList.add("error"); p.hidden = false;
+  } else {
+    input.removeAttribute("aria-invalid");
+    p.classList.remove("error");
+    if (!p.dataset.hint) p.hidden = true; else p.textContent = p.dataset.hint;
+  }
+}
+
 /** Importe: teclado decimal, acepta "12,50", "12.50", "1.234,56", "12€". */
-export function moneyField(label: string, o: { value?: string; error?: string; big?: boolean } = {}): HTMLDivElement {
+export function moneyField(label: string, o: { value?: string; error?: string; big?: boolean; name?: string; required?: boolean; hint?: string } = {}): HTMLDivElement {
   return field(label, { inputmode: "decimal", placeholder: "0,00", suffix: "€", ...o });
 }
 
@@ -227,22 +246,25 @@ export function sheet(title: string, body: Node, o: { footer?: Node } = {}): HTM
 }
 
 /* Selector de foto -------------------------------------------------------------- */
-export function photoPicker(o: { onChange?: (file: File | null) => void } = {}): HTMLElement {
+export function photoPicker(o: { onChange?: (file: File | null) => void; initialUrl?: string } = {}): HTMLElement {
   const wrap = h("div", { class: "photo-picker" });
   const camId = nextId("cam"), galId = nextId("gal");
-  const render = (file: File | null) => {
+  const render = (url: string | null) => {
     wrap.replaceChildren();
-    if (file) {
-      const url = URL.createObjectURL(file);
+    if (url) {
       wrap.append(h("div", { class: "photo-preview" },
         h("img", { src: url, alt: "Foto del movimiento" }),
-        button("Quitar foto", { variant: "secondary", size: "sm", iconOnly: true, icon: X, onClick: () => { URL.revokeObjectURL(url); render(null); o.onChange?.(null); } }),
+        button("Quitar foto", { variant: "secondary", size: "sm", iconOnly: true, icon: X, onClick: () => { render(null); o.onChange?.(null); (wrap.querySelector("label") as HTMLElement | null)?.focus(); } }),
       ));
       return;
     }
     const pick = (capture: boolean) => {
       const input = h("input", { type: "file", accept: "image/*", id: capture ? camId : galId, class: "sr-only", capture: capture ? "environment" : undefined });
-      input.addEventListener("change", () => { const f = input.files?.[0] ?? null; render(f); o.onChange?.(f); });
+      input.addEventListener("change", () => {
+        const f = input.files?.[0] ?? null;
+        if (!f) return;
+        render(URL.createObjectURL(f)); o.onChange?.(f);
+      });
       return input;
     };
     const cam = pick(true), gal = pick(false);
@@ -251,7 +273,7 @@ export function photoPicker(o: { onChange?: (file: File | null) => void } = {}):
       h("label", { for: galId, class: "photo-btn" }, icon(ImageIcon), h("span", {}, "De la galería")),
     );
   };
-  render(null);
+  render(o.initialUrl ?? null);
   return wrap;
 }
 
