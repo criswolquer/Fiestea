@@ -132,6 +132,7 @@ export async function infoScreen(_: string[], q: Query): Promise<HTMLElement> {
       h("dt", {}, "Gastado"), h("dd", {}, `Todos los gastos: ${money(s.expenseCents)}.`),
       h("dt", {}, "Ahorrado"), h("dd", {}, `Lo que metiste en huchas de ahorro menos lo que sacaste: ${money(s.savedCents)}.`),
       h("dt", {}, "Invertido"), h("dd", {}, `Igual, en tus huchas de inversión: ${money(s.investedCents)}.`),
-      h("dt", {}, "Te queda"), h("dd", {}, `Entró − gastado − ahorrado − invertido = ${money(s.balanceCents)}. Es lo que aún puedes usar este mes sin tocar tus huchas.`)),
-    h("p", { class: "muted" }, "Los saldos que ya tenías al empezar no cuentan como ahorro del mes. Tampoco es asesoramiento financiero: solo tus números, ordenados."));
+      h("dt", {}, "Te sobra"), h("dd", {}, `Entró − gastado = ${money(s.balanceCents)}. Ahorrar o invertir no es gastar: no lo resta.`),
+      h("dt", {}, "Apartado"), h("dd", {}, `Ahorrado + invertido = ${money(s.savedCents + s.investedCents)}. Sale de tu dinero disponible, pero sigue siendo tuyo (lo ves en Patrimonio).`)),
+    h("p", { class: "muted" }, "Lo que ya tenías ahorrado o invertido antes («Ya lo tenía») no cuenta como apartado ese mes. Esto no es asesoramiento financiero: solo tus números, ordenados."));
 }

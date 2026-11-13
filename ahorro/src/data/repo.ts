@@ -161,6 +161,11 @@ export async function addPotMovement(potId: string, kind: PotMovement["kind"], a
   await db.write([{ store: "potMovements", value: m }, ...(goalReached ? [{ store: "pots" as const, value: { ...pot, goalReachedAt: nowIso(), updatedAt: nowIso() } }] : [])]);
   return { goalReached };
 }
+/** Marca un aporte como dinero que ya tenías (no sale del disponible ni cuenta como aportado ese mes). */
+export async function setPotMovementInitial(id: string, initial: boolean): Promise<void> {
+  const m = (await db.getAll<PotMovement>("potMovements")).find((x) => x.id === id);
+  if (m) await db.put("potMovements", { ...m, initial: initial || undefined, updatedAt: nowIso() });
+}
 export async function deletePotMovement(id: string): Promise<void> {
   const all = await db.getAll<PotMovement>("potMovements"); const m = all.find((x) => x.id === id);
   if (m) await db.put("potMovements", { ...m, deletedAt: nowIso(), updatedAt: nowIso() });
@@ -181,7 +186,8 @@ export async function monthSummary(month: Month): Promise<MonthSummary> {
   const spentBy = new Map<string, number>();
   for (const t of txs) if (t.type === "expense" && t.categoryId) spentBy.set(t.categoryId, (spentBy.get(t.categoryId) ?? 0) + t.amountCents);
   const limits = cats.filter((c) => c.monthlyLimitCents).map((c) => ({ category: c, spentCents: spentBy.get(c.id) ?? 0, limitCents: c.monthlyLimitCents! }));
-  return { month, incomeCents, expenseCents, savedCents, investedCents, balanceCents: incomeCents - expenseCents - savedCents - investedCents, txCount: txs.length, limits };
+  // Lo que sobra = entró − gastado. Ahorrar o invertir no es gastar: se cuenta aparte (savedCents, investedCents).
+  return { month, incomeCents, expenseCents, savedCents, investedCents, balanceCents: incomeCents - expenseCents, txCount: txs.length, limits };
 }
 
 export interface Breakdown { segments: { category: Category | null; cents: number }[]; byKind: Record<CategoryKind, number>; byDay: number[]; totalCents: number }
@@ -290,7 +296,7 @@ export async function buildSummary(month: Month): Promise<RecapSummary> {
   void cats;
   return {
     month, incomeCents: s.incomeCents, expenseCents: s.expenseCents, savedCents: s.savedCents, investedCents: s.investedCents, balanceCents: s.balanceCents,
-    liquidStartCents: w, liquidEndCents: w + s.balanceCents, txCount: txs.length,
+    liquidStartCents: w, liquidEndCents: w + s.balanceCents - s.savedCents - s.investedCents, txCount: txs.length,
     photoTxIds: txs.filter((t) => t.hasPhoto).map((t) => t.id).slice(0, 12),
     topCategory: top ? { name: top.category!.name, cents: top.cents } : null,
     biggestExpense: biggest ? { title: biggest.title || "Sin concepto", cents: biggest.amountCents, occurredOn: biggest.occurredOn } : null,
