@@ -473,3 +473,30 @@ export function assistantFab(onClick?: () => void): HTMLButtonElement {
   b.classList.add("assistant-fab");
   return b;
 }
+
+/* Evolución (línea con área) ---------------------------------------------------------- */
+export function lineChart(points: { label: string; value: number }[], o: { color: string; label: string; format: (v: number) => string }): HTMLElement {
+  const W = 320, H = 140, padT = 12, padB = 22, padX = 6;
+  if (points.length < 2) return h("p", { class: "muted small" }, "Aún no hay suficientes meses para ver la evolución.");
+  const vals = points.map((p) => p.value);
+  let min = Math.min(...vals), max = Math.max(...vals);
+  if (min === max) { min -= Math.abs(min) * 0.1 + 1; max += Math.abs(max) * 0.1 + 1; }
+  const x = (i: number) => padX + (i * (W - 2 * padX)) / (points.length - 1);
+  const y = (v: number) => padT + (1 - (v - min) / (max - min)) * (H - padT - padB);
+  const line = points.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p.value).toFixed(1)}`).join(" ");
+  const area = `${line} L${x(points.length - 1).toFixed(1)},${H - padB} L${x(0).toFixed(1)},${H - padB} Z`;
+  const svg = s("svg", { viewBox: `0 0 ${W} ${H}`, class: "line-chart", "aria-hidden": "true" });
+  const gid = nextId("grad");
+  const defs = s("defs"); const grad = s("linearGradient", { id: gid, x1: 0, y1: 0, x2: 0, y2: 1 });
+  grad.append(s("stop", { offset: "0%", "stop-color": `var(--${o.color})`, "stop-opacity": .35 }), s("stop", { offset: "100%", "stop-color": `var(--${o.color})`, "stop-opacity": 0 }));
+  defs.append(grad); svg.append(defs);
+  svg.append(s("line", { x1: padX, y1: H - padB, x2: W - padX, y2: H - padB, stroke: "var(--border)" }));
+  svg.append(s("path", { d: area, fill: `url(#${gid})` }), s("path", { d: line, fill: "none", stroke: `var(--${o.color})`, "stroke-width": 2.5, "stroke-linejoin": "round", "stroke-linecap": "round" }));
+  const last = points.length - 1;
+  svg.append(s("circle", { cx: x(last), cy: y(points[last].value), r: 4.5, fill: `var(--${o.color})`, stroke: "var(--surface)", "stroke-width": 2 }));
+  points.forEach((p, i) => { if (i === 0 || i === last || (points.length > 6 && i === Math.floor(last / 2))) {
+    const tx = s("text", { x: x(i), y: H - 6, "text-anchor": i === 0 ? "start" : i === last ? "end" : "middle", class: "chart-label" }); tx.textContent = p.label; svg.append(tx); } });
+  const first = points[0].value, end = points[last].value, diff = end - first;
+  return h("figure", { class: "line-fig", role: "img", "aria-label": `${o.label}: de ${o.format(first)} en ${points[0].label} a ${o.format(end)} en ${points[last].label}` },
+    svg, h("figcaption", { class: "muted small" }, `${diff >= 0 ? "+" : "−"}${o.format(Math.abs(diff))} desde ${points[0].label}`));
+}

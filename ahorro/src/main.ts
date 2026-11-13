@@ -7,7 +7,7 @@ import "./styles/polish.css";
 import { route, render } from "./app/router";
 import { applyTheme } from "./app/util";
 import { enableCloud, startAutoSync } from "./data/cloud";
-import { closeFinishedMonths, getSettings, takeDueReminders } from "./data/repo";
+import { closeFinishedMonths, generateRecurring, getSettings, takeDueReminders } from "./data/repo";
 import { toast } from "./ui/components";
 import { designPage } from "./design";
 import { homeScreen } from "./screens/home";
@@ -25,6 +25,8 @@ import { assistantScreen } from "./screens/assistant";
 import { settingsScreen } from "./screens/settings";
 import { accountsScreen, importScreen } from "./screens/accounts";
 import { setupAccountsScreen } from "./screens/setupaccounts";
+import { recurringScreen } from "./screens/recurring";
+import { privacyScreen } from "./screens/privacy";
 
 route("/", homeScreen);                              // S06
 route("/bienvenida", welcomeScreen);                 // S01, S02
@@ -51,6 +53,8 @@ route("/ajustes", settingsScreen);                   // S23
 route("/cuentas", accountsScreen);                   // cuentas y saldos
 route("/importar", importScreen);                    // importar extracto del banco
 route("/configurar-cuentas", setupAccountsScreen);   // configuración guiada de cuentas
+route("/fijos", recurringScreen);                    // movimientos fijos
+route("/privacidad", privacyScreen);                 // política de privacidad
 route("/design", designPage);                        // sistema de diseño
 
 const app = document.getElementById("app")!;
@@ -58,6 +62,7 @@ const app = document.getElementById("app")!;
 async function boot(): Promise<void> {
   const s = await getSettings();
   applyTheme(s.theme);
+  if (s.onboardedAt) await generateRecurring().catch((e) => console.warn("Fijos", e));   // los fijos que ya tocaban
   window.addEventListener("hashchange", () => render(app));
   await render(app);
   // Guardado en la nube: enlaza el dispositivo (la primera vez) y sincroniza solo.

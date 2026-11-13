@@ -27,6 +27,14 @@ jobs:
       - run: npm run build
       # Ahorro: segunda app del repositorio, publicada en /ahorro/ dentro de la misma web.
       - run: npm ci --prefix ahorro
+      # Pruebas de Ahorro: si alguna falla, no se publica.
+      - run: npm run test:db --prefix ahorro
+      - run: npx playwright install --with-deps chromium
+        working-directory: ahorro
+      - run: npx playwright test
+        working-directory: ahorro
+        env:
+          CI: "1"
       - run: npm run build --prefix ahorro
         env:
           # Opcional: si se definen estas variables del repositorio, la app guarda también en la nube (ver replica/backend.md).

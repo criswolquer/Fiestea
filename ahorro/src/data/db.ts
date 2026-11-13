@@ -4,13 +4,13 @@
 export type Store =
   | "settings" | "categories" | "transactions" | "photos" | "pots" | "potMovements"
   | "monthPlans" | "notes" | "reminders" | "monthRecaps" | "reflections" | "assistantMessages" | "usage"
-  | "outbox" | "meta" | "accounts";
+  | "outbox" | "meta" | "accounts" | "recurring" | "transfers";
 
 const DB_NAME = "ahorro";
-const DB_VERSION = 3;
+const DB_VERSION = 5;
 
 /** Lo que se guarda en la nube. `usage` (contadores) se queda en el dispositivo. */
-export const SYNCED: Store[] = ["settings", "accounts", "categories", "transactions", "photos", "pots", "potMovements",
+export const SYNCED: Store[] = ["settings", "accounts", "recurring", "transfers", "categories", "transactions", "photos", "pots", "potMovements",
   "monthPlans", "notes", "reminders", "monthRecaps", "reflections", "assistantMessages"];
 export interface OutboxEntry { store: Store; key: string; at: string }
 export const outboxKey = (store: Store, key: string) => `${store}\u0000${key}`;
@@ -34,6 +34,8 @@ const SCHEMA: Record<Store, { key?: string; indexes?: string[] }> = {
   assistantMessages: { key: "id", indexes: ["createdAt"] },
   usage: {},
   accounts: { key: "id" },
+  recurring: { key: "id" },
+  transfers: { key: "id", indexes: ["occurredOn"] },
   outbox: {},                                   // cambios pendientes de subir: clave = store + id
   meta: {},                                     // estado de la sincronización
 };

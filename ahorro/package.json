@@ -10,7 +10,9 @@
     "build": "npm run tokens && tsc && vite build",
     "preview": "vite preview --host",
     "build:single": "npm run tokens && vite build --config vite.single.config.ts",
-    "test:db": "node --test supabase/tests/rls.test.mjs"
+    "test:db": "node --test supabase/tests/rls.test.mjs",
+    "test:e2e": "playwright test",
+    "test": "npm run test:db && npm run test:e2e"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",
@@ -21,6 +23,7 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.2.17",
+    "@playwright/test": "^1.63.0",
     "typescript": "^5.9.3",
     "vite": "^6.4.6"
   }

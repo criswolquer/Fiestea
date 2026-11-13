@@ -26,6 +26,8 @@ export interface Settings {
   /** Concepto de extracto normalizado → categoría elegida (para adivinar en la próxima importación). */
   importRules?: Record<string, string>;
   accountsSetupDone?: boolean;   // ya pasó por «Configura tus cuentas»
+  lastBackupAt?: string;         // última copia de seguridad descargada
+  lastAccountId?: string;        // última cuenta usada al apuntar
   updatedAt: string;
 }
 
@@ -74,7 +76,9 @@ export interface Pot extends Synced {
   name: string;
   goalCents: number | null;
   goalReachedAt?: string;
-  institution?: string;      // banco o entidad donde está («MyInvestor», «Trade Republic»…)
+  institution?: string;      // banco o entidad donde está
+  /** Inversión: lo que vale (lo actualiza la persona). Si falta, se usa lo aportado. */
+  valueHistory?: { on: Ymd; cents: number }[];
   createdAt: string;
 }
 
@@ -100,6 +104,32 @@ export interface MonthPlan {
   savingsBp: number;
   investmentsBp: number;
   updatedAt: string;
+}
+
+/** Dinero que pasa de una cuenta tuya a otra (no es gasto ni ingreso). */
+export interface Transfer extends Synced {
+  id: string;
+  fromAccountId: string;
+  toAccountId: string;
+  amountCents: number;
+  occurredOn: Ymd;
+  note: string;
+  importKey?: string;
+  createdAt: string;
+}
+
+/** Movimiento fijo que se apunta solo cada mes (alquiler, nómina, suscripciones…). */
+export interface Recurring extends Synced {
+  id: string;
+  type: TxType;
+  amountCents: number;
+  categoryId: string | null;
+  title: string;
+  accountId?: string;
+  dayOfMonth: number;        // 1-31 (31 = último día del mes)
+  startMonth: Month;         // primer mes en que se apunta
+  active: boolean;
+  createdAt: string;
 }
 
 export interface Note extends Synced { id: string; onDate: Ymd; text: string; createdAt: string }

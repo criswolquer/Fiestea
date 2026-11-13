@@ -32,3 +32,4 @@ Las capturas están en `replica/clone-screens/` para replica-diff.
 | S23 Ajustes | 2026-11-13 | hecho | «Eliminar cuenta» es «Borrar todo» mientras no haya cuentas | — |
 | extra: categorías, lista del mes | 2026-11-13 | hecho | — | — |
 | extra: cuentas e importar extracto | 2026-11-13 | hecho | Conexión automática con el banco (necesitaría un agregador bancario autorizado y servidor) | El lector de Excel se ha escrito sin librerías (zip + XML) para no arrastrar dependencias con vulnerabilidades |
+| extra: fijos, puedes gastar al día, mover dinero, valor de inversión, bienvenida corta, privacidad, pruebas automáticas | 2026-11-15 | hecho | Recordatorio diario (servidor de notificaciones), gastos compartidos (cuentas) | Las pruebas destaparon que el primer gasto sin ingresos salía como «gastado de más»: corregido |

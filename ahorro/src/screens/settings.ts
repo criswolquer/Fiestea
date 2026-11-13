@@ -65,6 +65,7 @@ export async function settingsScreen(): Promise<HTMLElement> {
     h("section", { class: "stack-sm" }, sectionTitle("Organización"),
       h("ul", { class: "list" },
         h("li", {}, h("a", { class: "plain-row as-button", href: "#/cuentas?volver=%23%2Fajustes" }, h("span", { class: "cat-name" }, "Cuentas y saldos"), h("span", { class: "muted" }, "Bancos, efectivo, importar"))),
+        h("li", {}, h("a", { class: "plain-row as-button", href: "#/fijos?volver=%23%2Fajustes" }, h("span", { class: "cat-name" }, "Fijos del mes"), h("span", { class: "muted" }, "Se apuntan solos"))),
         h("li", {}, h("a", { class: "plain-row as-button", href: "#/categorias" }, h("span", { class: "cat-name" }, "Categorías"), h("span", { class: "muted" }, "Crear, cambiar, archivar"))),
         h("li", {}, h("a", { class: "plain-row as-button", href: "#/limites" }, h("span", { class: "cat-name" }, "Límites por categoría"))),
         h("li", {}, h("a", { class: "plain-row as-button", href: "#/primeros-pasos" }, h("span", { class: "cat-name" }, "Primeros pasos"))))),
@@ -91,6 +92,7 @@ export async function settingsScreen(): Promise<HTMLElement> {
       } })),
     h("section", { class: "stack-sm" }, sectionTitle("Acerca de"),
       h("p", { class: "muted" }, "Esta app te ayuda a organizar tu dinero. No es asesoramiento financiero, fiscal ni de inversión."),
-      h("p", { class: "muted" }, "Iconos: Lucide (licencia ISC).")),
+      h("p", {}, h("a", { href: "#/privacidad" }, "Privacidad: qué se guarda y dónde")),
+      h("p", { class: "muted" }, "Iconos: Lucide (licencia ISC). Tipografía: Bricolage Grotesque (licencia OFL).")),
   );
 }

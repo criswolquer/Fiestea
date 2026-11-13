@@ -1,17 +1,20 @@
 // S06 Inicio: el mes de un vistazo.
-import { BookOpen, CalendarClock, ReceiptText, ChartPie, FileText, Flame, Gauge, Scale, Settings as Cog, Sparkles, Target } from "lucide";
+import { BookOpen, CalendarClock, Repeat, ReceiptText, ChartPie, FileText, Flame, Gauge, Scale, Settings as Cog, Sparkles, Target } from "lucide";
 import { addDays, addMonths, dayLabel, isValidYmd, longDay, monthLabel, thisMonth, today } from "../data/dates";
 import { categoryIcon } from "../ui/caticons";
-import { getSettings, listCategories, recordOpen, listRecaps, listTransactions, monthSummary, oneMonthAgo, streaks } from "../data/repo";
+import { exportBackup, getSettings, listCategories, paceWarnings, recordOpen, safeToSpend, listRecaps, listTransactions, monthSummary, oneMonthAgo, streaks } from "../data/repo";
 import { storageMode } from "../data/db";
 import type { Category, Transaction } from "../data/types";
-import { banner, emptyState, kpi, monthSwitcher, ring, tile } from "../ui/components";
+import { banner, button, emptyState, toast, kpi, monthSwitcher, ring, tile } from "../ui/components";
 import { h, icon, money } from "../ui/dom";
 import { screen, sectionTitle } from "../app/layout";
 import { go, photoUrl } from "../app/util";
 import type { Query } from "../app/router";
 import { newTxButton } from "./txform";
 import { cloudBanner } from "./cloudui";
+import { cloudStatus } from "../data/cloud";
+import { download } from "../app/util";
+import { refresh } from "../app/router";
 import { setupAccountsCard } from "./setupaccounts";
 import { firstStepsCard } from "./firststeps";
 
@@ -39,16 +42,27 @@ export async function homeScreen(_: string[], q: Query): Promise<HTMLElement> {
   // Anillo: lo que te sobra de lo que entró (entró − gastado). Ahorrar o invertir no cuenta como gasto.
   const left = s.balanceCents;
   const base = s.incomeCents;
-  const ringEl = ring({
-    value: Math.max(0, left), max: base || 1, color: left < 0 ? "danger" : "accent", size: 232, stroke: 16,
-    center: money(Math.abs(left)),
-    sub: left < 0 ? "gastado de más este mes" : base ? "te sobra este mes" : "aún no has apuntado ingresos",
-    label: left < 0 ? `Este mes has gastado ${money(-left)} más de lo que entró` : `Te sobran ${money(left)} de ${money(base)} este mes`,
-  });
+  const ringEl = base
+    ? ring({
+      value: Math.max(0, left), max: base, color: left < 0 ? "danger" : "accent", size: 232, stroke: 16,
+      center: money(Math.abs(left)), sub: left < 0 ? "gastado de más este mes" : "te sobra este mes",
+      label: left < 0 ? `Este mes has gastado ${money(-left)} más de lo que entró` : `Te sobran ${money(left)} de ${money(base)} este mes`,
+    })
+    // Sin ingresos apuntados aún: no es «te has pasado», es que falta apuntar lo que entra.
+    : ring({ value: 0, max: 1, color: "accent", size: 232, stroke: 16, center: money(s.expenseCents),
+      sub: s.expenseCents ? "gastado este mes" : "aún no hay movimientos", label: `Este mes has gastado ${money(s.expenseCents)}. Aún no has apuntado ingresos.` });
 
   const unseen = recaps.find((r) => !r.seenAt);
+  const [safe, pace, cloud] = isCurrent ? await Promise.all([safeToSpend(), paceWarnings(), cloudStatus()]) : [null, [], null];
+  // Copia de seguridad: si no hay nube enlazada, recordar cada 7 días cuando ya hay datos.
+  const needsBackup = isCurrent && !cloud?.linked && txs.length >= 5 &&
+    (!settings.lastBackupAt || Date.now() - new Date(settings.lastBackupAt).getTime() > 7 * 86400000);
   const banners = h("div", { class: "stack-sm" },
     await cloudBanner(),
+    needsBackup ? banner(settings.lastBackupAt ? "Hace más de una semana de tu última copia. Tus datos solo están en este móvil." : "Tus datos solo están en este móvil. Haz una copia por si lo pierdes.", "warning",
+      button("Hacer copia", { size: "sm", variant: "secondary", onClick: async () => { download(await exportBackup(true), `copia-ahorro-${today()}.json`); toast("Copia descargada. Guárdala en Archivos o en tu nube."); refresh(); } })) : null,
+    ...pace.map((p) => banner(`Vas rápido en ${p.name}: llevas el ${p.spentPct} % del límite y va el ${p.monthPct} % del mes.`, "warning",
+      h("a", { class: "btn btn-secondary btn-sm", href: `#/limites` }, "Ver"))),
     storageMode() === "memory" ? banner("Este navegador no deja guardar datos: lo que apuntes se perderá al cerrar.", "danger") : null,
     unseen ? banner(`Tu resumen de ${monthLabel(unseen.month, { year: false })} está listo.`, "success",
       h("a", { class: "btn btn-secondary btn-sm", href: `#/resumen/${unseen.month}?auto=1` }, "Verlo")) : null,
@@ -58,6 +72,7 @@ export async function homeScreen(_: string[], q: Query): Promise<HTMLElement> {
     quickLink("Gráficos", `#/graficos?mes=${month}`, ChartPie),
     quickLink("Límites", `#/limites?mes=${month}`, Gauge),
     quickLink("Plan", `#/plan?mes=${month}`, Scale),
+    quickLink("Fijos", "#/fijos", Repeat),
     quickLink("Informe", `#/informe/${month}`, FileText),
   );
 
@@ -81,7 +96,7 @@ export async function homeScreen(_: string[], q: Query): Promise<HTMLElement> {
   const apart = s.savedCents + s.investedCents;
   const heroNote = base
     ? `Has gastado el ${spentPct} % de lo que entró${apart > 0 ? ` y has apartado ${money(apart)}` : ""}.`
-    : apart > 0 ? `Has apartado ${money(apart)} en tus huchas.` : null;
+    : s.expenseCents ? "Apunta lo que te entra (o añade tu nómina en Fijos) para ver cuánto te sobra." : apart > 0 ? `Has apartado ${money(apart)} en tus huchas.` : null;
   return screen({ title: monthLabel(month), tab: "inicio", newHref: isCurrent ? "#/nuevo" : `#/nuevo?fecha=${month}-01`, header, actions: [
     h("a", { class: "btn btn-ghost btn-icon btn-md", href: "#/ajustes", "aria-label": "Ajustes" }, icon(Cog)),
   ] },
@@ -89,6 +104,10 @@ export async function homeScreen(_: string[], q: Query): Promise<HTMLElement> {
     h("section", { class: "hero-card", "aria-label": "Resumen del mes" },
       h("div", { class: "hero-ring" }, ringEl),
       heroNote ? h("p", { class: "hero-note" }, heroNote) : null,
+      safe ? h("a", { class: `safe-pill${safe.perDayCents < 0 ? " is-over" : ""}`, href: "#/info?mes=" + month },
+        safe.perDayCents >= 0
+          ? [h("span", { class: "safe-num num" }, money(safe.perDayCents)), h("span", {}, ` al día hasta fin de mes · ${safe.daysLeft === 1 ? "queda 1 día" : `quedan ${safe.daysLeft} días`}`)]
+          : [h("span", {}, "Con tus fijos y tu plan, este mes te faltan "), h("span", { class: "safe-num num" }, money(-safe.availableCents))]) : null,
       h("div", { class: "kpis kpis-grid" },
         kpi("Entró", s.incomeCents, "income"), kpi("Gastado", s.expenseCents, "expense"),
         kpi("Ahorrado", s.savedCents, "savings"), kpi("Invertido", s.investedCents, "investment"))),

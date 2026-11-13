@@ -53,3 +53,10 @@ Sección de educación financiera,contenido,could,no,skip,"en el original es ""p
 Boletín semanal / Instagram / YouTube,contenido,could,yes,skip,contenido y comunidad
 Conexión con bancos,integraciones,could,no,skip,el original no la tiene
 Sus usuarios y valoraciones,red,could,yes,skip,no se pueden clonar
+Movimientos fijos que se apuntan solos cada mes,transacciones,should,no,yes,#/fijos; id fijo por mes: no se duplican entre móviles
+Cuánto puedes gastar al día hasta fin de mes,inicio,should,no,yes,entra − gastado − fijos pendientes − lo que falta por apartar del plan
+Aviso de ritmo por categoría,límites,could,no,yes,gastado % > mes transcurrido % + 20
+Mover dinero entre cuentas propias y huchas,patrimonio,should,no,yes,no cuenta como gasto ni ingreso; también al importar
+Valor real de la inversión y ganancia,patrimonio,should,no,yes,valor apuntado a mano con historial
+Evolución del patrimonio (12 meses),patrimonio,could,no,yes,gráfico en Patrimonio
+Pruebas automáticas antes de publicar,plataforma,should,no,yes,12 pruebas de BD + 7 de punta a punta en el workflow de Pages
