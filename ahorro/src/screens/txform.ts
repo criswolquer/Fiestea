@@ -1,7 +1,7 @@
 // S07 Nuevo movimiento y edición de uno existente (#/nuevo, #/movimiento/:id/editar).
 import { Plus } from "lucide";
 import { addMonths, isValidYmd, today } from "../data/dates";
-import { addTransaction, getTransaction, listCategories, markFirstStep, updateTransaction } from "../data/repo";
+import { addTransaction, getTransaction, listCategories, markFirstStep, monthSummary, updateTransaction } from "../data/repo";
 import type { Category, TxType } from "../data/types";
 import { button, field, moneyField, parseMoney, photoPicker, segmented, setFieldError, toast } from "../ui/components";
 import { h, icon } from "../ui/dom";
@@ -74,6 +74,11 @@ export async function txFormScreen(params: string[], q: Query): Promise<HTMLElem
         await addTransaction(input, blob);
         await markFirstStep("primer-movimiento");
         toast(type === "expense" ? "Gasto apuntado" : "Ingreso apuntado");
+        if (type === "expense" && input.categoryId) {
+          const lim = (await monthSummary(d.slice(0, 7))).limits.find((l) => l.category.id === input.categoryId);
+          if (lim && lim.spentCents > lim.limitCents) toast(`Te has pasado del límite de ${lim.category.name}`, "danger");
+          else if (lim && lim.spentCents >= lim.limitCents * 0.85) toast(`Llevas el ${Math.round((lim.spentCents / lim.limitCents) * 100)} % del límite de ${lim.category.name}`, "warning");
+        }
       }
       go(returnTo);
     } catch (err) {

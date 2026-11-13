@@ -43,6 +43,7 @@
   --tabbar-height: 64px;
   --header-height: 52px;
   --tap-min: 44px;
+  --max-width-wide: 560px;
   --bg: #101114;
   --surface: #1b1d22;
   --surface-2: #262931;

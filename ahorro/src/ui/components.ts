@@ -349,7 +349,7 @@ export function actionMenu(label: string, items: { label: string; icon: IconNode
 }
 
 /* Visor de historias (cierre de mes) ------------------------------------------------- */
-export function stories(slides: { kicker?: string; title: string; body?: string; tone?: string }[]): HTMLDialogElement {
+export function stories(slides: { kicker?: string; title: string; body?: string; tone?: string; photos?: { src: string; alt: string }[] }[]): HTMLDialogElement {
   let i = 0;
   const bar = h("div", { class: "story-progress", "aria-hidden": "true" }, slides.map(() => h("span", {}, h("i"))));
   const live = h("div", { class: "story-slide", "aria-live": "polite" });
@@ -372,6 +372,7 @@ export function stories(slides: { kicker?: string; title: string; body?: string;
       sl.kicker ? h("p", { class: "story-kicker" }, sl.kicker) : "",
       h("h2", { class: "story-title" }, sl.title),
       sl.body ? h("p", { class: "story-body" }, sl.body) : "",
+      sl.photos?.length ? h("div", { class: `story-photos n${Math.min(sl.photos.length, 4)}` }, ...sl.photos.slice(0, 4).map((p) => h("img", { src: p.src, alt: p.alt }))) : "",
     );
   };
   d.addEventListener("keydown", (e) => {

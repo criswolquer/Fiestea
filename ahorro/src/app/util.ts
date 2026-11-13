@@ -43,3 +43,10 @@ export function errorText(e: unknown): string {
 export const formValues = (f: HTMLFormElement) => Object.fromEntries([...new FormData(f).entries()].map(([k, v]) => [k, String(v)]));
 
 export const centsToInput = (c: number) => (c / 100).toLocaleString("es-ES", { minimumFractionDigits: c % 100 ? 2 : 0, maximumFractionDigits: 2, useGrouping: false });
+
+export function applyTheme(t: "system" | "light" | "dark"): void {
+  if (t === "system") delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = t;
+  const bg = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim();
+  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute("content", bg));
+}

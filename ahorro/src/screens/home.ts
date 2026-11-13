@@ -46,7 +46,7 @@ export async function homeScreen(_: string[], q: Query): Promise<HTMLElement> {
   const banners = h("div", { class: "stack-sm" },
     storageMode() === "memory" ? banner("Este navegador no deja guardar datos: lo que apuntes se perderá al cerrar.", "danger") : null,
     unseen ? banner(`Tu resumen de ${monthLabel(unseen.month, { year: false })} está listo.`, "success",
-      h("a", { class: "btn btn-secondary btn-sm", href: `#/resumen/${unseen.month}` }, "Verlo")) : null,
+      h("a", { class: "btn btn-secondary btn-sm", href: `#/resumen/${unseen.month}?auto=1` }, "Verlo")) : null,
   );
 
   const quick = h("nav", { class: "quick", "aria-label": "Atajos del mes" },
