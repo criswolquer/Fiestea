@@ -35,13 +35,14 @@ export async function homeScreen(_: string[], q: Query): Promise<HTMLElement> {
     onInfo: () => go(`#/info?mes=${month}`),
   });
 
-  // Anillo: lo que te queda frente a lo que entró.
+  // Anillo: lo que te sobra de lo que entró (entró − gastado). Ahorrar o invertir no cuenta como gasto.
   const left = s.balanceCents;
   const base = s.incomeCents;
   const ringEl = ring({
     value: Math.max(0, left), max: base || 1, color: left < 0 ? "danger" : "accent", size: 232, stroke: 16,
-    center: money(Math.abs(left)), sub: left < 0 ? "te has pasado este mes" : base ? "te queda este mes" : "aún no has apuntado ingresos",
-    label: left < 0 ? `Este mes te has pasado ${money(-left)}` : `Te quedan ${money(left)} de ${money(base)} este mes`,
+    center: money(Math.abs(left)),
+    sub: left < 0 ? "gastado de más este mes" : base ? "te sobra este mes" : "aún no has apuntado ingresos",
+    label: left < 0 ? `Este mes has gastado ${money(-left)} más de lo que entró` : `Te sobran ${money(left)} de ${money(base)} este mes`,
   });
 
   const unseen = recaps.find((r) => !r.seenAt);
@@ -75,14 +76,18 @@ export async function homeScreen(_: string[], q: Query): Promise<HTMLElement> {
 
   const steps = isCurrent ? await firstStepsCard(settings) : null;
 
-  const used = base ? Math.round(((base - Math.max(0, left)) / base) * 100) : 0;
+  const spentPct = base ? Math.round((s.expenseCents / base) * 100) : 0;
+  const apart = s.savedCents + s.investedCents;
+  const heroNote = base
+    ? `Has gastado el ${spentPct} % de lo que entró${apart > 0 ? ` y has apartado ${money(apart)}` : ""}.`
+    : apart > 0 ? `Has apartado ${money(apart)} en tus huchas.` : null;
   return screen({ title: monthLabel(month), tab: "inicio", newHref: isCurrent ? "#/nuevo" : `#/nuevo?fecha=${month}-01`, header, actions: [
     h("a", { class: "btn btn-ghost btn-icon btn-md", href: "#/ajustes", "aria-label": "Ajustes" }, icon(Cog)),
   ] },
     banners,
     h("section", { class: "hero-card", "aria-label": "Resumen del mes" },
       h("div", { class: "hero-ring" }, ringEl),
-      base ? h("p", { class: "hero-note" }, `Has usado el ${used} % de lo que entró`) : null,
+      heroNote ? h("p", { class: "hero-note" }, heroNote) : null,
       h("div", { class: "kpis kpis-grid" },
         kpi("Entró", s.incomeCents, "income"), kpi("Gastado", s.expenseCents, "expense"),
         kpi("Ahorrado", s.savedCents, "savings"), kpi("Invertido", s.investedCents, "investment"))),

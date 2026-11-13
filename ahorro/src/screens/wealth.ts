@@ -1,7 +1,7 @@
 // S12 Patrimonio, S13 aporte o retirada (hoja), detalle de una hucha.
-import { ArrowDownLeft, ArrowUpRight, PiggyBank, Plus, Scale, Trash2 } from "lucide";
+import { ArrowDownLeft, ArrowUpRight, History, PiggyBank, Plus, Scale, Trash2, Undo2 } from "lucide";
 import { dayLabel, isValidYmd, thisMonth, today } from "../data/dates";
-import { addPotMovement, deletePot, deletePotMovement, listPotMovements, upsertPot, wealth } from "../data/repo";
+import { addPotMovement, deletePot, deletePotMovement, listPotMovements, setPotMovementInitial, upsertPot, wealth } from "../data/repo";
 import type { Pot, PotType } from "../data/types";
 import { button, emptyState, field, moneyField, parseMoney, ring, segmented, setFieldError, toast } from "../ui/components";
 import { h, icon, money, pct } from "../ui/dom";
@@ -63,9 +63,14 @@ export async function potScreen([id]: string[]): Promise<HTMLElement> {
     h("section", { class: "stack-sm" }, sectionTitle("Movimientos"),
       movs.length ? h("ul", { class: "list" }, ...movs.map((m) => h("li", { class: "plain-row" },
         h("span", { class: `mov-icon ${m.kind}` }, icon(m.kind === "contribution" ? ArrowDownLeft : ArrowUpRight, { size: 18 })),
-        h("span", { class: "cat-name" }, m.initial ? "Saldo inicial" : m.kind === "contribution" ? "Aporte" : "Retirada",
+        h("span", { class: "cat-name" }, m.initial ? "Ya lo tenías" : m.kind === "contribution" ? "Aporte" : "Retirada",
           h("span", { class: "muted block" }, dayLabel(m.occurredOn) + (m.note && !m.initial ? ` · ${m.note}` : ""))),
         h("span", { class: "num" }, `${m.kind === "contribution" ? "+" : "−"}${money(m.amountCents)}`),
+        m.kind === "contribution" ? button(m.initial ? "Contar como aporte de ese mes" : "Marcar como «ya lo tenía»", { variant: "ghost", size: "sm", iconOnly: true, icon: m.initial ? Undo2 : History, onClick: async () => {
+          await setPotMovementInitial(m.id, !m.initial);
+          toast(m.initial ? "Ahora cuenta como aportado ese mes" : "Marcado como dinero que ya tenías");
+          refresh();
+        } }) : null,
         button("Borrar este movimiento", { variant: "ghost", size: "sm", iconOnly: true, icon: Trash2, onClick: async () => {
           if (await confirmDialog("¿Borrar este movimiento de la hucha?", { ok: "Borrar", danger: true })) { await deletePotMovement(m.id); refresh(); }
         } }))))
@@ -78,7 +83,10 @@ export function movementSheet(p: Pot, kind: "contribution" | "withdrawal"): void
   const amount = moneyField("Importe", { name: "amount", big: true, required: true });
   const date = field("Fecha", { name: "date", type: "date", value: today(), max: today() });
   const note = field("Nota", { name: "note", placeholder: "Opcional", maxlength: 80 });
-  const form = h("form", { class: "stack-sm", novalidate: true }, amount, date, note, button(kind === "contribution" ? "Aportar" : "Retirar", { type: "submit", block: true }));
+  const had = kind === "contribution" ? h("label", { class: "check" },
+    h("input", { type: "checkbox", name: "initial", id: "mov-initial" }),
+    h("span", {}, h("strong", {}, "Ya lo tenía"), h("span", { class: "muted block" }, `Dinero que ya estaba ${p.type === "savings" ? "ahorrado" : "invertido"} antes: no sale de tu disponible ni cuenta como apartado este mes.`))) : null;
+  const form = h("form", { class: "stack-sm", novalidate: true }, amount, date, note, had, button(kind === "contribution" ? "Aportar" : "Retirar", { type: "submit", block: true }));
   const d = openSheet(`${kind === "contribution" ? "Aportar a" : "Retirar de"} ${p.name}`, form);
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -88,7 +96,7 @@ export function movementSheet(p: Pot, kind: "contribution" | "withdrawal"): void
     const dv = String(fd.get("date"));
     if (!isValidYmd(dv)) { setFieldError(date, "Elige una fecha."); return; }
     try {
-      const r = await addPotMovement(p.id, kind, c, dv, String(fd.get("note") ?? "").trim());
+      const r = await addPotMovement(p.id, kind, c, dv, String(fd.get("note") ?? "").trim(), fd.get("initial") === "on");
       d.close();
       toast(r.goalReached ? `¡Has llegado a tu meta de ${p.name}!` : kind === "contribution" ? "Aporte guardado" : "Retirada guardada", r.goalReached ? "success" : "info");
       refresh();

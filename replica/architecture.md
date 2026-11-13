@@ -82,8 +82,8 @@ se lee por el índice `occurredOn` en un rango.
 Fórmulas (el recon no las veía; decisión propia):
 - Ingresado, Gastado = Σ de las transacciones del mes por tipo.
 - Ahorrado, Invertido = Σ de aportes − retiradas del mes, por tipo de hucha.
-- **Balance total del mes** = Ingresado − Gastado − Ahorrado − Invertido (lo que queda libre).
-- Capital líquido = inicial + Σ de todos los balances desde la fecha inicial.
+- **Lo que sobra del mes** = Ingresado − Gastado. Ahorrar o invertir no es gastar: se muestra aparte como «apartado» (cambiado el 2026-11-13 a petición del usuario).
+- Capital líquido = inicial + ingresos − gastos − aportes + retiradas desde la fecha inicial (los aportes «ya lo tenía» no restan).
 - Patrimonio = capital líquido + Σ de los saldos de las huchas.
 - Mes "en verde" = Ingresado > Gastado.
 
