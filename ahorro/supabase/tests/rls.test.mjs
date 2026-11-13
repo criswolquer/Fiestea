@@ -106,6 +106,11 @@ test("fotos: cada espacio solo ve su carpeta", async () => {
   await as(B, "insert into storage.objects (bucket_id, name) values ('fotos', $1)", [`${sB}/y.jpg`]);
 });
 
+test("las cuentas se guardan como cualquier registro", async () => {
+  const [{ n }] = await push(B, [rec("accounts", "principal", { name: "BBVA nómina", initialCents: 120000 })]);
+  assert.equal(n, 1);
+});
+
 test("lotes y datos no válidos se rechazan", async () => {
   await rejects(push(A, [rec("otra_cosa", "x", {})]), /records_store_check/);
   await rejects(push(A, Array.from({ length: 501 }, (_, i) => rec("notes", `m${i}`, {}))), /lote_no_valido/);

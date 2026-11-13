@@ -1,7 +1,7 @@
 // S07 Nuevo movimiento y edición de uno existente (#/nuevo, #/movimiento/:id/editar).
 import { Plus } from "lucide";
 import { addMonths, isValidYmd, today } from "../data/dates";
-import { addTransaction, getTransaction, listCategories, markFirstStep, monthSummary, updateTransaction } from "../data/repo";
+import { addTransaction, getTransaction, listAccounts, listCategories, markFirstStep, monthSummary, updateTransaction } from "../data/repo";
 import type { Category, TxType } from "../data/types";
 import { button, field, moneyField, parseMoney, photoPicker, segmented, setFieldError, toast } from "../ui/components";
 import { h, icon } from "../ui/dom";
@@ -19,6 +19,7 @@ export async function txFormScreen(params: string[], q: Query): Promise<HTMLElem
   const returnTo = q.get("volver") ?? (existing ? `#/movimiento/${existing.id}` : "#/");
   let photo: File | null | undefined = undefined;  // undefined = sin cambios
   const allCats = await listCategories();
+  const accounts = await listAccounts();
 
   const amount = moneyField("Importe", { big: true, name: "amount", required: true, value: existing ? centsToInput(existing.amountCents) : "" });
   const title = field("Concepto", { name: "title", placeholder: "Ej.: cena con amigos", maxlength: 80, value: existing?.title });
@@ -49,7 +50,12 @@ export async function txFormScreen(params: string[], q: Query): Promise<HTMLElem
   const saveBtn = button(existing ? "Guardar cambios" : "Guardar", { block: true, size: "lg", type: "submit" });
   const form = h("form", { class: "stack", novalidate: true },
     segmented("Tipo de movimiento", ["Gasto", "Ingreso"], type === "expense" ? 0 : 1, (i) => { type = i === 0 ? "expense" : "income"; renderCats(); }),
-    amount, catBox, title, dateF, note,
+    amount, catBox, title, dateF,
+    accounts.length > 1 ? h("fieldset", { class: "chips" }, h("legend", { class: "field-label" }, "Cuenta"),
+      ...accounts.map((a, i) => h("span", { class: "chip-opt" },
+        h("input", { type: "radio", name: "account", value: a.id, id: `acc-${a.id}`, class: "seg-input", checked: existing ? (existing.accountId ?? accounts[0].id) === a.id : i === 0 }),
+        h("label", { for: `acc-${a.id}`, class: "chip", style: `--chip:var(--${a.color})` }, a.name)))) : null,
+    note,
     h("div", { class: "field" }, h("span", { class: "field-label" }, "Foto del momento"),
       photoPicker({ initialUrl: existing?.hasPhoto ? await photoUrl(existing.id) : undefined, onChange: (f) => { photo = f; } })),
     saveBtn,
@@ -66,7 +72,7 @@ export async function txFormScreen(params: string[], q: Query): Promise<HTMLElem
     saveBtn.disabled = true;
     try {
       const blob = photo ? await compressImage(photo) : photo;
-      const input = { type, amountCents: cents, categoryId: String(fd.get("category") ?? "") || null, title: String(fd.get("title") ?? ""), occurredOn: d, note: String(fd.get("note") ?? "") };
+      const input = { type, amountCents: cents, categoryId: String(fd.get("category") ?? "") || null, title: String(fd.get("title") ?? ""), occurredOn: d, note: String(fd.get("note") ?? ""), accountId: String(fd.get("account") ?? "") || existing?.accountId };
       if (existing) {
         await updateTransaction(existing.id, input, blob);
         forgetPhoto(existing.id);

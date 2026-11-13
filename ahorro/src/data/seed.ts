@@ -27,9 +27,11 @@ export async function loadDemo(): Promise<void> {
   await repo.saveSettings({ nickname: "Alex", liquidStartCents: 120000, liquidStartDate: `${start}-01`, onboardedAt: new Date().toISOString(),
     firstSteps: ["nombre", "dinero-hoy", "huchas", "limites", "plan"] });
 
-  const sav = await repo.upsertPot({ name: "Colchón", type: "savings", goalCents: 300000 });
+  await repo.upsertAccount({ id: repo.MAIN_ACCOUNT, name: "Banco de la nómina", kind: "corriente", initialCents: 120000, initialDate: `${start}-01`, color: "chart-2" });
+  const cash = await repo.upsertAccount({ name: "Efectivo", kind: "efectivo", initialCents: 6000, initialDate: `${start}-01`, color: "chart-4" });
+  const sav = await repo.upsertPot({ name: "Colchón", type: "savings", goalCents: 300000, institution: "Cuenta remunerada" });
   const trip = await repo.upsertPot({ name: "Viaje a Lisboa", type: "savings", goalCents: 60000 });
-  const inv = await repo.upsertPot({ name: "Fondo indexado", type: "investment", goalCents: null });
+  const inv = await repo.upsertPot({ name: "Fondo indexado", type: "investment", goalCents: null, institution: "Banco de inversión" });
   await repo.addPotMovement(sav.id, "contribution", 150000, `${start}-01`, "Saldo inicial", true);
   await repo.addPotMovement(inv.id, "contribution", 80000, `${start}-01`, "Saldo inicial", true);
 
@@ -56,6 +58,7 @@ export async function loadDemo(): Promise<void> {
     await add("expense", 1650, "Ocio", "Partido de pádel", 22, k !== 1);
     if (k === 1) await add("income", 25000, "Extras", "Venta de la bici vieja", 20);
     await add("expense", 900, "Caprichos", "Helado", 25, true);
+    if (25 <= last) await repo.addTransaction({ type: "expense", amountCents: 350, categoryId: byName("Comida"), title: "Churros", occurredOn: day(12), accountId: cash.id });
     if (m !== now || last >= 2) {
       await repo.addPotMovement(sav.id, "contribution", 20000, day(2));
       await repo.addPotMovement(trip.id, "contribution", 10000, day(2));

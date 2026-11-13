@@ -1,18 +1,17 @@
 // S23 Ajustes: perfil, aspecto, categorías, asistente, tus datos.
 import { Download, Upload } from "lucide";
 import { getApiKey, setApiKey } from "../data/assistantLocal";
-import { isValidYmd } from "../data/dates";
 import { storageMode } from "../data/db";
 import { cloudConfigured, cloudStatus, deleteCloudData } from "../data/cloud";
 import { cloudSection } from "./cloudui";
 import { exportBackup, getSettings, importBackup, saveSettings, wipeAll } from "../data/repo";
 import type { Settings } from "../data/types";
-import { button, field, moneyField, parseMoney, segmented, setFieldError, toast } from "../ui/components";
+import { button, field, segmented, setFieldError, toast } from "../ui/components";
 import { h, icon } from "../ui/dom";
 import { screen, sectionTitle } from "../app/layout";
 import { confirmDialog } from "../app/dialogs";
 import { refresh } from "../app/router";
-import { applyTheme, centsToInput, download, errorText } from "../app/util";
+import { applyTheme, download, errorText } from "../app/util";
 
 export async function settingsScreen(): Promise<HTMLElement> {
   const s = await getSettings();
@@ -22,17 +21,10 @@ export async function settingsScreen(): Promise<HTMLElement> {
 
   // Perfil
   const nick = field("Nombre o apodo", { name: "nickname", value: s.nickname, maxlength: 30 });
-  const liquid = moneyField("Dinero disponible de partida", { name: "liquid", value: centsToInput(s.liquidStartCents), hint: "Lo que tenías en cuentas el día de abajo, sin contar huchas." });
-  const liquidDate = field("Fecha de partida", { name: "liquidDate", type: "date", value: s.liquidStartDate });
-  const profile = h("form", { class: "stack-sm", novalidate: true }, nick, liquid, liquidDate, button("Guardar", { type: "submit", variant: "secondary" }));
+  const profile = h("form", { class: "stack-sm", novalidate: true }, nick, button("Guardar", { type: "submit", variant: "secondary" }));
   profile.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const fd = new FormData(profile);
-    const c = parseMoney(String(fd.get("liquid") ?? "0") || "0");
-    if (c === null) { setFieldError(liquid, "Escribe una cantidad, por ejemplo 1200."); return; }
-    const d = String(fd.get("liquidDate"));
-    if (!isValidYmd(d)) { setFieldError(liquidDate, "Elige una fecha."); return; }
-    await saveSettings({ nickname: String(fd.get("nickname") ?? "").trim(), liquidStartCents: c, liquidStartDate: d });
+    await saveSettings({ nickname: String(new FormData(profile).get("nickname") ?? "").trim() });
     toast("Guardado");
   });
 
@@ -72,6 +64,7 @@ export async function settingsScreen(): Promise<HTMLElement> {
     h("section", { class: "stack-sm" }, sectionTitle("Aspecto"), theme),
     h("section", { class: "stack-sm" }, sectionTitle("Organización"),
       h("ul", { class: "list" },
+        h("li", {}, h("a", { class: "plain-row as-button", href: "#/cuentas?volver=%23%2Fajustes" }, h("span", { class: "cat-name" }, "Cuentas y saldos"), h("span", { class: "muted" }, "Bancos, efectivo, importar"))),
         h("li", {}, h("a", { class: "plain-row as-button", href: "#/categorias" }, h("span", { class: "cat-name" }, "Categorías"), h("span", { class: "muted" }, "Crear, cambiar, archivar"))),
         h("li", {}, h("a", { class: "plain-row as-button", href: "#/limites" }, h("span", { class: "cat-name" }, "Límites por categoría"))),
         h("li", {}, h("a", { class: "plain-row as-button", href: "#/primeros-pasos" }, h("span", { class: "cat-name" }, "Primeros pasos"))))),

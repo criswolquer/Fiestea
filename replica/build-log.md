@@ -31,3 +31,4 @@ Las capturas están en `replica/clone-screens/` para replica-diff.
 | S22 Qué significan las cifras | 2026-11-13 | hecho | — | — |
 | S23 Ajustes | 2026-11-13 | hecho | «Eliminar cuenta» es «Borrar todo» mientras no haya cuentas | — |
 | extra: categorías, lista del mes | 2026-11-13 | hecho | — | — |
+| extra: cuentas e importar extracto | 2026-11-13 | hecho | Conexión automática con el banco (necesitaría un agregador bancario autorizado y servidor) | El lector de Excel se ha escrito sin librerías (zip + XML) para no arrastrar dependencias con vulnerabilidades |

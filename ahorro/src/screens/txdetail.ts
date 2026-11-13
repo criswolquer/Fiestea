@@ -1,7 +1,7 @@
 // S08 Detalle de un movimiento + lista completa del mes (#/movimientos).
 import { Pencil, Share2, Trash2, ReceiptText } from "lucide";
 import { longDay, monthLabel } from "../data/dates";
-import { deleteTransaction, getPhoto, getTransaction, listCategories, listTransactions } from "../data/repo";
+import { deleteTransaction, getPhoto, getTransaction, listAccounts, listCategories, listTransactions } from "../data/repo";
 import { button, emptyState, toast } from "../ui/components";
 import { h, icon, money } from "../ui/dom";
 import { screen } from "../app/layout";
@@ -14,7 +14,7 @@ import { newTxButton } from "./txform";
 export async function txDetailScreen([id]: string[]): Promise<HTMLElement> {
   const t = await getTransaction(id);
   if (!t) return screen({ title: "Movimiento", back: "#/" }, emptyState("Este movimiento ya no existe", "Puede que lo hayas borrado.", ReceiptText));
-  const cats = await listCategories(undefined, { includeArchived: true });
+  const [cats, accounts] = await Promise.all([listCategories(undefined, { includeArchived: true }), listAccounts({ includeArchived: true })]);
   const cat = cats.find((c) => c.id === t.categoryId);
   const url = t.hasPhoto ? await photoUrl(t.id) : undefined;
   const backTo = `#/?mes=${t.occurredOn.slice(0, 7)}`;
@@ -39,6 +39,7 @@ export async function txDetailScreen([id]: string[]): Promise<HTMLElement> {
     h("dl", { class: "facts" },
       h("dt", {}, "Categoría"), h("dd", {}, cat ? h("a", { href: `#/categoria/${cat.id}?mes=${t.occurredOn.slice(0, 7)}` }, cat.name) : "Sin categoría"),
       h("dt", {}, "Fecha"), h("dd", {}, longDay(t.occurredOn)),
+      accounts.length > 1 ? h("dt", {}, "Cuenta") : null, accounts.length > 1 ? h("dd", {}, (accounts.find((a) => a.id === t.accountId) ?? accounts[0]).name) : null,
       t.note ? h("dt", {}, "Nota") : null, t.note ? h("dd", { class: "pre" }, t.note) : null),
     h("div", { class: "row" },
       h("a", { class: "btn btn-secondary btn-md", href: `#/movimiento/${t.id}/editar` }, icon(Pencil), h("span", {}, "Editar")),
