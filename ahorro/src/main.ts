@@ -24,6 +24,7 @@ import { reportScreen } from "./screens/report";
 import { assistantScreen } from "./screens/assistant";
 import { settingsScreen } from "./screens/settings";
 import { accountsScreen, importScreen } from "./screens/accounts";
+import { setupAccountsScreen } from "./screens/setupaccounts";
 
 route("/", homeScreen);                              // S06
 route("/bienvenida", welcomeScreen);                 // S01, S02
@@ -49,6 +50,7 @@ route("/info", infoScreen);                          // S22
 route("/ajustes", settingsScreen);                   // S23
 route("/cuentas", accountsScreen);                   // cuentas y saldos
 route("/importar", importScreen);                    // importar extracto del banco
+route("/configurar-cuentas", setupAccountsScreen);   // configuración guiada de cuentas
 route("/design", designPage);                        // sistema de diseño
 
 const app = document.getElementById("app")!;

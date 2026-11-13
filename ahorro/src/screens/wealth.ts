@@ -120,7 +120,7 @@ function editPot(p: Partial<Pot> & { type: PotType }): void {
   let type = p.type;
   const name = field("Nombre", { name: "name", value: p.name, required: true, maxlength: 40, placeholder: p.type === "savings" ? "Ej.: Colchón, Viaje" : "Ej.: Fondo indexado" });
   const goal = moneyField("Meta (opcional)", { name: "goal", value: p.goalCents ? centsToInput(p.goalCents) : "", hint: "Te avisamos cuando la alcances." });
-  const inst = field("Banco o entidad (opcional)", { name: "institution", value: p.institution, maxlength: 40, placeholder: "Ej.: MyInvestor, Trade Republic, BBVA" });
+  const inst = field("Banco o entidad (opcional)", { name: "institution", value: p.institution, maxlength: 40, placeholder: "Ej.: el banco o la app donde lo tienes" });
   const form = h("form", { class: "stack-sm", novalidate: true },
     p.id ? null : segmented("Tipo", ["Ahorro", "Inversión"], type === "savings" ? 0 : 1, (i) => { type = i ? "investment" : "savings"; }),
     name, inst, goal, button("Guardar", { type: "submit", block: true }),

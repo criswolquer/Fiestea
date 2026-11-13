@@ -25,6 +25,7 @@ export interface Settings {
   openDays: Ymd[];
   /** Concepto de extracto normalizado → categoría elegida (para adivinar en la próxima importación). */
   importRules?: Record<string, string>;
+  accountsSetupDone?: boolean;   // ya pasó por «Configura tus cuentas»
   updatedAt: string;
 }
 
@@ -43,7 +44,7 @@ export interface Category extends Synced {
 /** Cuenta de dinero disponible: un banco, efectivo… (las huchas siguen siendo ahorro e inversión). */
 export interface Account extends Synced {
   id: string;
-  name: string;              // «BBVA nómina», «Efectivo»
+  name: string;              // «Cuenta de la nómina», «Efectivo»
   kind: "corriente" | "efectivo" | "otra";
   initialCents: number;      // saldo el día initialDate
   initialDate: Ymd;

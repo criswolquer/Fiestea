@@ -12,6 +12,7 @@ import { go, photoUrl } from "../app/util";
 import type { Query } from "../app/router";
 import { newTxButton } from "./txform";
 import { cloudBanner } from "./cloudui";
+import { setupAccountsCard } from "./setupaccounts";
 import { firstStepsCard } from "./firststeps";
 
 
@@ -74,7 +75,7 @@ export async function homeScreen(_: string[], q: Query): Promise<HTMLElement> {
     tile({ title: "Asistente", body: "Pregúntale por tus gastos", icon: Sparkles, tone: "accent", onClick: () => go("#/asistente") }),
   ) : null;
 
-  const steps = isCurrent ? await firstStepsCard(settings) : null;
+  const steps = isCurrent ? (settings.accountsSetupDone ? await firstStepsCard(settings) : setupAccountsCard()) : null;
 
   const spentPct = base ? Math.round((s.expenseCents / base) * 100) : 0;
   const apart = s.savedCents + s.investedCents;

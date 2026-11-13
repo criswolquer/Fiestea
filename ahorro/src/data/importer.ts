@@ -1,5 +1,5 @@
 // Lectura de extractos bancarios (Excel .xlsx o .csv) en el propio navegador, sin librerías ni servidor.
-// Pensado para el Excel de movimientos de BBVA, pero reconoce las columnas por su nombre
+// Reconoce las columnas por su nombre
 // (Fecha, Concepto, Importe, Disponible…), así que sirve para la mayoría de bancos.
 import type { Ymd } from "./types";
 
