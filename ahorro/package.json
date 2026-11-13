@@ -1,0 +1,27 @@
+{
+  "name": "ahorro",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Web móvil de finanzas personales (nombre provisional)",
+  "scripts": {
+    "tokens": "node scripts/tokens.mjs",
+    "dev": "npm run tokens && vite --host",
+    "build": "npm run tokens && tsc && vite build",
+    "preview": "vite preview --host",
+    "build:single": "npm run tokens && vite build --config vite.single.config.ts",
+    "test:db": "node --test supabase/tests/rls.test.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0",
+    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
+    "@supabase/supabase-js": "^2.118.0",
+    "jspdf": "^4.2.1",
+    "lucide": "1.60.0"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.2.17",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.6"
+  }
+}

@@ -1,0 +1,53 @@
+feature,area,priority,original,clone,notes
+Registro con email,cuenta,must,yes,no,decidido no hacerlo por ahora: cada móvil entra anónimo y se une con código de emparejar o de recuperación
+Tour guiado antes de crear cuenta,onboarding,should,yes,yes,S01: 3 pantallas + botón de datos de ejemplo
+Cuestionario inicial (objetivo / cómo llevas tus finanzas / ahorro deseado),onboarding,should,yes,yes,"S02: 3 preguntas, se pueden saltar"
+Primeros pasos: capital inicial / ahorros / inversiones / categorías (se puede saltar),onboarding,must,yes,yes,"S04: 6 pasos, cada uno se puede dejar para luego"
+Inicio con balance del mes y 4 cifras (ingresado / gastado / ahorrado / invertido),inicio,must,yes,yes,S06
+Cambiar de mes,inicio,must,yes,yes,"S06, S09, S11, S14, S15"
+Añadir gasto o ingreso (importe / categoría / título / fecha / nota),transacciones,must,yes,yes,S07: ~6 toques con foto; avisa al 85 % y al pasarse del límite
+Foto en la transacción (cámara o galería) guardada solo en el dispositivo,transacciones,must,yes,yes,comprimida a 1280 px y guardada solo en el dispositivo
+Editar y borrar transacciones,transacciones,must,yes,yes,S08
+Categorías personalizables (con tipo fijo / discrecional / deuda),categorías,must,yes,yes,"#/categorias: crear, cambiar color y tipo, archivar"
+Gráfico donut de gastos e ingresos por categoría,análisis,must,yes,yes,S09
+Barras de gasto por día,análisis,should,yes,yes,S09
+Reparto fijo / discrecional / deuda,análisis,should,yes,yes,S09
+Tocar categoría y ver sus movimientos con fotos,análisis,should,yes,yes,S10 con rejilla de fotos
+Límites de gasto por categoría con disponible,límites,must,yes,yes,S11
+Aviso y ajuste proporcional si los límites no cuadran,límites,could,yes,yes,S11: propone bajar los límites en proporción
+Capital total: ahorros e inversiones separados + capital líquido,patrimonio,must,yes,yes,S12
+Aportes y retiradas a ahorro e inversión,patrimonio,must,yes,yes,S13 (hoja) y detalle de hucha
+Metas de ahorro e inversión con aviso al cumplirlas,patrimonio,should,yes,partial,aviso dentro de la app al cumplirla; sin notificación push
+Planificación del mes en % o cantidad,planificación,must,yes,yes,S14
+Comparar plan y realidad al final del mes,planificación,should,yes,yes,S14 y en el resumen del mes
+Calendario del mes con movimientos por día,calendario,must,yes,yes,S15
+Notas en un día del calendario,calendario,should,yes,yes,S15
+Recordatorios únicos / semanales / mensuales,recordatorios,could,yes,partial,se avisan al abrir la app el día que toca; sin notificaciones push (necesitan servidor)
+Recap mensual tipo historias con fotos,recap,must,yes,yes,"S18: historias con fotos, se cierra solo al empezar el mes"
+Preguntas de reflexión del recap,recap,should,yes,partial,3 preguntas fijas escritas aquí; sin generarlas con IA
+Hace un mes (recuerdo),recap,could,yes,yes,S19
+Rachas (días abriendo la app / movimientos con foto / meses en verde),rachas,could,yes,yes,S20
+Asistente financiero con IA sobre tus datos,asistente,should,yes,partial,con la clave de Claude de la persona; herramientas sobre los datos locales; no probado con una clave real en esta sesión
+Saludo diario del asistente con datos reales,asistente,could,yes,partial,calculado en el móvil sin IA (gratis)
+Dictado por voz (español e inglés),asistente,could,yes,partial,"Web Speech API en español; no existe en Firefox, irregular en Safari"
+Límite diario de mensajes al asistente (gratis),asistente,should,yes,no,fase 5: ahora solo se cuentan
+Reporte mensual en PDF,reportes,should,yes,yes,"S21: jsPDF en el navegador, 2+ páginas"
+Suscripción mensual y anual con prueba gratis,pagos,must,yes,no,fase 5 (Stripe)
+Límites del plan gratis y avisos para pasar a Premium,pagos,should,yes,no,fase 5
+Funciona sin conexión y sincroniza,plataforma,must,yes,yes,"sin conexión (IndexedDB + service worker) y guardado en la nube con Supabase: cola de cambios, gana el último; ver replica/backend.md"
+Instalable como app (PWA),plataforma,must,no,yes,manifest + service worker + icono propio
+Eliminar cuenta y borrar datos,cuenta,must,yes,partial,sin cuentas: «Borrar todos mis datos» borra el móvil y el espacio en la nube (con sus fotos)
+Perfil y ajustes (nombre / idioma / notificaciones / ayuda / feedback),cuenta,should,yes,yes,S23
+Interfaz en inglés,cuenta,could,yes,no,solo español
+Notificaciones personalizadas con IA,notificaciones,could,yes,no,necesitan servidor (Web Push)
+Compartir la foto de un movimiento en historias,social,could,yes,yes,Web Share API cuando el navegador lo permite
+Inicio de sesión con Apple y Google,cuenta,could,yes,no,fase 4
+Widgets de rachas en pantalla de inicio y bloqueo,plataforma,could,yes,skip,no existen en la web
+Atajo de iOS para crear transacción,plataforma,could,yes,skip,no existe en la web; acceso directo de la PWA como sustituto
+Pagos con compras dentro de la app de Apple,pagos,could,yes,skip,la web usa Stripe
+Mascota animada del asistente,marca,could,yes,skip,es de su marca; hacer una propia o ninguna
+Marca / logo / colores / tipografía / textos del original,marca,could,yes,skip,reservados por sus términos (§11)
+Sección de educación financiera,contenido,could,no,skip,"en el original es ""próximamente""; es contenido"
+Boletín semanal / Instagram / YouTube,contenido,could,yes,skip,contenido y comunidad
+Conexión con bancos,integraciones,could,no,skip,el original no la tiene
+Sus usuarios y valoraciones,red,could,yes,skip,no se pueden clonar

@@ -25,6 +25,14 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      # Ahorro: segunda app del repositorio, publicada en /ahorro/ dentro de la misma web.
+      - run: npm ci --prefix ahorro
+      - run: npm run build --prefix ahorro
+        env:
+          # Opcional: si se definen estas variables del repositorio, la app guarda también en la nube (ver replica/backend.md).
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+      - run: cp -r ahorro/dist dist/ahorro
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
