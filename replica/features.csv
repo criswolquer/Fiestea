@@ -16,6 +16,8 @@ Tocar categoría y ver sus movimientos con fotos,análisis,should,yes,yes,S10 co
 Límites de gasto por categoría con disponible,límites,must,yes,yes,S11
 Aviso y ajuste proporcional si los límites no cuadran,límites,could,yes,yes,S11: propone bajar los límites en proporción
 Capital total: ahorros e inversiones separados + capital líquido,patrimonio,must,yes,yes,S12
+Varias cuentas (bancos / efectivo) con su saldo y cuadrar con el banco,patrimonio,should,no,yes,petición del usuario; #/cuentas; el disponible es la suma de las cuentas
+Importar extracto del banco (Excel .xlsx o CSV; probado con formato tipo BBVA),transacciones,should,no,yes,se lee en el móvil; sin repetidos; adivina categoría y recuerda; transferencias a inversión → aporte a hucha
 Aportes y retiradas a ahorro e inversión,patrimonio,must,yes,yes,S13 (hoja) y detalle de hucha
 Metas de ahorro e inversión con aviso al cumplirlas,patrimonio,should,yes,partial,aviso dentro de la app al cumplirla; sin notificación push
 Planificación del mes en % o cantidad,planificación,must,yes,yes,S14

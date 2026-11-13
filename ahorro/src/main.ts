@@ -23,6 +23,7 @@ import { infoScreen, memoryScreen, recapScreen, streaksScreen } from "./screens/
 import { reportScreen } from "./screens/report";
 import { assistantScreen } from "./screens/assistant";
 import { settingsScreen } from "./screens/settings";
+import { accountsScreen, importScreen } from "./screens/accounts";
 
 route("/", homeScreen);                              // S06
 route("/bienvenida", welcomeScreen);                 // S01, S02
@@ -46,6 +47,8 @@ route("/rachas", streaksScreen);                     // S20
 route("/informe/:mes", reportScreen);                // S21
 route("/info", infoScreen);                          // S22
 route("/ajustes", settingsScreen);                   // S23
+route("/cuentas", accountsScreen);                   // cuentas y saldos
+route("/importar", importScreen);                    // importar extracto del banco
 route("/design", designPage);                        // sistema de diseño
 
 const app = document.getElementById("app")!;

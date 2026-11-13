@@ -23,6 +23,8 @@ export interface Settings {
   liquidStartDate: Ymd;
   theme: "system" | "light" | "dark";
   openDays: Ymd[];
+  /** Concepto de extracto normalizado → categoría elegida (para adivinar en la próxima importación). */
+  importRules?: Record<string, string>;
   updatedAt: string;
 }
 
@@ -38,6 +40,19 @@ export interface Category extends Synced {
   archived: boolean;
 }
 
+/** Cuenta de dinero disponible: un banco, efectivo… (las huchas siguen siendo ahorro e inversión). */
+export interface Account extends Synced {
+  id: string;
+  name: string;              // «BBVA nómina», «Efectivo»
+  kind: "corriente" | "efectivo" | "otra";
+  initialCents: number;      // saldo el día initialDate
+  initialDate: Ymd;
+  color: string;             // token "chart-n"
+  sortOrder: number;
+  archived: boolean;
+  createdAt: string;
+}
+
 export interface Transaction extends Synced {
   id: string;
   type: TxType;
@@ -47,6 +62,8 @@ export interface Transaction extends Synced {
   occurredOn: Ymd;
   note: string;
   hasPhoto: boolean;
+  accountId?: string;        // sin cuenta = la cuenta principal
+  importKey?: string;        // huella del movimiento importado de un extracto (para no repetirlo)
   createdAt: string;
 }
 
@@ -56,6 +73,7 @@ export interface Pot extends Synced {
   name: string;
   goalCents: number | null;
   goalReachedAt?: string;
+  institution?: string;      // banco o entidad donde está («MyInvestor», «Trade Republic»…)
   createdAt: string;
 }
 
@@ -68,6 +86,8 @@ export interface PotMovement extends Synced {
   note: string;
   /** Saldo que ya tenías al empezar: no sale de tu dinero líquido ni cuenta como ahorro del mes. */
   initial?: boolean;
+  accountId?: string;        // de qué cuenta sale o a cuál vuelve el dinero (sin cuenta = la principal)
+  importKey?: string;
   createdAt: string;
 }
 

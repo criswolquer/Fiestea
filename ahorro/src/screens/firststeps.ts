@@ -1,7 +1,7 @@
 // S04 Primeros pasos: configurar lo básico, cada paso se puede dejar para luego.
 import { Check, ListChecks } from "lucide";
 import { today } from "../data/dates";
-import { addPotMovement, getSettings, markFirstStep, saveSettings, upsertPot } from "../data/repo";
+import { addPotMovement, getSettings, listAccounts, markFirstStep, saveSettings, setAccountBalanceToday, upsertPot } from "../data/repo";
 import type { Settings } from "../data/types";
 import { button, field, moneyField, parseMoney, setFieldError, toast } from "../ui/components";
 import { h, icon } from "../ui/dom";
@@ -60,11 +60,13 @@ function stepBody(id: string, s: Settings): HTMLElement | null {
     return form([f], async (fd) => { await saveSettings({ nickname: fd.get("nickname")!.toString().trim() }); await markFirstStep(id); });
   }
   if (id === "dinero-hoy") {
-    const f = moneyField("Dinero disponible hoy", { name: "liquid", hint: "Puedes ponerlo aproximado y cambiarlo luego en Ajustes." });
+    const f = moneyField("Dinero disponible hoy", { name: "liquid", hint: "Lo de tu cuenta principal. Si tienes varios bancos, créalos luego en Patrimonio → Cuentas." });
     return form([f], async (fd) => {
       const c = parseMoney(String(fd.get("liquid")));
       if (c === null) { setFieldError(f, "Escribe una cantidad, por ejemplo 1200 o 0."); throw new Error(""); }
-      await saveSettings({ liquidStartCents: c, liquidStartDate: today() }); await markFirstStep(id);
+      await saveSettings({ liquidStartCents: c, liquidStartDate: today() });
+      const [main] = await listAccounts(); await setAccountBalanceToday(main.id, c);
+      await markFirstStep(id);
     });
   }
   if (id === "huchas") {

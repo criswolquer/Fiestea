@@ -183,3 +183,14 @@ input.sr-only:focus-visible + label { outline: 2px solid var(--accent); outline-
 
 .check { display: flex; gap: var(--space-3); align-items: flex-start; padding: var(--space-3); border-radius: var(--radius-md); background: var(--surface-2); cursor: pointer; }
 .check input { width: 22px; height: 22px; margin: 0; flex: none; accent-color: var(--accent); }
+
+/* Cuentas e importación */
+.account { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--space-2) var(--space-3); padding: var(--space-3) var(--space-4); border-radius: var(--radius-lg); background: var(--surface); }
+.account-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.neg { color: var(--danger); }
+.import-list { gap: var(--space-2); }
+.import-row { display: grid; gap: var(--space-2); padding: var(--space-3); border-radius: var(--radius-md); background: var(--surface); }
+.import-row.is-dup, .import-row.is-skip { opacity: .55; }
+.import-head { display: flex; gap: var(--space-3); align-items: flex-start; }
+.import-controls { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
+.input-sm { min-height: 40px; font-size: var(--text-sm); padding: 0 var(--space-3); }

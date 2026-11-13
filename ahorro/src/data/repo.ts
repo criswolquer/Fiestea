@@ -5,7 +5,7 @@ import {
   addDays, addMonths, daysInMonth, isoWeekday, monthOf, monthRange, nowIso, sameDayLastMonth, thisMonth, today,
 } from "./dates";
 import type {
-  AssistantMessage, Category, CategoryKind, Month, MonthPlan, MonthRecap, Note, Pot, PotMovement, PotType,
+  Account, AssistantMessage, Category, CategoryKind, Month, MonthPlan, MonthRecap, Note, Pot, PotMovement, PotType,
   RecapSummary, Reflection, Reminder, Settings, Transaction, TxType, Ymd,
 } from "./types";
 
@@ -80,7 +80,7 @@ export async function setLimit(categoryId: string, cents: number | null): Promis
 }
 
 /* Movimientos --------------------------------------------------------------- */
-export interface TxInput { type: TxType; amountCents: number; categoryId: string | null; title: string; occurredOn: Ymd; note?: string }
+export interface TxInput { type: TxType; amountCents: number; categoryId: string | null; title: string; occurredOn: Ymd; note?: string; accountId?: string; importKey?: string }
 
 export async function addTransaction(t: TxInput, photo?: Blob | null): Promise<Transaction> {
   validateTx(t);
@@ -128,6 +128,7 @@ export async function listPots(type?: PotType): Promise<Pot[]> {
 export async function upsertPot(p: Partial<Pot> & { name: string; type: PotType }): Promise<Pot> {
   const prev = p.id ? await db.get<Pot>("pots", p.id) : undefined;
   const v: Pot = { id: p.id ?? uuid(), type: p.type, name: p.name.trim(), goalCents: p.goalCents ?? null, goalReachedAt: prev?.goalReachedAt,
+    institution: (p.institution ?? prev?.institution ?? "").trim() || undefined,
     createdAt: prev?.createdAt ?? nowIso(), updatedAt: nowIso() };
   if (!v.name) throw new Error("Ponle un nombre.");
   if (prev && v.goalCents !== prev.goalCents) v.goalReachedAt = undefined;
@@ -149,13 +150,15 @@ export async function listPotMovements(f: { potId?: string; month?: Month } = {}
   return alive(xs).filter((m) => !f.month || monthOf(m.occurredOn) === f.month).sort((a, b) => b.occurredOn.localeCompare(a.occurredOn) || b.createdAt.localeCompare(a.createdAt));
 }
 /** Devuelve si con este movimiento se ha cumplido la meta (para avisar). */
-export async function addPotMovement(potId: string, kind: PotMovement["kind"], amountCents: number, occurredOn: Ymd, note = "", initial = false): Promise<{ goalReached: boolean }> {
+export async function addPotMovement(potId: string, kind: PotMovement["kind"], amountCents: number, occurredOn: Ymd, note = "",
+  opts: boolean | { initial?: boolean; accountId?: string; importKey?: string } = {}): Promise<{ goalReached: boolean }> {
+  const { initial = false, accountId, importKey } = typeof opts === "boolean" ? { initial: opts } : opts;
   if (!Number.isInteger(amountCents) || amountCents <= 0) throw new Error("El importe tiene que ser mayor que cero.");
   const pot = await db.get<Pot>("pots", potId);
   if (!pot || pot.deletedAt) throw new Error("Esa hucha ya no existe.");
   const bal = await potBalance(potId);
   if (kind === "withdrawal" && amountCents > bal) throw new Error(`Solo hay ${(bal / 100).toLocaleString("es-ES", { minimumFractionDigits: 2 })} € en esta hucha.`);
-  const m: PotMovement = { id: uuid(), potId, kind, amountCents, occurredOn, note, initial: initial || undefined, createdAt: nowIso(), updatedAt: nowIso() };
+  const m: PotMovement = { id: uuid(), potId, kind, amountCents, occurredOn, note, initial: initial || undefined, accountId, importKey, createdAt: nowIso(), updatedAt: nowIso() };
   const after = bal + (kind === "contribution" ? amountCents : -amountCents);
   const goalReached = !!pot.goalCents && !pot.goalReachedAt && after >= pot.goalCents;
   await db.write([{ store: "potMovements", value: m }, ...(goalReached ? [{ store: "pots" as const, value: { ...pot, goalReachedAt: nowIso(), updatedAt: nowIso() } }] : [])]);
@@ -219,21 +222,80 @@ export async function limitsCheck(month: Month): Promise<{ availableCents: numbe
 }
 
 /* Patrimonio -------------------------------------------------------------------- */
-export async function wealth(): Promise<{ liquidCents: number; savingsCents: number; investmentCents: number; totalCents: number; pots: (Pot & { balanceCents: number })[] }> {
-  const [s, txs, movs, pots] = await Promise.all([getSettings(), listTransactions({ from: "0000-01-01" }), db.getAll<PotMovement>("potMovements"), listPots()]);
-  const start = s.liquidStartDate;
-  let liquid = s.liquidStartCents;
-  for (const t of txs) if (t.occurredOn >= start) liquid += t.type === "income" ? t.amountCents : -t.amountCents;
+export type AccountWithBalance = Account & { balanceCents: number };
+export async function wealth(): Promise<{ liquidCents: number; savingsCents: number; investmentCents: number; totalCents: number;
+  pots: (Pot & { balanceCents: number })[]; accounts: AccountWithBalance[] }> {
+  const [accounts, movs, pots] = await Promise.all([accountBalances(), db.getAll<PotMovement>("potMovements"), listPots()]);
   const bal = new Map<string, number>();
-  for (const m of alive(movs)) {
-    const d = m.kind === "contribution" ? m.amountCents : -m.amountCents;
-    bal.set(m.potId, (bal.get(m.potId) ?? 0) + d);
-    if (m.occurredOn >= start && !m.initial) liquid -= d;
-  }
+  for (const m of alive(movs)) bal.set(m.potId, (bal.get(m.potId) ?? 0) + (m.kind === "contribution" ? m.amountCents : -m.amountCents));
   const withBal = pots.map((p) => ({ ...p, balanceCents: bal.get(p.id) ?? 0 }));
   const savingsCents = withBal.filter((p) => p.type === "savings").reduce((a, p) => a + p.balanceCents, 0);
   const investmentCents = withBal.filter((p) => p.type === "investment").reduce((a, p) => a + p.balanceCents, 0);
-  return { liquidCents: liquid, savingsCents, investmentCents, totalCents: liquid + savingsCents + investmentCents, pots: withBal };
+  const liquid = accounts.filter((a) => !a.archived || a.balanceCents).reduce((x, a) => x + a.balanceCents, 0);
+  return { liquidCents: liquid, savingsCents, investmentCents, totalCents: liquid + savingsCents + investmentCents, pots: withBal, accounts };
+}
+
+/* Cuentas ------------------------------------------------------------------------ */
+export const MAIN_ACCOUNT = "principal";   // id fijo: dos móviles no crean dos «principales»
+
+/** Cuentas vivas. Si no hay ninguna, crea la principal con el saldo de partida de Ajustes. */
+export async function listAccounts(opts: { includeArchived?: boolean } = {}): Promise<Account[]> {
+  let xs = alive(await db.getAll<Account>("accounts"));
+  if (!xs.length) {
+    const s = await getSettings();
+    const main: Account = { id: MAIN_ACCOUNT, name: "Cuenta principal", kind: "corriente", initialCents: s.liquidStartCents, initialDate: s.liquidStartDate,
+      color: "chart-2", sortOrder: 0, archived: false, createdAt: nowIso(), updatedAt: nowIso() };
+    if (s.onboardedAt) await db.put("accounts", main);
+    xs = [main];
+  }
+  return xs.filter((a) => opts.includeArchived || !a.archived).sort((a, b) => a.sortOrder - b.sortOrder || a.createdAt.localeCompare(b.createdAt));
+}
+export async function upsertAccount(a: Partial<Account> & { name: string }): Promise<Account> {
+  const all = await listAccounts({ includeArchived: true });
+  const prev = a.id ? all.find((x) => x.id === a.id) : undefined;
+  const v: Account = { id: a.id ?? uuid(), name: a.name.trim(), kind: a.kind ?? prev?.kind ?? "corriente",
+    initialCents: a.initialCents ?? prev?.initialCents ?? 0, initialDate: a.initialDate ?? prev?.initialDate ?? today(),
+    color: a.color ?? prev?.color ?? `chart-${(all.length % 6) + 1}`, sortOrder: a.sortOrder ?? prev?.sortOrder ?? all.length,
+    archived: a.archived ?? prev?.archived ?? false, createdAt: prev?.createdAt ?? nowIso(), updatedAt: nowIso() };
+  if (!v.name) throw new Error("Ponle un nombre.");
+  if (all.some((x) => x.id !== v.id && !x.archived && x.name.toLowerCase() === v.name.toLowerCase())) throw new Error(`Ya tienes una cuenta llamada «${v.name}».`);
+  await db.put("accounts", v);
+  return v;
+}
+/** Resuelve la cuenta de un movimiento: la suya, o la primera si no tiene o ya no existe. */
+function accountResolver(accounts: Account[]): (id?: string) => string {
+  const ids = new Set(accounts.map((a) => a.id));
+  const fallback = ids.has(MAIN_ACCOUNT) ? MAIN_ACCOUNT : accounts[0]?.id ?? MAIN_ACCOUNT;
+  return (id) => (id && ids.has(id) ? id : fallback);
+}
+/** Saldo de cada cuenta (antes del día `before`, si se da). */
+export async function accountBalances(before?: Ymd): Promise<AccountWithBalance[]> {
+  const [accounts, txs, movs] = await Promise.all([listAccounts({ includeArchived: true }), listTransactions({ from: "0000-01-01" }), db.getAll<PotMovement>("potMovements")]);
+  const of = accountResolver(accounts);
+  const byId = new Map(accounts.map((a) => [a.id, { ...a, balanceCents: a.initialCents }]));
+  const counts = (acc: Account, d: Ymd) => d >= acc.initialDate && (!before || d < before);
+  for (const x of txs) { const a = byId.get(of(x.accountId))!; if (counts(a, x.occurredOn)) a.balanceCents += x.type === "income" ? x.amountCents : -x.amountCents; }
+  for (const m of alive(movs)) {
+    if (m.initial) continue;
+    const a = byId.get(of(m.accountId))!;
+    if (counts(a, m.occurredOn)) a.balanceCents -= m.kind === "contribution" ? m.amountCents : -m.amountCents;
+  }
+  return [...byId.values()];
+}
+/** Lo apuntado en una cuenta después de `day` (para cuadrar con el saldo de un extracto de ese día). */
+export async function accountNetAfter(accountId: string, day: Ymd): Promise<number> {
+  const [accounts, txs, movs] = await Promise.all([listAccounts({ includeArchived: true }), listTransactions({ from: addDays(day, 1) }), db.getAll<PotMovement>("potMovements")]);
+  const of = accountResolver(accounts);
+  let net = 0;
+  for (const x of txs) if (of(x.accountId) === accountId) net += x.type === "income" ? x.amountCents : -x.amountCents;
+  for (const m of alive(movs)) if (!m.initial && m.occurredOn > day && of(m.accountId) === accountId) net -= m.kind === "contribution" ? m.amountCents : -m.amountCents;
+  return net;
+}
+/** «Cuadrar con el banco»: ajusta el saldo de partida para que hoy dé `realCents`. */
+export async function setAccountBalanceToday(id: string, realCents: number): Promise<void> {
+  const a = (await accountBalances()).find((x) => x.id === id);
+  if (!a) throw new Error("Esa cuenta ya no existe.");
+  await upsertAccount({ ...a, initialCents: a.initialCents + (realCents - a.balanceCents) });
 }
 
 /* Planificación ------------------------------------------------------------------ */
@@ -288,8 +350,7 @@ export async function takeDueReminders(): Promise<Reminder[]> {
 /* Cierre de mes ------------------------------------------------------------------- */
 export async function buildSummary(month: Month): Promise<RecapSummary> {
   const [s, prev, txs, cats, plan] = await Promise.all([monthSummary(month), monthSummary(addMonths(month, -1)), listTransactions({ month }), listCategories("expense", { includeArchived: true }), planVsActual(month)]);
-  const settings = await getSettings();
-  const w = await liquidAt(`${month}-01`, settings);
+  const w = await liquidAt(`${month}-01`);
   const brk = await categoryBreakdown(month, "expense");
   const top = brk.segments.find((x) => x.category);
   const biggest = txs.filter((t) => t.type === "expense").sort((a, b) => b.amountCents - a.amountCents)[0];
@@ -304,13 +365,8 @@ export async function buildSummary(month: Month): Promise<RecapSummary> {
     plan: plan?.plan ?? null, actual: plan?.actual ?? null,
   };
 }
-async function liquidAt(day: Ymd, s: Settings): Promise<number> {
-  if (day < s.liquidStartDate) return s.liquidStartCents;
-  const [txs, movs] = await Promise.all([listTransactions({ from: s.liquidStartDate, to: addDays(day, -1) }), db.getAll<PotMovement>("potMovements")]);
-  let v = s.liquidStartCents;
-  for (const t of txs) v += t.type === "income" ? t.amountCents : -t.amountCents;
-  for (const m of alive(movs)) if (m.occurredOn >= s.liquidStartDate && m.occurredOn < day && !m.initial) v -= m.kind === "contribution" ? m.amountCents : -m.amountCents;
-  return v;
+async function liquidAt(day: Ymd): Promise<number> {
+  return (await accountBalances(day)).reduce((x, a) => x + a.balanceCents, 0);
 }
 
 /** Congela el resumen de los meses ya terminados que tengan datos (una vez por mes). */
@@ -413,4 +469,37 @@ export async function importBackup(file: File): Promise<{ transactions: number }
 export const wipeAll = () => db.clearAll({ includeMeta: true });
 function blobToDataUrl(b: Blob): Promise<string> {
   return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.onerror = () => rej(r.error); r.readAsDataURL(b); });
+}
+
+/* Importar extractos --------------------------------------------------------------- */
+export interface ImportDecision {
+  key: string; date: Ymd; concept: string; detail: string; amountCents: number;   // amount con signo
+  action: "expense" | "income" | "pot" | "skip"; categoryId: string | null; potId?: string;
+}
+/** Huellas ya importadas (para marcar los repetidos). */
+export async function existingImportKeys(): Promise<Set<string>> {
+  const [txs, movs] = await Promise.all([db.getAll<Transaction>("transactions"), db.getAll<PotMovement>("potMovements")]);
+  return new Set([...alive(txs), ...alive(movs)].map((x) => x.importKey).filter((k): k is string => !!k));
+}
+/** Apunta las filas elegidas en una sola transacción y recuerda la categoría de cada concepto. */
+export async function importStatement(accountId: string, rows: ImportDecision[], conceptKey: (s: string) => string): Promise<{ txs: number; moves: number }> {
+  const ops: db.Write[] = []; const t = nowIso(); let txs = 0, moves = 0;
+  const s = await getSettings(); const rules = { ...(s.importRules ?? {}) };
+  for (const r of rows) {
+    if (r.action === "skip") continue;
+    const cents = Math.abs(r.amountCents);
+    if (r.action === "pot") {
+      if (!r.potId) continue;
+      ops.push({ store: "potMovements", value: { id: uuid(), potId: r.potId, kind: r.amountCents < 0 ? "contribution" : "withdrawal", amountCents: cents,
+        occurredOn: r.date, note: r.concept.slice(0, 80), accountId, importKey: r.key, createdAt: t, updatedAt: t } satisfies PotMovement });
+      moves++; continue;
+    }
+    ops.push({ store: "transactions", value: { id: uuid(), type: r.action, amountCents: cents, categoryId: r.categoryId, title: r.concept.slice(0, 80),
+      occurredOn: r.date, note: r.detail.slice(0, 1000), hasPhoto: false, accountId, importKey: r.key, createdAt: t, updatedAt: t } satisfies Transaction });
+    if (r.categoryId) rules[conceptKey(r.concept)] = r.categoryId;
+    txs++;
+  }
+  ops.push({ store: "settings", value: { ...s, importRules: rules, updatedAt: t } });
+  await db.write(ops);
+  return { txs, moves };
 }
