@@ -31,9 +31,12 @@ export async function openMoveSheet(preset: { from?: string; to?: string } = {})
       swap,
       h("div", { class: "field" }, h("label", { class: "field-label", for: "mv-to" }, "A"), to)),
     amount, date, note,
-    h("p", { class: "muted small" }, "Mover dinero entre tus cuentas o a tus huchas no cuenta como gasto ni como ingreso."),
-    button("Mover", { type: "submit", block: true, size: "lg" }));
-  const d = openSheet("Mover dinero", form);
+    h("p", { class: "muted small" }, "Mover dinero entre tus cuentas o a tus huchas no cuenta como gasto ni como ingreso."));
+  form.id = "move-form";
+  // El botón va en el pie fijo de la hoja: siempre visible aunque el contenido no quepa.
+  const submit = button("Mover", { type: "submit", block: true, size: "lg" });
+  submit.setAttribute("form", "move-form");
+  const d = openSheet("Mover dinero", form, submit);
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const fd = new FormData(form);
