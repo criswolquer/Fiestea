@@ -164,6 +164,13 @@ export async function addPotMovement(potId: string, kind: PotMovement["kind"], a
   await db.write([{ store: "potMovements", value: m }, ...(goalReached ? [{ store: "pots" as const, value: { ...pot, goalReachedAt: nowIso(), updatedAt: nowIso() } }] : [])]);
   return { goalReached };
 }
+/** Pone el saldo de una hucha en `realCents` con un ajuste «ya lo tenía» (no toca el disponible). */
+export async function setPotBalance(potId: string, realCents: number): Promise<void> {
+  const diff = realCents - (await potBalance(potId));
+  if (!diff) return;
+  await db.put("potMovements", { id: uuid(), potId, kind: diff > 0 ? "contribution" : "withdrawal", amountCents: Math.abs(diff), occurredOn: today(),
+    note: "Ajuste de saldo", initial: true, createdAt: nowIso(), updatedAt: nowIso() } satisfies PotMovement);
+}
 /** Marca un aporte como dinero que ya tenías (no sale del disponible ni cuenta como aportado ese mes). */
 export async function setPotMovementInitial(id: string, initial: boolean): Promise<void> {
   const m = (await db.getAll<PotMovement>("potMovements")).find((x) => x.id === id);

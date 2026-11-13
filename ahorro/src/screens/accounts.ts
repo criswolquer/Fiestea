@@ -23,7 +23,8 @@ export async function accountsScreen(_: string[], q: Query): Promise<HTMLElement
   return screen({ title: "Cuentas", back: q.get("volver") ?? "#/capital", actions: [button("Nueva cuenta", { variant: "ghost", size: "sm", icon: Plus, onClick: () => editAccount({}) })] },
     h("section", { class: "hero" }, h("p", { class: "muted" }, "Dinero disponible en tus cuentas"), h("p", { class: "big-number num" }, money(total))),
     h("ul", { class: "list" }, ...accounts.map((a) => accountRow(a))),
-    h("a", { class: "btn btn-primary btn-lg btn-block", href: "#/importar" }, icon(FileUp), h("span", {}, "Importar extracto del banco")),
+    h("a", { class: "btn btn-secondary btn-md btn-block", href: "#/configurar-cuentas" }, icon(Landmark), h("span", {}, "Configurar cuentas e inversión de una vez")),
+    h("a", { class: "btn btn-ghost btn-md btn-block", href: "#/importar" }, icon(FileUp), h("span", {}, "Importar extracto del banco")),
     h("p", { class: "muted" }, "Cada movimiento que apuntas va a una cuenta. El ahorro y la inversión van en tus huchas (Patrimonio): ahí puedes poner en qué banco o entidad está cada una."),
   );
 }
@@ -41,7 +42,7 @@ function accountRow(a: AccountWithBalance): HTMLElement {
 
 function editAccount(a: Partial<Account>): void {
   let kind: Account["kind"] = a.kind ?? "corriente";
-  const name = field("Nombre", { name: "name", value: a.name, required: true, maxlength: 40, placeholder: "Ej.: BBVA nómina" });
+  const name = field("Nombre", { name: "name", value: a.name, required: true, maxlength: 40, placeholder: "Ej.: Cuenta de la nómina" });
   const bal = a.id ? null : moneyField("Saldo de hoy", { name: "balance", hint: "Lo que pone tu banco ahora mismo. Puedes ajustarlo luego con «Cuadrar con el banco»." });
   const kinds: Account["kind"][] = ["corriente", "efectivo", "otra"];
   const form = h("form", { class: "stack-sm", novalidate: true }, name,
@@ -101,7 +102,7 @@ export async function importScreen(_: string[], q: Query): Promise<HTMLElement> 
   accountSelect.addEventListener("change", () => { accountId = accountSelect.value; });
 
   const intro = h("div", { class: "stack-sm" },
-    h("p", { class: "muted" }, "En la web o la app de tu banco (BBVA incluido), entra en los movimientos de la cuenta y usa «Descargar» o «Exportar» en Excel (.xlsx) o CSV. Luego súbelo aquí: se lee en tu móvil, no se envía a ningún sitio."),
+    h("p", { class: "muted" }, "En la web o la app de tu banco, entra en los movimientos de la cuenta y usa «Descargar» o «Exportar» en Excel (.xlsx) o CSV. Luego súbelo aquí: se lee en tu móvil, no se envía a ningún sitio."),
     h("div", { class: "field" }, h("label", { class: "field-label", for: "acc" }, "¿De qué cuenta es el extracto?"), accountSelect),
     h("div", {}, fileInput, h("label", { for: "statement", class: "btn btn-primary btn-lg btn-block" }, icon(FileUp), h("span", {}, "Elegir archivo"))),
     accounts.length === 1 ? h("p", { class: "muted small" }, h("a", { href: "#/cuentas" }, "¿Es de otro banco? Crea antes la cuenta.")) : null);

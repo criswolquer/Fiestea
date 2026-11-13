@@ -25,7 +25,7 @@ export async function loadDemo(): Promise<void> {
   const now = thisMonth();
   const start = addMonths(now, -2);
   await repo.saveSettings({ nickname: "Alex", liquidStartCents: 120000, liquidStartDate: `${start}-01`, onboardedAt: new Date().toISOString(),
-    firstSteps: ["nombre", "dinero-hoy", "huchas", "limites", "plan"] });
+    firstSteps: ["nombre", "dinero-hoy", "huchas", "limites", "plan"], accountsSetupDone: true });
 
   await repo.upsertAccount({ id: repo.MAIN_ACCOUNT, name: "Banco de la nómina", kind: "corriente", initialCents: 120000, initialDate: `${start}-01`, color: "chart-2" });
   const cash = await repo.upsertAccount({ name: "Efectivo", kind: "efectivo", initialCents: 6000, initialDate: `${start}-01`, color: "chart-4" });
