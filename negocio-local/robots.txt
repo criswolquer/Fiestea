@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://peluqueria-celia.netlify.app/sitemap.xml
