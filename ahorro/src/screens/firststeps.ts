@@ -10,9 +10,8 @@ import { refresh } from "../app/router";
 import { errorText } from "../app/util";
 
 export const STEPS: { id: string; title: string; text: string; href?: string }[] = [
-  { id: "nombre", title: "Dinos cómo te llamamos", text: "Para saludarte y personalizar tus resúmenes." },
-  { id: "dinero-hoy", title: "Cuánto tienes hoy", text: "Lo que hay en tus cuentas y en efectivo, sin contar ahorros ni inversiones." },
-  { id: "huchas", title: "Lo que ya tienes apartado", text: "Si ya ahorras o inviertes, apúntalo para que tu patrimonio cuadre." },
+  { id: "cuentas", title: "Tus cuentas e inversión", text: "Dónde tienes tu dinero y cuánto hay hoy.", href: "#/configurar-cuentas" },
+  { id: "fijos", title: "Tus fijos del mes", text: "Nómina, alquiler, suscripciones… se apuntarán solos.", href: "#/fijos" },
   { id: "limites", title: "Un límite para empezar", text: "Elige la categoría que más se te escapa y ponle un tope.", href: "#/limites" },
   { id: "plan", title: "Reparte el mes", text: "Decide qué parte de lo que ganas va a gastos, ahorro e inversión.", href: "#/plan" },
   { id: "primer-movimiento", title: "Tu primer movimiento", text: "Apunta un gasto de hoy. Con foto, si te apetece.", href: "#/nuevo" },

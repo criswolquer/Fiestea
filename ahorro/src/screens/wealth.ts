@@ -1,9 +1,10 @@
 // S12 Patrimonio, S13 aporte o retirada (hoja), detalle de una hucha.
-import { ArrowDownLeft, ArrowUpRight, FileUp, History, Landmark, PiggyBank, Plus, Scale, Trash2, Undo2 } from "lucide";
-import { dayLabel, isValidYmd, thisMonth, today } from "../data/dates";
-import { addPotMovement, deletePot, deletePotMovement, listAccounts, listPotMovements, setPotMovementInitial, upsertPot, wealth } from "../data/repo";
+import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, FileUp, History, Landmark, PiggyBank, Plus, Scale, Trash2, TrendingUp, Undo2 } from "lucide";
+import { dayLabel, isValidYmd, monthLabel, thisMonth, today } from "../data/dates";
+import { addPotMovement, deletePot, deletePotMovement, listAccounts, listPotMovements, netWorthHistory, setPotMovementInitial, setPotValue, upsertPot, wealth } from "../data/repo";
+import { openMoveSheet } from "./move";
 import type { Pot, PotType } from "../data/types";
-import { button, emptyState, field, moneyField, parseMoney, ring, segmented, setFieldError, toast } from "../ui/components";
+import { button, emptyState, field, lineChart, moneyField, parseMoney, ring, segmented, setFieldError, toast } from "../ui/components";
 import { h, icon, money, pct } from "../ui/dom";
 import { screen, sectionTitle } from "../app/layout";
 import { confirmDialog, openSheet } from "../app/dialogs";
@@ -11,14 +12,15 @@ import { refresh } from "../app/router";
 import { centsToInput, errorText, go } from "../app/util";
 
 export async function wealthScreen(): Promise<HTMLElement> {
-  const w = await wealth();
-  const potCard = (p: Pot & { balanceCents: number }) => h("li", {},
+  const [w, history] = await Promise.all([wealth(), netWorthHistory(12)]);
+  const potCard = (p: Pot & { balanceCents: number; valueCents: number; gainCents: number | null }) => h("li", {},
     h("a", { class: "pot", href: `#/hucha/${p.id}` },
       ring({ value: p.goalCents ? p.balanceCents : 1, max: p.goalCents ?? 1, color: p.type, size: 56, stroke: 6, showPct: !!p.goalCents,
         label: p.goalCents ? `${p.name}: ${pct(p.balanceCents, p.goalCents)} % de la meta` : p.name }),
       h("span", { class: "pot-main" }, h("span", { class: "pot-name" }, p.name),
         h("span", { class: "muted" }, [p.institution, p.goalCents ? `Meta: ${money(p.goalCents)}${p.goalReachedAt ? " · ¡conseguida!" : ""}` : p.institution ? "" : p.type === "savings" ? "Ahorro" : "Inversión"].filter(Boolean).join(" · "))),
-      h("span", { class: "num pot-amount" }, money(p.balanceCents))));
+      h("span", { class: "pot-right" }, h("span", { class: "num pot-amount" }, money(p.valueCents)),
+        p.gainCents !== null && p.gainCents !== 0 ? h("span", { class: `num gain ${p.gainCents > 0 ? "up" : "down"}` }, `${p.gainCents > 0 ? "+" : "−"}${money(Math.abs(p.gainCents))}`) : null)));
   const group = (type: PotType, title: string) => {
     const pots = w.pots.filter((p) => p.type === type);
     return h("section", { class: "stack-sm" },
@@ -35,6 +37,8 @@ export async function wealthScreen(): Promise<HTMLElement> {
         ringBlock("Disponible", w.liquidCents, w.totalCents, "accent"),
         ringBlock("Ahorrado", w.savingsCents, w.totalCents, "savings"),
         ringBlock("Invertido", w.investmentCents, w.totalCents, "investment"))),
+    history.length >= 2 ? h("section", { class: "card stack-sm" }, h("h2", { class: "section-title" }, "Evolución"),
+      lineChart(history.map((x) => ({ label: monthLabel(x.month, { year: false }).slice(0, 3), value: x.totalCents })), { color: "accent", label: "Patrimonio de los últimos meses", format: money })) : null,
     empty ? emptyState("Empieza por lo que tienes hoy", "Dinos cuánto hay en tus cuentas en Primeros pasos, o crea tu primera hucha.", PiggyBank,
       h("a", { class: "btn btn-primary btn-md", href: "#/primeros-pasos" }, "Ir a primeros pasos")) : null,
     h("section", { class: "stack-sm" },
@@ -44,7 +48,9 @@ export async function wealthScreen(): Promise<HTMLElement> {
           h("span", { class: "cat-icon", "aria-hidden": "true" }, icon(Landmark, { size: 18 })),
           h("span", { class: "pot-main" }, h("span", { class: "pot-name" }, a.name), h("span", { class: "muted" }, "Disponible")),
           h("span", { class: `num pot-amount${a.balanceCents < 0 ? " neg" : ""}` }, money(a.balanceCents)))))),
-      h("a", { class: "btn btn-secondary btn-md", href: "#/importar" }, icon(FileUp, { size: 18 }), h("span", {}, "Importar extracto del banco"))),
+      h("div", { class: "row two" },
+        button("Mover dinero", { variant: "secondary", icon: ArrowLeftRight, onClick: () => openMoveSheet() }),
+        h("a", { class: "btn btn-secondary btn-md", href: "#/importar" }, icon(FileUp, { size: 18 }), h("span", {}, "Importar extracto")))),
     group("savings", "Ahorro"), group("investment", "Inversión"),
     h("p", { class: "muted" }, "«Disponible» es lo que hay en tus cuentas: su saldo de partida más lo que entra, menos lo que gastas y lo que mueves a tus huchas."),
   );
@@ -59,12 +65,26 @@ export async function potScreen([id]: string[]): Promise<HTMLElement> {
   const p = w.pots.find((x) => x.id === id);
   if (!p) return screen({ title: "Hucha", back: "#/capital" }, emptyState("Esta hucha ya no existe", "Puede que la hayas borrado.", PiggyBank));
   const movs = await listPotMovements({ potId: id });
-  const left = p.goalCents ? Math.max(0, p.goalCents - p.balanceCents) : 0;
+  const shown = p.valueCents;
+  const left = p.goalCents ? Math.max(0, p.goalCents - shown) : 0;
+  const inv = p.type === "investment";
+  const gainPct = p.gainCents !== null && p.balanceCents > 0 ? (p.gainCents / p.balanceCents) * 100 : null;
+  const hist = (p.valueHistory ?? []).slice(-12);
   return screen({ title: p.name, back: "#/capital", actions: [button("Editar", { variant: "ghost", size: "sm", onClick: () => editPot(p) })] },
     h("section", { class: "hero" },
-      ring({ value: p.goalCents ? p.balanceCents : 1, max: p.goalCents ?? 1, color: p.type, size: 200, center: money(p.balanceCents),
-        sub: p.goalCents ? (left ? `faltan ${money(left)}` : "¡meta conseguida!") : p.type === "savings" ? "ahorrado" : "invertido",
-        label: p.goalCents ? `${money(p.balanceCents)} de ${money(p.goalCents)}` : money(p.balanceCents) })),
+      ring({ value: p.goalCents ? shown : 1, max: p.goalCents ?? 1, color: p.type, size: 200, center: money(shown),
+        sub: p.goalCents ? (left ? `faltan ${money(left)}` : "¡meta conseguida!") : inv ? (p.gainCents === null ? "aportado" : "vale hoy") : "ahorrado",
+        label: p.goalCents ? `${money(shown)} de ${money(p.goalCents)}` : money(shown) }),
+      p.institution ? h("p", { class: "muted" }, p.institution) : null),
+    inv ? h("section", { class: "card stack-sm" },
+      h("dl", { class: "facts" },
+        h("dt", {}, "Aportado"), h("dd", { class: "num" }, money(p.balanceCents)),
+        h("dt", {}, "Vale hoy"), h("dd", { class: "num" }, p.gainCents === null ? "Sin actualizar" : money(p.valueCents)),
+        p.gainCents !== null ? h("dt", {}, p.gainCents >= 0 ? "Ganas" : "Pierdes") : null,
+        p.gainCents !== null ? h("dd", { class: `num gain ${p.gainCents >= 0 ? "up" : "down"}` }, `${money(Math.abs(p.gainCents))}${gainPct !== null ? ` (${gainPct >= 0 ? "+" : "−"}${Math.abs(gainPct).toLocaleString("es-ES", { maximumFractionDigits: 1 })} %)` : ""}`) : null),
+      button(p.gainCents === null ? "¿Cuánto vale hoy? Actualizar valor" : "Actualizar valor", { variant: "secondary", block: true, icon: TrendingUp, onClick: () => valueSheet(p) }),
+      hist.length >= 2 ? lineChart(hist.map((x) => ({ label: dayLabel(x.on), value: x.cents })), { color: "investment", label: "Valor de la inversión", format: money }) : null,
+      h("p", { class: "muted small" }, "Mira el valor en la app o web de tu banco o bróker y apúntalo de vez en cuando (una vez al mes basta).")) : null,
     h("div", { class: "row two" },
       button("Aportar", { icon: ArrowDownLeft, block: true, onClick: () => movementSheet(p, "contribution") }),
       button("Retirar", { icon: ArrowUpRight, variant: "secondary", block: true, disabled: p.balanceCents <= 0, onClick: () => movementSheet(p, "withdrawal") })),
@@ -113,6 +133,18 @@ export async function movementSheet(p: Pot, kind: "contribution" | "withdrawal")
       toast(r.goalReached ? `¡Has llegado a tu meta de ${p.name}!` : kind === "contribution" ? "Aporte guardado" : "Retirada guardada", r.goalReached ? "success" : "info");
       refresh();
     } catch (err) { setFieldError(amount, errorText(err)); }
+  });
+}
+
+function valueSheet(p: Pot & { valueCents: number }): void {
+  const f = moneyField("Valor de hoy", { name: "value", big: true, value: centsToInput(p.valueCents), hint: "Lo que dice tu banco o bróker que vale ahora mismo." });
+  const form = h("form", { class: "stack-sm", novalidate: true }, f, button("Guardar valor", { type: "submit", block: true }));
+  const d = openSheet(`Valor de ${p.name}`, form);
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const c = parseMoney(String(new FormData(form).get("value") ?? ""));
+    if (c === null) { setFieldError(f, "Escribe una cantidad, por ejemplo 8120,45."); return; }
+    await setPotValue(p.id, c); d.close(); toast("Valor actualizado"); refresh();
   });
 }
 

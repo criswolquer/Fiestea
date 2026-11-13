@@ -5,7 +5,7 @@ import {
   addDays, addMonths, daysInMonth, isoWeekday, monthOf, monthRange, nowIso, sameDayLastMonth, thisMonth, today,
 } from "./dates";
 import type {
-  Account, AssistantMessage, Category, CategoryKind, Month, MonthPlan, MonthRecap, Note, Pot, PotMovement, PotType,
+  Account, AssistantMessage, Recurring, Transfer, Category, CategoryKind, Month, MonthPlan, MonthRecap, Note, Pot, PotMovement, PotType,
   RecapSummary, Reflection, Reminder, Settings, Transaction, TxType, Ymd,
 } from "./types";
 
@@ -231,13 +231,15 @@ export async function limitsCheck(month: Month): Promise<{ availableCents: numbe
 /* Patrimonio -------------------------------------------------------------------- */
 export type AccountWithBalance = Account & { balanceCents: number };
 export async function wealth(): Promise<{ liquidCents: number; savingsCents: number; investmentCents: number; totalCents: number;
-  pots: (Pot & { balanceCents: number })[]; accounts: AccountWithBalance[] }> {
+  pots: (Pot & { balanceCents: number; valueCents: number; gainCents: number | null })[]; accounts: AccountWithBalance[] }> {
   const [accounts, movs, pots] = await Promise.all([accountBalances(), db.getAll<PotMovement>("potMovements"), listPots()]);
   const bal = new Map<string, number>();
   for (const m of alive(movs)) bal.set(m.potId, (bal.get(m.potId) ?? 0) + (m.kind === "contribution" ? m.amountCents : -m.amountCents));
-  const withBal = pots.map((p) => ({ ...p, balanceCents: bal.get(p.id) ?? 0 }));
-  const savingsCents = withBal.filter((p) => p.type === "savings").reduce((a, p) => a + p.balanceCents, 0);
-  const investmentCents = withBal.filter((p) => p.type === "investment").reduce((a, p) => a + p.balanceCents, 0);
+  // balanceCents = lo aportado; valueCents = lo que vale hoy (inversión con valor apuntado) o lo aportado.
+  const withBal = pots.map((p) => { const put = bal.get(p.id) ?? 0; const v = p.type === "investment" ? potValueAt(p) : null;
+    return { ...p, balanceCents: put, valueCents: v ?? put, gainCents: v === null ? null : v - put }; });
+  const savingsCents = withBal.filter((p) => p.type === "savings").reduce((a, p) => a + p.valueCents, 0);
+  const investmentCents = withBal.filter((p) => p.type === "investment").reduce((a, p) => a + p.valueCents, 0);
   const liquid = accounts.filter((a) => !a.archived || a.balanceCents).reduce((x, a) => x + a.balanceCents, 0);
   return { liquidCents: liquid, savingsCents, investmentCents, totalCents: liquid + savingsCents + investmentCents, pots: withBal, accounts };
 }
@@ -277,9 +279,14 @@ function accountResolver(accounts: Account[]): (id?: string) => string {
 }
 /** Saldo de cada cuenta (antes del día `before`, si se da). */
 export async function accountBalances(before?: Ymd): Promise<AccountWithBalance[]> {
-  const [accounts, txs, movs] = await Promise.all([listAccounts({ includeArchived: true }), listTransactions({ from: "0000-01-01" }), db.getAll<PotMovement>("potMovements")]);
+  const [accounts, txs, movs, trs] = await Promise.all([listAccounts({ includeArchived: true }), listTransactions({ from: "0000-01-01" }), db.getAll<PotMovement>("potMovements"), listTransfers()]);
   const of = accountResolver(accounts);
   const byId = new Map(accounts.map((a) => [a.id, { ...a, balanceCents: a.initialCents }]));
+  for (const x of trs) {
+    const from = byId.get(of(x.fromAccountId))!, to = byId.get(of(x.toAccountId))!;
+    if (x.occurredOn >= from.initialDate && (!before || x.occurredOn < before)) from.balanceCents -= x.amountCents;
+    if (x.occurredOn >= to.initialDate && (!before || x.occurredOn < before)) to.balanceCents += x.amountCents;
+  }
   const counts = (acc: Account, d: Ymd) => d >= acc.initialDate && (!before || d < before);
   for (const x of txs) { const a = byId.get(of(x.accountId))!; if (counts(a, x.occurredOn)) a.balanceCents += x.type === "income" ? x.amountCents : -x.amountCents; }
   for (const m of alive(movs)) {
@@ -291,9 +298,10 @@ export async function accountBalances(before?: Ymd): Promise<AccountWithBalance[
 }
 /** Lo apuntado en una cuenta después de `day` (para cuadrar con el saldo de un extracto de ese día). */
 export async function accountNetAfter(accountId: string, day: Ymd): Promise<number> {
-  const [accounts, txs, movs] = await Promise.all([listAccounts({ includeArchived: true }), listTransactions({ from: addDays(day, 1) }), db.getAll<PotMovement>("potMovements")]);
+  const [accounts, txs, movs, trs] = await Promise.all([listAccounts({ includeArchived: true }), listTransactions({ from: addDays(day, 1) }), db.getAll<PotMovement>("potMovements"), listTransfers()]);
   const of = accountResolver(accounts);
   let net = 0;
+  for (const x of trs) if (x.occurredOn > day) { if (of(x.fromAccountId) === accountId) net -= x.amountCents; if (of(x.toAccountId) === accountId) net += x.amountCents; }
   for (const x of txs) if (of(x.accountId) === accountId) net += x.type === "income" ? x.amountCents : -x.amountCents;
   for (const m of alive(movs)) if (!m.initial && m.occurredOn > day && of(m.accountId) === accountId) net -= m.kind === "contribution" ? m.amountCents : -m.amountCents;
   return net;
@@ -456,6 +464,7 @@ export async function exportBackup(withPhotos: boolean): Promise<Blob> {
     for (const [k, v] of await db.entries("photos")) photos.push([k, await blobToDataUrl(v as Blob)]);
     out.photos = photos;
   }
+  await saveSettings({ lastBackupAt: nowIso() });
   return new Blob([JSON.stringify(out)], { type: "application/json" });
 }
 export async function importBackup(file: File): Promise<{ transactions: number }> {
@@ -481,20 +490,31 @@ function blobToDataUrl(b: Blob): Promise<string> {
 /* Importar extractos --------------------------------------------------------------- */
 export interface ImportDecision {
   key: string; date: Ymd; concept: string; detail: string; amountCents: number;   // amount con signo
-  action: "expense" | "income" | "pot" | "skip"; categoryId: string | null; potId?: string;
+  action: "expense" | "income" | "pot" | "transfer" | "skip"; categoryId: string | null; potId?: string; otherAccountId?: string;
 }
 /** Huellas ya importadas (para marcar los repetidos). */
 export async function existingImportKeys(): Promise<Set<string>> {
-  const [txs, movs] = await Promise.all([db.getAll<Transaction>("transactions"), db.getAll<PotMovement>("potMovements")]);
-  return new Set([...alive(txs), ...alive(movs)].map((x) => x.importKey).filter((k): k is string => !!k));
+  const [txs, movs, trs] = await Promise.all([db.getAll<Transaction>("transactions"), db.getAll<PotMovement>("potMovements"), db.getAll<Transfer>("transfers")]);
+  return new Set([...alive(txs), ...alive(movs), ...alive(trs)].map((x) => x.importKey).filter((k): k is string => !!k));
 }
 /** Apunta las filas elegidas en una sola transacción y recuerda la categoría de cada concepto. */
 export async function importStatement(accountId: string, rows: ImportDecision[], conceptKey: (s: string) => string): Promise<{ txs: number; moves: number }> {
   const ops: db.Write[] = []; const t = nowIso(); let txs = 0, moves = 0;
   const s = await getSettings(); const rules = { ...(s.importRules ?? {}) };
+  const transfers = await listTransfers();
   for (const r of rows) {
     if (r.action === "skip") continue;
     const cents = Math.abs(r.amountCents);
+    if (r.action === "transfer") {
+      if (!r.otherAccountId || r.otherAccountId === accountId) continue;
+      const from = r.amountCents < 0 ? accountId : r.otherAccountId, to = r.amountCents < 0 ? r.otherAccountId : accountId;
+      // Si ya se importó desde el extracto del otro banco, no se duplica (mismo día ±3, importe y cuentas).
+      const dup = transfers.some((x) => x.fromAccountId === from && x.toAccountId === to && x.amountCents === cents && Math.abs(Date.parse(x.occurredOn) - Date.parse(r.date)) <= 3 * 86400000);
+      if (dup) continue;
+      ops.push({ store: "transfers", value: { id: uuid(), fromAccountId: from, toAccountId: to, amountCents: cents, occurredOn: r.date, note: r.concept.slice(0, 80),
+        importKey: r.key, createdAt: t, updatedAt: t } satisfies Transfer });
+      moves++; continue;
+    }
     if (r.action === "pot") {
       if (!r.potId) continue;
       ops.push({ store: "potMovements", value: { id: uuid(), potId: r.potId, kind: r.amountCents < 0 ? "contribution" : "withdrawal", amountCents: cents,
@@ -509,4 +529,137 @@ export async function importStatement(accountId: string, rows: ImportDecision[],
   ops.push({ store: "settings", value: { ...s, importRules: rules, updatedAt: t } });
   await db.write(ops);
   return { txs, moves };
+}
+
+/* Movimientos fijos ------------------------------------------------------------------ */
+export async function listRecurring(): Promise<Recurring[]> {
+  return alive(await db.getAll<Recurring>("recurring")).sort((a, b) => a.dayOfMonth - b.dayOfMonth || a.title.localeCompare(b.title, "es"));
+}
+export async function upsertRecurring(r: Partial<Recurring> & Pick<Recurring, "type" | "amountCents" | "title" | "dayOfMonth">): Promise<Recurring> {
+  if (!Number.isInteger(r.amountCents) || r.amountCents <= 0) throw new Error("El importe tiene que ser mayor que cero.");
+  if (!r.title.trim()) throw new Error("Ponle un nombre, por ejemplo «Alquiler».");
+  const prev = r.id ? await db.get<Recurring>("recurring", r.id) : undefined;
+  const v: Recurring = { id: r.id ?? uuid(), type: r.type, amountCents: r.amountCents, categoryId: r.categoryId ?? null, title: r.title.trim(),
+    accountId: r.accountId, dayOfMonth: Math.min(31, Math.max(1, Math.round(r.dayOfMonth))), startMonth: r.startMonth ?? prev?.startMonth ?? thisMonth(),
+    active: r.active ?? prev?.active ?? true, createdAt: prev?.createdAt ?? nowIso(), updatedAt: nowIso() };
+  await db.put("recurring", v);
+  return v;
+}
+export async function deleteRecurring(id: string): Promise<void> {
+  const r = await db.get<Recurring>("recurring", id);
+  if (r) await db.put("recurring", { ...r, deletedAt: nowIso(), updatedAt: nowIso() });
+}
+const recurringDay = (r: Recurring, m: Month) => `${m}-${String(Math.min(r.dayOfMonth, daysInMonth(m))).padStart(2, "0")}`;
+/** Id fijo por mes: si dos móviles lo apuntan, es el mismo movimiento y no se duplica. */
+const recurringTxId = (r: Recurring, m: Month) => `fijo-${r.id}-${m}`;
+
+/** Apunta los fijos que ya tocaban (incluidos meses en los que no se abrió la app). Devuelve cuántos. */
+export async function generateRecurring(): Promise<number> {
+  const recs = (await listRecurring()).filter((r) => r.active);
+  const t = today(); const ops: db.Write[] = [];
+  for (const r of recs) {
+    for (let m = r.startMonth; m <= monthOf(t); m = addMonths(m, 1)) {
+      const day = recurringDay(r, m);
+      if (day > t) break;
+      const id = recurringTxId(r, m);
+      if (await db.get<Transaction>("transactions", id)) continue;   // ya está (o se borró a propósito)
+      ops.push({ store: "transactions", value: { id, type: r.type, amountCents: r.amountCents, categoryId: r.categoryId, title: r.title, occurredOn: day,
+        note: "Movimiento fijo", hasPhoto: false, accountId: r.accountId, createdAt: nowIso(), updatedAt: nowIso() } satisfies Transaction });
+    }
+  }
+  if (ops.length) await db.write(ops);
+  return ops.length;
+}
+/** Fijos de este mes que aún no han llegado. */
+export async function upcomingRecurring(): Promise<{ r: Recurring; day: Ymd }[]> {
+  const t = today(); const m = monthOf(t);
+  return (await listRecurring()).filter((r) => r.active && r.startMonth <= m).map((r) => ({ r, day: recurringDay(r, m) })).filter((x) => x.day > t);
+}
+
+/* Cuánto puedes gastar ------------------------------------------------------------------ */
+export interface SafeToSpend { perDayCents: number; availableCents: number; daysLeft: number; incomeCents: number; committedCents: number; apartTargetLeftCents: number; usesPlan: boolean }
+/** Lo que puedes gastar al día hasta fin de mes: entra − gastado − fijos pendientes − lo que quieres apartar y aún no has apartado. */
+export async function safeToSpend(): Promise<SafeToSpend | null> {
+  const m = thisMonth(); const t = today();
+  const [s, plan, up] = await Promise.all([monthSummary(m), getPlan(m), upcomingRecurring()]);
+  const upIncome = up.filter((x) => x.r.type === "income").reduce((a, x) => a + x.r.amountCents, 0);
+  const upExpense = up.filter((x) => x.r.type === "expense").reduce((a, x) => a + x.r.amountCents, 0);
+  const income = Math.max(s.incomeCents + upIncome, plan?.plannedIncomeCents ?? 0);
+  if (!income) return null;
+  const apartTarget = plan ? Math.round((plan.plannedIncomeCents * (plan.savingsBp + plan.investmentsBp)) / 10000) : 0;
+  const apartLeft = Math.max(0, apartTarget - (s.savedCents + s.investedCents));
+  const committed = s.expenseCents + upExpense;
+  const available = income - committed - apartLeft;
+  const daysLeft = daysInMonth(m) - Number(t.slice(8)) + 1;
+  return { perDayCents: Math.floor(available / daysLeft), availableCents: available, daysLeft, incomeCents: income, committedCents: committed, apartTargetLeftCents: apartLeft, usesPlan: !!plan };
+}
+/** Categorías que van más rápido que el mes (gastado % > mes transcurrido % + 20 puntos). */
+export async function paceWarnings(): Promise<{ name: string; spentPct: number; monthPct: number }[]> {
+  const m = thisMonth(); const s = await monthSummary(m);
+  const monthPct = Math.round((Number(today().slice(8)) / daysInMonth(m)) * 100);
+  return s.limits.map((l) => ({ name: l.category.name, spentPct: Math.round((l.spentCents / l.limitCents) * 100), monthPct }))
+    .filter((x) => x.spentPct < 100 && x.spentPct >= 25 && x.spentPct > x.monthPct + 20);
+}
+/** Veces que se ha usado cada categoría en los últimos 90 días (para ordenar las más usadas primero). */
+export async function categoryUsage(): Promise<Map<string, number>> {
+  const txs = await listTransactions({ from: addDays(today(), -90) });
+  const n = new Map<string, number>();
+  for (const x of txs) if (x.categoryId) n.set(x.categoryId, (n.get(x.categoryId) ?? 0) + 1);
+  return n;
+}
+
+/* Valor de la inversión y evolución del patrimonio ------------------------------------------ */
+export function potValueAt(p: Pot, day: Ymd = today()): number | null {
+  const h = (p.valueHistory ?? []).filter((x) => x.on <= day).sort((a, b) => a.on.localeCompare(b.on));
+  return h.length ? h[h.length - 1].cents : null;
+}
+export async function setPotValue(potId: string, cents: number): Promise<void> {
+  const p = await db.get<Pot>("pots", potId);
+  if (!p) throw new Error("Esa hucha ya no existe.");
+  const t = today();
+  const valueHistory = [...(p.valueHistory ?? []).filter((x) => x.on !== t), { on: t, cents }].sort((a, b) => a.on.localeCompare(b.on)).slice(-120);
+  await db.put("pots", { ...p, valueHistory, updatedAt: nowIso() });
+}
+/** Patrimonio al final de cada uno de los últimos `months` meses (el actual, a hoy). */
+export async function netWorthHistory(months = 12): Promise<{ month: Month; totalCents: number; liquidCents: number; savingsCents: number; investmentCents: number }[]> {
+  const [accounts, movs, pots] = await Promise.all([listAccounts({ includeArchived: true }), db.getAll<PotMovement>("potMovements"), listPots()]);
+  const earliest = [...accounts.map((a) => a.initialDate), ...alive(movs).map((m) => m.occurredOn)].sort()[0] ?? today();
+  const out = [];
+  for (let i = months - 1; i >= 0; i--) {
+    const m = addMonths(thisMonth(), -i);
+    const end = i === 0 ? today() : `${m}-${String(daysInMonth(m)).padStart(2, "0")}`;
+    if (end < earliest.slice(0, 7) + "-01") continue;
+    const liquid = (await accountBalances(addDays(end, 1))).reduce((a, x) => a + x.balanceCents, 0);
+    let savings = 0, investment = 0;
+    for (const p of pots) {
+      const put = alive(movs).filter((x) => x.potId === p.id && x.occurredOn <= end).reduce((a, x) => a + (x.kind === "contribution" ? x.amountCents : -x.amountCents), 0);
+      if (p.type === "savings") savings += put; else investment += potValueAt(p, end) ?? put;
+    }
+    out.push({ month: m, totalCents: liquid + savings + investment, liquidCents: liquid, savingsCents: savings, investmentCents: investment });
+  }
+  return out;
+}
+
+/* Traspasos entre cuentas propias ------------------------------------------------------ */
+export async function listTransfers(f: { from?: Ymd; to?: Ymd } = {}): Promise<Transfer[]> {
+  const xs = alive(await db.range<Transfer>("transfers", "occurredOn", f.from ?? "0000-01-01", f.to ?? "9999-12-31"));
+  return xs.sort((a, b) => b.occurredOn.localeCompare(a.occurredOn) || b.createdAt.localeCompare(a.createdAt));
+}
+/** Mueve dinero: cuenta → cuenta, cuenta → hucha (aporte) o hucha → cuenta (retirada). */
+export async function moveMoney(o: { from: { account?: string; pot?: string }; to: { account?: string; pot?: string }; amountCents: number; occurredOn: Ymd; note?: string; importKey?: string }): Promise<{ goalReached: boolean }> {
+  if (!Number.isInteger(o.amountCents) || o.amountCents <= 0) throw new Error("El importe tiene que ser mayor que cero.");
+  const note = (o.note ?? "").trim();
+  if (o.from.account && o.to.account) {
+    if (o.from.account === o.to.account) throw new Error("Elige dos cuentas distintas.");
+    await db.put("transfers", { id: uuid(), fromAccountId: o.from.account, toAccountId: o.to.account, amountCents: o.amountCents, occurredOn: o.occurredOn,
+      note, importKey: o.importKey, createdAt: nowIso(), updatedAt: nowIso() } satisfies Transfer);
+    return { goalReached: false };
+  }
+  if (o.from.account && o.to.pot) return addPotMovement(o.to.pot, "contribution", o.amountCents, o.occurredOn, note, { accountId: o.from.account, importKey: o.importKey });
+  if (o.from.pot && o.to.account) return addPotMovement(o.from.pot, "withdrawal", o.amountCents, o.occurredOn, note, { accountId: o.to.account, importKey: o.importKey });
+  throw new Error("De una hucha a otra: retira primero a una cuenta y luego aporta a la otra.");
+}
+export async function deleteTransfer(id: string): Promise<void> {
+  const x = (await db.getAll<Transfer>("transfers")).find((t) => t.id === id);
+  if (x) await db.put("transfers", { ...x, deletedAt: nowIso(), updatedAt: nowIso() });
 }

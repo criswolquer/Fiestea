@@ -1,12 +1,13 @@
 // «Configura tus cuentas»: en una pantalla, dónde está tu dinero del día a día y dónde tu ahorro o inversión.
 import { Landmark, PiggyBank, Plus, X } from "lucide";
-import { accountBalances, saveSettings, setAccountBalanceToday, setPotBalance, upsertAccount, upsertPot, wealth } from "../data/repo";
+import { accountBalances, markFirstStep, saveSettings, setAccountBalanceToday, setPotBalance, upsertAccount, upsertPot, wealth } from "../data/repo";
 import { today } from "../data/dates";
 import type { PotType } from "../data/types";
 import { button, parseMoney, toast } from "../ui/components";
 import { h, icon } from "../ui/dom";
 import { screen, sectionTitle } from "../app/layout";
 import { centsToInput, errorText, go } from "../app/util";
+import type { Query } from "../app/router";
 
 let n = 0;
 const uid = () => `s${++n}`;
@@ -27,7 +28,8 @@ function input(label: string, o: { value?: string; placeholder?: string; money?:
       o.money ? h("span", { class: "input-suffix", "aria-hidden": "true" }, "€") : null));
 }
 
-export async function setupAccountsScreen(): Promise<HTMLElement> {
+export async function setupAccountsScreen(_: string[], q: Query): Promise<HTMLElement> {
+  const first = q.get("inicio") === "1";   // viene de la bienvenida: después, el primer gasto
   const [accounts, w] = await Promise.all([accountBalances(), wealth()]);
   const accList = h("div", { class: "stack-sm" });
   const potList = h("div", { class: "stack-sm" });
@@ -84,12 +86,14 @@ export async function setupAccountsScreen(): Promise<HTMLElement> {
         if ((prev?.balanceCents ?? 0) !== bal) await setPotBalance(saved.id, bal);
       }
       await saveSettings({ accountsSetupDone: true });
+      await markFirstStep("cuentas");
       toast("Cuentas guardadas", "success");
-      go("#/capital");
+      go(first ? "#/nuevo?primero=1" : "#/capital");
     } catch (e) { err.textContent = errorText(e); err.hidden = false; save.disabled = false; }
   });
 
-  return screen({ title: "Tus cuentas", back: "#/" },
+  return screen({ title: "Tus cuentas", back: first ? undefined : "#/" },
+    first ? h("p", { class: "welcome-kicker" }, "Paso 1 de 2") : null,
     h("p", { class: "muted" }, "Pon dónde tienes tu dinero y cuánto hay hoy. Puedes cambiarlo cuando quieras en Patrimonio."),
     h("section", { class: "stack-sm" },
       sectionTitle("Dinero del día a día"),
@@ -100,7 +104,7 @@ export async function setupAccountsScreen(): Promise<HTMLElement> {
       h("p", { class: "muted small" }, "Lo que tienes apartado en otro sitio. Contará en tu patrimonio, no como gasto."),
       potList, button("Añadir otra", { variant: "secondary", icon: Plus, onClick: () => potRow() })),
     err, save,
-    button("Ahora no", { variant: "ghost", block: true, onClick: async () => { await saveSettings({ accountsSetupDone: true }); go("#/"); } }));
+    button("Ahora no", { variant: "ghost", block: true, onClick: async () => { await saveSettings({ accountsSetupDone: true }); go(first ? "#/nuevo?primero=1" : "#/"); } }));
 }
 
 /** Tarjeta del inicio mientras no se haya configurado. */

@@ -3,3 +3,5 @@ dist
 dist-single
 .env*.local
 .env
+test-results
+playwright-report

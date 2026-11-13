@@ -1,5 +1,6 @@
 // Cuentas (bancos, efectivo) e importación de extractos.
-import { FileUp, Landmark, Plus, Scale, Upload } from "lucide";
+import { ArrowLeftRight, FileUp, Landmark, Plus, Scale, Upload } from "lucide";
+import { openMoveSheet, transfersSection } from "./move";
 import { dayLabel, today } from "../data/dates";
 import { conceptKey, importKeys, KEYWORDS, looksLikeTransfer, readStatement, type StatementRow } from "../data/importer";
 import {
@@ -23,6 +24,8 @@ export async function accountsScreen(_: string[], q: Query): Promise<HTMLElement
   return screen({ title: "Cuentas", back: q.get("volver") ?? "#/capital", actions: [button("Nueva cuenta", { variant: "ghost", size: "sm", icon: Plus, onClick: () => editAccount({}) })] },
     h("section", { class: "hero" }, h("p", { class: "muted" }, "Dinero disponible en tus cuentas"), h("p", { class: "big-number num" }, money(total))),
     h("ul", { class: "list" }, ...accounts.map((a) => accountRow(a))),
+    button("Mover dinero entre cuentas o a tus huchas", { variant: "primary", block: true, icon: ArrowLeftRight, onClick: () => openMoveSheet() }),
+    await transfersSection(),
     h("a", { class: "btn btn-secondary btn-md btn-block", href: "#/configurar-cuentas" }, icon(Landmark), h("span", {}, "Configurar cuentas e inversión de una vez")),
     h("a", { class: "btn btn-ghost btn-md btn-block", href: "#/importar" }, icon(FileUp), h("span", {}, "Importar extracto del banco")),
     h("p", { class: "muted" }, "Cada movimiento que apuntas va a una cuenta. El ahorro y la inversión van en tus huchas (Patrimonio): ahí puedes poner en qué banco o entidad está cada una."),
@@ -136,12 +139,14 @@ export async function importScreen(_: string[], q: Query): Promise<HTMLElement> 
     const setBalance = latest ? h("label", { class: "check" }, h("input", { type: "checkbox", id: "set-balance", checked: true }),
       h("span", {}, h("strong", {}, `Poner el saldo de ${acc.name} en ${money(latest.balanceCents!)}`), h("span", { class: "muted block" }, `Es el saldo que da el extracto el ${dayLabel(latest.date)}.`))) : null;
 
-    const list = h("ul", { class: "list import-list" }, ...decisions.map((d) => importRow(d, cats, pots, count)));
+    const others = accounts.filter((a) => a.id !== accountId);
+    const list = h("ul", { class: "list import-list" }, ...decisions.map((d) => importRow(d, cats, pots, others, count)));
     body.replaceChildren(...[
       h("p", {}, h("strong", {}, `${st.rows.length} movimientos`), ` del ${dayLabel(dates[0])} al ${dayLabel(dates[dates.length - 1])} · cuenta ${acc.name}.`),
       decisions.length - fresh.length ? banner(`${decisions.length - fresh.length} ya estaban importados: no se repetirán.`, "info") : null,
       st.skipped ? banner(`${st.skipped} filas no tenían fecha o importe y se han saltado.`, "warning") : null,
       fresh.some((d) => d.action === "pot") ? banner("Las transferencias a tu inversión se apuntan como aporte a la hucha, no como gasto. Cámbialo en cada fila si no es así.", "info") : null,
+      others.length ? h("p", { class: "muted small" }, "Si un movimiento es dinero que pasaste a otra cuenta tuya, elige «Traspaso a…»: no cuenta como gasto.") : null,
       h("p", { class: "muted small" }, "Revisa la categoría de cada uno. La app recordará tus elecciones para la próxima vez."),
       list, setBalance, run, button("Elegir otro archivo", { variant: "ghost", block: true, onClick: () => body.replaceChildren(intro) }),
     ].filter((x) => !!x) as HTMLElement[]);
@@ -163,7 +168,7 @@ export async function importScreen(_: string[], q: Query): Promise<HTMLElement> 
   return screen({ title: "Importar extracto", back: q.get("volver") ?? "#/cuentas" },
     accounts.length ? body : emptyState("Primero crea una cuenta", "Crea la cuenta del banco antes de importar.", Landmark));
 }
-function importRow(d: ImportDecision & { dup: boolean }, cats: Category[], pots: Pot[], onChange: () => void): HTMLElement {
+function importRow(d: ImportDecision & { dup: boolean }, cats: Category[], pots: Pot[], others: Account[], onChange: () => void): HTMLElement {
   const li = h("li", { class: `import-row${d.dup ? " is-dup" : ""}` });
   const amount = h("span", { class: `num tx-amount ${d.amountCents < 0 ? "expense" : "income"}` }, `${d.amountCents < 0 ? "−" : "+"}${money(Math.abs(d.amountCents))}`);
   const headRow = h("div", { class: "import-head" },
@@ -173,14 +178,16 @@ function importRow(d: ImportDecision & { dup: boolean }, cats: Category[], pots:
   const what = h("select", { class: "input input-sm", id: `${id}-a`, "aria-label": `Qué es: ${d.concept}` },
     h("option", { value: d.amountCents < 0 ? "expense" : "income", selected: d.action === "expense" || d.action === "income" }, d.amountCents < 0 ? "Gasto" : "Ingreso"),
     ...pots.map((p) => h("option", { value: `pot:${p.id}`, selected: d.action === "pot" && d.potId === p.id }, `${d.amountCents < 0 ? "Aporte a" : "Retirada de"} ${p.name}`)),
+    ...others.map((a) => h("option", { value: `acc:${a.id}`, selected: d.action === "transfer" && d.otherAccountId === a.id }, `${d.amountCents < 0 ? "Traspaso a" : "Traspaso desde"} ${a.name}`)),
     h("option", { value: "skip", selected: d.action === "skip" }, "No importar"));
   const type = d.amountCents < 0 ? "expense" : "income";
   const cat = h("select", { class: "input input-sm", id: `${id}-c`, "aria-label": `Categoría: ${d.concept}` },
     h("option", { value: "" }, "Sin categoría"), ...cats.filter((c) => c.type === type).map((c) => h("option", { value: c.id, selected: c.id === d.categoryId }, c.name)));
   const sync = () => {
     const v = what.value;
-    d.action = v === "skip" ? "skip" : v.startsWith("pot:") ? "pot" : (v as "expense" | "income");
+    d.action = v === "skip" ? "skip" : v.startsWith("pot:") ? "pot" : v.startsWith("acc:") ? "transfer" : (v as "expense" | "income");
     d.potId = v.startsWith("pot:") ? v.slice(4) : undefined;
+    d.otherAccountId = v.startsWith("acc:") ? v.slice(4) : undefined;
     cat.hidden = d.action !== "expense" && d.action !== "income";
     li.classList.toggle("is-skip", d.action === "skip");
     onChange();

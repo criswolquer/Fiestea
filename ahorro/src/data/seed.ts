@@ -65,6 +65,13 @@ export async function loadDemo(): Promise<void> {
       await repo.addPotMovement(inv.id, "contribution", 12000, day(3));
     }
   }
+  // Fijos: desde el mes que viene (los de estos meses ya están apuntados arriba).
+  const next = addMonths(now, 1);
+  for (const [title, cat, cents, type, dayN] of [["Nómina", "Nómina", 184500, "income", 1], ["Alquiler", "Vivienda", 55000, "expense", 1], ["Música", "Suscripciones", 1299, "expense", 3],
+    ["Abono transporte", "Transporte", 4000, "expense", 2], ["Cuota del portátil", "Préstamos", 8000, "expense", 10]] as const)
+    await repo.upsertRecurring({ title, categoryId: byName(cat), amountCents: cents, type, dayOfMonth: dayN, startMonth: next });
+  // Lo que vale el fondo según el bróker (sube un poco).
+  await repo.setPotValue(inv.id, 80000 + 3 * 12000 + 2350);
   await repo.savePlan({ month: now, plannedIncomeCents: 184500, mode: "pct", expensesBp: 6000, savingsBp: 2500, investmentsBp: 1500 });
   await repo.savePlan({ month: addMonths(now, -1), plannedIncomeCents: 184500, mode: "pct", expensesBp: 6500, savingsBp: 2000, investmentsBp: 1500 });
   await repo.saveNote(t, "Devolver a Marta los 15 € de la cena.");

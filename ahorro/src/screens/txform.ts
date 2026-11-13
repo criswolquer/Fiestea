@@ -1,7 +1,7 @@
 // S07 Nuevo movimiento y edición de uno existente (#/nuevo, #/movimiento/:id/editar).
 import { Plus } from "lucide";
 import { addMonths, isValidYmd, today } from "../data/dates";
-import { addTransaction, getTransaction, listAccounts, listCategories, markFirstStep, monthSummary, updateTransaction } from "../data/repo";
+import { addTransaction, categoryUsage, getSettings, getTransaction, listAccounts, listCategories, markFirstStep, monthSummary, saveSettings, updateTransaction } from "../data/repo";
 import type { Category, TxType } from "../data/types";
 import { button, field, moneyField, parseMoney, photoPicker, segmented, setFieldError, toast } from "../ui/components";
 import { h, icon } from "../ui/dom";
@@ -16,10 +16,13 @@ export async function txFormScreen(params: string[], q: Query): Promise<HTMLElem
   if (editId && !existing) throw new Error("Ese movimiento ya no existe.");
   let type: TxType = existing?.type ?? (q.get("tipo") === "ingreso" ? "income" : "expense");
   const date = existing?.occurredOn ?? (isValidYmd(q.get("fecha") ?? "") ? q.get("fecha")! : today());
+  const firstTime = q.get("primero") === "1";
   const returnTo = q.get("volver") ?? (existing ? `#/movimiento/${existing.id}` : "#/");
   let photo: File | null | undefined = undefined;  // undefined = sin cambios
-  const allCats = await listCategories();
-  const accounts = await listAccounts();
+  const [allCats, accounts, usage, settings] = await Promise.all([listCategories(), listAccounts(), categoryUsage(), getSettings()]);
+  // Las categorías que más usas, primero.
+  allCats.sort((a, b) => (usage.get(b.id) ?? 0) - (usage.get(a.id) ?? 0));
+  const lastAccount = accounts.some((a) => a.id === settings.lastAccountId) ? settings.lastAccountId : accounts[0]?.id;
 
   const amount = moneyField("Importe", { big: true, name: "amount", required: true, value: existing ? centsToInput(existing.amountCents) : "" });
   const title = field("Concepto", { name: "title", placeholder: "Ej.: cena con amigos", maxlength: 80, value: existing?.title });
@@ -53,7 +56,7 @@ export async function txFormScreen(params: string[], q: Query): Promise<HTMLElem
     amount, catBox, title, dateF,
     accounts.length > 1 ? h("fieldset", { class: "chips" }, h("legend", { class: "field-label" }, "Cuenta"),
       ...accounts.map((a, i) => h("span", { class: "chip-opt" },
-        h("input", { type: "radio", name: "account", value: a.id, id: `acc-${a.id}`, class: "seg-input", checked: existing ? (existing.accountId ?? accounts[0].id) === a.id : i === 0 }),
+        h("input", { type: "radio", name: "account", value: a.id, id: `acc-${a.id}`, class: "seg-input", checked: existing ? (existing.accountId ?? accounts[0].id) === a.id : a.id === lastAccount || (!lastAccount && i === 0) }),
         h("label", { for: `acc-${a.id}`, class: "chip", style: `--chip:var(--${a.color})` }, a.name)))) : null,
     note,
     h("div", { class: "field" }, h("span", { class: "field-label" }, "Foto del momento"),
@@ -79,8 +82,9 @@ export async function txFormScreen(params: string[], q: Query): Promise<HTMLElem
         toast("Cambios guardados");
       } else {
         await addTransaction(input, blob);
+        if (input.accountId) await saveSettings({ lastAccountId: input.accountId });
         await markFirstStep("primer-movimiento");
-        toast(type === "expense" ? "Gasto apuntado" : "Ingreso apuntado");
+        toast(firstTime ? "¡Listo! Ya tienes tu mes en marcha." : type === "expense" ? "Gasto apuntado" : "Ingreso apuntado", firstTime ? "success" : "info");
         if (type === "expense" && input.categoryId) {
           const lim = (await monthSummary(d.slice(0, 7))).limits.find((l) => l.category.id === input.categoryId);
           if (lim && lim.spentCents > lim.limitCents) toast(`Te has pasado del límite de ${lim.category.name}`, "danger");
@@ -94,7 +98,13 @@ export async function txFormScreen(params: string[], q: Query): Promise<HTMLElem
     }
   });
 
-  return screen({ title: existing ? "Editar movimiento" : "Nuevo movimiento", close: returnTo }, form);
+  // Al apuntar uno nuevo, el teclado de números sale ya abierto.
+  if (!existing) setTimeout(() => (amount.querySelector("input") as HTMLInputElement | null)?.focus(), 60);
+  return screen({ title: existing ? "Editar movimiento" : "Nuevo movimiento", close: returnTo },
+    firstTime ? h("div", { class: "stack-sm" }, h("p", { class: "welcome-kicker" }, "Paso 2 de 2"),
+      h("p", { class: "muted" }, "Apunta lo último que hayas gastado hoy (un café vale). Así verás cómo funciona."),
+      h("a", { href: "#/", class: "small" }, "Saltar por ahora")) : null,
+    form);
 }
 
 /** Botón principal "Apuntar" (enlace a #/nuevo). */
