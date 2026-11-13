@@ -1,12 +1,12 @@
 import { ChevronLeft, X, type IconNode } from "lucide";
-import { tabbar } from "../ui/components";
+import { tabbar, type TabKey } from "../ui/components";
 import { h, icon } from "../ui/dom";
 
-export type Tab = "inicio" | "calendario" | "patrimonio";
+export type Tab = TabKey;
 
 /** Plantilla de pantalla: cabecera (volver, título, acciones), contenido y pestañas. */
 export function screen(
-  o: { title: string; back?: string; close?: string; tab?: Tab; actions?: Node[]; hideTitle?: boolean; header?: Node },
+  o: { title: string; back?: string; close?: string; tab?: Tab; newHref?: string; actions?: Node[]; hideTitle?: boolean; header?: Node },
   ...content: (Node | null | false)[]
 ): HTMLElement {
   const nav = o.back ?? o.close;
@@ -18,7 +18,7 @@ export function screen(
       h("div", { class: "topbar-actions" }, ...(o.actions ?? [])),
     ),
     h("main", { class: "page", id: "main" }, ...content.filter(Boolean) as Node[]),
-    o.tab ? tabbar(o.tab) : null,
+    o.tab ? tabbar(o.tab, o.newHref) : null,
   );
 }
 

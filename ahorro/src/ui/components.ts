@@ -3,7 +3,7 @@
 // replica/design/components.md.
 import {
   CalendarDays, Camera, ChevronLeft, ChevronRight, House, Image as ImageIcon, Info, Mic,
-  PiggyBank, Send, Sparkles, X, type IconNode,
+  PiggyBank, Plus, Send, Sparkles, X, type IconNode,
 } from "lucide";
 import { h, icon, money, pct, s } from "./dom";
 
@@ -422,15 +422,16 @@ export function monthSwitcher(label: string, o: { onPrev?: () => void; onNext?: 
 }
 
 /* Barra de pestañas -------------------------------------------------------------- */
-export function tabbar(active: "calendario" | "inicio" | "patrimonio"): HTMLElement {
-  const tabs: [typeof active, string, IconNode, string][] = [
-    ["calendario", "Calendario", CalendarDays, "#/calendario"],
-    ["inicio", "Inicio", House, "#/"],
-    ["patrimonio", "Patrimonio", PiggyBank, "#/capital"],
-  ];
+export type TabKey = "inicio" | "calendario" | "patrimonio" | "asistente";
+export function tabbar(active: TabKey | null, newHref = "#/nuevo"): HTMLElement {
+  const tab = (key: TabKey, label: string, ic: IconNode, href: string) =>
+    h("a", { href, class: `tab${key === active ? " is-active" : ""}`, "aria-current": key === active ? "page" : undefined }, icon(ic, { size: 22 }), h("span", {}, label));
   return h("nav", { class: "tabbar", "aria-label": "Secciones" },
-    tabs.map(([key, label, ic, href]) => h("a", { href, class: `tab${key === active ? " is-active" : ""}`, "aria-current": key === active ? "page" : undefined },
-      icon(ic, { size: 22 }), h("span", {}, label))));
+    tab("inicio", "Inicio", House, "#/"),
+    tab("calendario", "Calendario", CalendarDays, "#/calendario"),
+    h("a", { href: newHref, class: "tab-fab", "aria-label": "Apuntar un movimiento" }, icon(Plus, { size: 26 })),
+    tab("patrimonio", "Patrimonio", PiggyBank, "#/capital"),
+    tab("asistente", "Asistente", Sparkles, "#/asistente"));
 }
 
 /* Tarjeta de plan ------------------------------------------------------------------- */

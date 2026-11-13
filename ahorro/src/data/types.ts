@@ -32,6 +32,7 @@ export interface Category extends Synced {
   type: TxType;
   kind?: CategoryKind;
   color: string;            // nombre de token: "chart-1"…"chart-7"
+  icon?: string;            // clave de CATEGORY_ICONS; si falta, se deduce del nombre
   monthlyLimitCents: number | null;
   sortOrder: number;
   archived: boolean;

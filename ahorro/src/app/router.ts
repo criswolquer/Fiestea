@@ -34,6 +34,7 @@ export async function render(app: HTMLElement): Promise<void> {
   clearTimeout(slow);
   if (id !== rendering) return;
   const scroll = samePage ? window.scrollY : 0;
+  if (!samePage) el.classList.add("enter");
   app.replaceChildren(el);
   window.scrollTo(0, scroll);
   if (!samePage) (app.querySelector("h1") as HTMLElement | null)?.focus({ preventScroll: true });

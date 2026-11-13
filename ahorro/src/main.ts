@@ -1,7 +1,9 @@
+import "@fontsource-variable/bricolage-grotesque";   // tipografía de cifras y títulos (OFL), va dentro de la app
 import "./styles/tokens.css";
 import "./styles/components.css";
 import "./styles/app.css";
 import "./styles/design.css";
+import "./styles/polish.css";
 import { route, render } from "./app/router";
 import { applyTheme } from "./app/util";
 import { enableCloud, startAutoSync } from "./data/cloud";

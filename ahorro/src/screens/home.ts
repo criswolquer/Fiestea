@@ -1,6 +1,7 @@
 // S06 Inicio: el mes de un vistazo.
 import { BookOpen, CalendarClock, ReceiptText, ChartPie, FileText, Flame, Gauge, Scale, Settings as Cog, Sparkles, Target } from "lucide";
-import { addMonths, dayLabel, isValidYmd, monthLabel, thisMonth } from "../data/dates";
+import { addDays, addMonths, dayLabel, isValidYmd, longDay, monthLabel, thisMonth, today } from "../data/dates";
+import { categoryIcon } from "../ui/caticons";
 import { getSettings, listCategories, recordOpen, listRecaps, listTransactions, monthSummary, oneMonthAgo, streaks } from "../data/repo";
 import { storageMode } from "../data/db";
 import type { Category, Transaction } from "../data/types";
@@ -38,7 +39,7 @@ export async function homeScreen(_: string[], q: Query): Promise<HTMLElement> {
   const left = s.balanceCents;
   const base = s.incomeCents;
   const ringEl = ring({
-    value: Math.max(0, left), max: base || 1, color: left < 0 ? "danger" : "accent", size: 220,
+    value: Math.max(0, left), max: base || 1, color: left < 0 ? "danger" : "accent", size: 232, stroke: 16,
     center: money(Math.abs(left)), sub: left < 0 ? "te has pasado este mes" : base ? "te queda este mes" : "aún no has apuntado ingresos",
     label: left < 0 ? `Este mes te has pasado ${money(-left)}` : `Te quedan ${money(left)} de ${money(base)} este mes`,
   });
@@ -58,9 +59,9 @@ export async function homeScreen(_: string[], q: Query): Promise<HTMLElement> {
     quickLink("Informe", `#/informe/${month}`, FileText),
   );
 
-  const recent = txs.slice(0, 6);
+  const recent = txs.slice(0, 8);
   const list = recent.length
-    ? h("ul", { class: "list" }, ...(await Promise.all(recent.map((t) => txItem(t, catById)))))
+    ? await txDayGroups(recent, catById)
     : emptyState(isCurrent ? "Aún no hay movimientos este mes" : "Este mes no tiene movimientos",
         isCurrent ? "Apunta el primero: importe, categoría y, si quieres, una foto." : "Puedes apuntar algo con fecha de ese mes.",
         ReceiptText, newTxButton("Apuntar el primero", `#/nuevo?fecha=${month}-01`));
@@ -74,16 +75,17 @@ export async function homeScreen(_: string[], q: Query): Promise<HTMLElement> {
 
   const steps = isCurrent ? await firstStepsCard(settings) : null;
 
-  return screen({ title: monthLabel(month), tab: "inicio", header, actions: [
+  const used = base ? Math.round(((base - Math.max(0, left)) / base) * 100) : 0;
+  return screen({ title: monthLabel(month), tab: "inicio", newHref: isCurrent ? "#/nuevo" : `#/nuevo?fecha=${month}-01`, header, actions: [
     h("a", { class: "btn btn-ghost btn-icon btn-md", href: "#/ajustes", "aria-label": "Ajustes" }, icon(Cog)),
   ] },
     banners,
-    h("section", { class: "hero", "aria-label": "Resumen del mes" },
-      ringEl,
-      h("div", { class: "kpis" },
+    h("section", { class: "hero-card", "aria-label": "Resumen del mes" },
+      h("div", { class: "hero-ring" }, ringEl),
+      base ? h("p", { class: "hero-note" }, `Has usado el ${used} % de lo que entró`) : null,
+      h("div", { class: "kpis kpis-grid" },
         kpi("Entró", s.incomeCents, "income"), kpi("Gastado", s.expenseCents, "expense"),
         kpi("Ahorrado", s.savedCents, "savings"), kpi("Invertido", s.investedCents, "investment"))),
-    h("div", { class: "cta-row" }, newTxButton("Apuntar", isCurrent ? "#/nuevo" : `#/nuevo?fecha=${month}-01`)),
     quick,
     steps,
     tiles,
@@ -102,14 +104,30 @@ export async function txItem(t: Transaction, catById: Map<string, Category>, sho
   const cat = t.categoryId ? catById.get(t.categoryId) : undefined;
   const url = t.hasPhoto ? await photoUrl(t.id) : undefined;
   const sign = t.type === "income" ? "+" : "−";
+  const tone = `--cat:var(--${cat?.color ?? "chart-7"})`;
   return h("li", {},
-    h("a", { class: "tx-row", href: `#/movimiento/${t.id}` },
-      url ? h("img", { class: "tx-thumb", src: url, alt: "" })
-        : h("span", { class: "tx-thumb tx-thumb-empty", "aria-hidden": "true", style: cat ? `color:var(--${cat.color})` : undefined }, (t.title || cat?.name || "?").slice(0, 1).toUpperCase()),
+    h("a", { class: "tx-row", href: `#/movimiento/${t.id}`, style: tone },
+      url ? h("span", { class: "tx-thumb tx-thumb-photo" }, h("img", { src: url, alt: "" }), h("span", { class: "tx-badge", "aria-hidden": "true" }, icon(categoryIcon(cat), { size: 12 })))
+        : h("span", { class: "tx-thumb tx-thumb-icon", "aria-hidden": "true" }, icon(categoryIcon(cat), { size: 20 })),
       h("span", { class: "tx-main" },
         h("span", { class: "tx-title" }, t.title || cat?.name || "Sin concepto"),
         h("span", { class: "tx-sub" }, [cat?.name ?? "Sin categoría", showDate ? dayLabel(t.occurredOn) : ""].filter(Boolean).join(" · "))),
       h("span", { class: `tx-amount num ${t.type}` }, h("span", { class: "sr-only" }, t.type === "income" ? "Ingreso de " : "Gasto de "), `${sign}${money(t.amountCents)}`)));
+}
+
+/** Movimientos agrupados por día: «Hoy», «Ayer», «Jueves 12», con lo gastado ese día. */
+export async function txDayGroups(txs: Transaction[], catById: Map<string, Category>): Promise<HTMLElement> {
+  const days = new Map<string, Transaction[]>();
+  for (const x of txs) (days.get(x.occurredOn) ?? days.set(x.occurredOn, []).get(x.occurredOn)!).push(x);
+  const t0 = today(), t1 = addDays(t0, -1);
+  const groups = await Promise.all([...days.entries()].map(async ([d, list]) => {
+    const spent = list.filter((x) => x.type === "expense").reduce((a, x) => a + x.amountCents, 0);
+    const name = d === t0 ? "Hoy" : d === t1 ? "Ayer" : longDay(d);
+    return h("section", { class: "day-group" },
+      h("h3", { class: "day-head" }, h("span", {}, name), spent ? h("span", { class: "num day-total" }, `−${money(spent)}`) : null),
+      h("ul", { class: "list" }, ...(await Promise.all(list.map((x) => txItem(x, catById, false))))));
+  }));
+  return h("div", { class: "day-groups" }, ...groups);
 }
 
 async function agoTile(day: string, t: Transaction): Promise<HTMLElement> {

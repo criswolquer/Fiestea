@@ -6,7 +6,8 @@ import {
 } from "../data/repo";
 import type { Category, CategoryKind, TxType } from "../data/types";
 import { banner, bars, button, donut, emptyState, field, limitRow, monthSwitcher, moneyField, parseMoney, ring, setFieldError, toast } from "../ui/components";
-import { h, money, pct } from "../ui/dom";
+import { h, icon, money, pct } from "../ui/dom";
+import { CATEGORY_ICONS, categoryIcon, categoryIconName } from "../ui/caticons";
 import { screen, sectionTitle } from "../app/layout";
 import { openSheet } from "../app/dialogs";
 import { refresh, type Query } from "../app/router";
@@ -48,8 +49,8 @@ export async function chartsScreen(_: string[], q: Query): Promise<HTMLElement> 
     `${Math.abs(diff)} % ${diff > 0 ? "más" : "menos"} que en ${monthLabel(addMonths(month, -1), { year: false })} (${money(prevTotal)}).`);
 
   const rows = h("ul", { class: "list" }, ...b.segments.map((s) => h("li", {},
-    h("a", { class: "cat-row", href: `#/categoria/${s.category?.id ?? "sin"}?mes=${month}` },
-      h("span", { class: "swatch", style: `background:var(--${s.category?.color ?? "chart-7"})` }),
+    h("a", { class: "cat-row", href: `#/categoria/${s.category?.id ?? "sin"}?mes=${month}`, style: `--cat:var(--${s.category?.color ?? "chart-7"})` },
+      h("span", { class: "cat-icon", "aria-hidden": "true" }, icon(categoryIcon(s.category), { size: 18 })),
       h("span", { class: "cat-name" }, s.category?.name ?? "Sin categoría"),
       h("span", { class: "muted num" }, `${pct(s.cents, b.totalCents)} %`),
       h("span", { class: "num cat-amount" }, money(s.cents))))));
@@ -127,8 +128,8 @@ export async function limitsScreen(_: string[], q: Query): Promise<HTMLElement> 
     rebalance, top,
     withLimit.length ? rows : emptyState("Aún no tienes límites", "Elige una categoría de abajo y ponle un tope mensual.", Gauge),
     without.length ? h("section", { class: "stack-sm" }, sectionTitle("Sin límite"),
-      h("ul", { class: "list" }, ...without.map((c) => h("li", { class: "plain-row" },
-        h("span", { class: "swatch", style: `background:var(--${c.color})` }), h("span", { class: "cat-name" }, c.name),
+      h("ul", { class: "list" }, ...without.map((c) => h("li", { class: "plain-row", style: `--cat:var(--${c.color})` },
+        h("span", { class: "cat-icon", "aria-hidden": "true" }, icon(categoryIcon(c), { size: 18 })), h("span", { class: "cat-name" }, c.name),
         button("Poner límite", { size: "sm", variant: "secondary", onClick: () => editLimit(c) }))))) : null,
   );
 }
@@ -155,8 +156,8 @@ export async function categoriesScreen(_: string[], q: Query): Promise<HTMLEleme
   const group = (type: TxType, title: string) => h("section", { class: "stack-sm" },
     sectionTitle(title, button("Nueva", { size: "sm", variant: "secondary", icon: Plus, onClick: () => editCategory({ type }) })),
     h("ul", { class: "list" }, ...all.filter((c) => c.type === type).map((c) => h("li", {},
-      h("button", { type: "button", class: `plain-row as-button${c.archived ? " is-archived" : ""}`, onclick: () => editCategory(c) },
-        h("span", { class: "swatch", style: `background:var(--${c.color})` }),
+      h("button", { type: "button", class: `plain-row as-button${c.archived ? " is-archived" : ""}`, onclick: () => editCategory(c), style: `--cat:var(--${c.color})` },
+        h("span", { class: "cat-icon", "aria-hidden": "true" }, icon(categoryIcon(c), { size: 18 })),
         h("span", { class: "cat-name" }, c.name),
         h("span", { class: "muted" }, c.archived ? "Archivada" : c.kind ? KIND_LABEL[c.kind] : ""))))));
   return screen({ title: "Categorías", back }, group("expense", "De gasto"), group("income", "De ingreso"));
@@ -175,7 +176,15 @@ function editCategory(c: Partial<Category> & { type: TxType }): void {
     h("label", { class: "field-label", for: "cat-kind" }, "Tipo de gasto"),
     h("select", { id: "cat-kind", name: "kind", class: "input" },
       ...(Object.keys(KIND_LABEL) as CategoryKind[]).map((k) => h("option", { value: k, selected: (c.kind ?? "discrecional") === k }, `${KIND_LABEL[k]}: ${KIND_HELP[k].toLowerCase()}`)))) : null;
-  const form = h("form", { class: "stack-sm", novalidate: true }, name, kind, colors,
+  const current = categoryIconName({ name: c.name ?? "", icon: c.icon });
+  const icons = h("fieldset", { class: "chips icon-picker" }, h("legend", { class: "field-label" }, "Icono"),
+    ...Object.entries(CATEGORY_ICONS).map(([k, ic]) => {
+      const id = `icon-${k}`;
+      return h("span", { class: "chip-opt" },
+        h("input", { type: "radio", name: "icon", value: k, id, class: "seg-input", checked: k === current }),
+        h("label", { for: id, class: "chip icon-chip", "aria-label": k }, icon(ic, { size: 18 })));
+    }));
+  const form = h("form", { class: "stack-sm", novalidate: true }, name, kind, icons, colors,
     button("Guardar", { type: "submit", block: true }),
     c.id ? button(c.archived ? "Volver a usarla" : "Archivar", { variant: "ghost", block: true, onClick: async () => {
       await upsertCategory({ ...(c as Category), archived: !c.archived }); d.close(); refresh();
@@ -188,7 +197,7 @@ function editCategory(c: Partial<Category> & { type: TxType }): void {
     const n = String(fd.get("name") ?? "").trim();
     if (!n) { setFieldError(name, "Ponle un nombre."); return; }
     try {
-      await upsertCategory({ ...c, name: n, color: String(fd.get("color") ?? "chart-1"), kind: (fd.get("kind") as CategoryKind) ?? undefined });
+      await upsertCategory({ ...c, name: n, color: String(fd.get("color") ?? "chart-1"), icon: String(fd.get("icon") ?? "") || undefined, kind: (fd.get("kind") as CategoryKind) ?? undefined });
       d.close(); toast("Categoría guardada"); refresh();
     } catch (err) { setFieldError(name, errorText(err)); }
   });

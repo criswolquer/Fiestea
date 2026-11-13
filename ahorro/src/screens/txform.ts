@@ -5,6 +5,7 @@ import { addTransaction, getTransaction, listCategories, markFirstStep, monthSum
 import type { Category, TxType } from "../data/types";
 import { button, field, moneyField, parseMoney, photoPicker, segmented, setFieldError, toast } from "../ui/components";
 import { h, icon } from "../ui/dom";
+import { categoryIcon } from "../ui/caticons";
 import { screen } from "../app/layout";
 import { centsToInput, compressImage, errorText, forgetPhoto, go, photoUrl } from "../app/util";
 import type { Query } from "../app/router";
@@ -41,7 +42,7 @@ export async function txFormScreen(params: string[], q: Query): Promise<HTMLElem
     const iid = `cat-${id || "none"}`;
     return h("span", { class: "chip-opt" },
       h("input", { type: "radio", name: "category", value: id, id: iid, class: "seg-input", checked }),
-      h("label", { for: iid, class: "chip", style: `--chip:var(--${color})` }, name));
+      h("label", { for: iid, class: "chip chip-cat", style: `--chip:var(--${color})` }, icon(categoryIcon(id ? allCats.find((c) => c.id === id) : null), { size: 16 }), name));
   };
   renderCats();
 

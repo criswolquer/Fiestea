@@ -8,7 +8,7 @@ import { screen } from "../app/layout";
 import { confirmDialog } from "../app/dialogs";
 import { forgetPhoto, go, photoUrl } from "../app/util";
 import type { Query } from "../app/router";
-import { monthParam, txItem } from "./home";
+import { monthParam, txDayGroups } from "./home";
 import { newTxButton } from "./txform";
 
 export async function txDetailScreen([id]: string[]): Promise<HTMLElement> {
@@ -52,16 +52,19 @@ export async function txListScreen(_: string[], q: Query): Promise<HTMLElement> 
   const [txs, cats] = await Promise.all([listTransactions({ month }), listCategories(undefined, { includeArchived: true })]);
   const byId = new Map(cats.map((c) => [c.id, c]));
   const search = h("input", { class: "input", type: "search", placeholder: "Buscar por concepto o nota", "aria-label": "Buscar movimientos" });
-  const list = h("ul", { class: "list" }, ...(await Promise.all(txs.map((t) => txItem(t, byId)))));
+  const list = await txDayGroups(txs, byId);
   const none = h("p", { class: "muted center", hidden: true }, "Nada coincide con esa búsqueda.");
+  const items = [...list.querySelectorAll<HTMLElement>(".tx-row")].map((el) => el.parentElement!);
+  const byHref = new Map(txs.map((t) => [`#/movimiento/${t.id}`, t]));
   search.addEventListener("input", () => {
     const term = search.value.trim().toLowerCase();
     let shown = 0;
-    [...list.children].forEach((li, i) => {
-      const t = txs[i]; const c = t.categoryId ? byId.get(t.categoryId)?.name ?? "" : "";
+    for (const li of items) {
+      const t = byHref.get(li.firstElementChild!.getAttribute("href")!)!; const c = t.categoryId ? byId.get(t.categoryId)?.name ?? "" : "";
       const hit = !term || `${t.title} ${t.note} ${c}`.toLowerCase().includes(term);
-      (li as HTMLElement).hidden = !hit; if (hit) shown++;
-    });
+      li.hidden = !hit; if (hit) shown++;
+    }
+    list.querySelectorAll<HTMLElement>(".day-group").forEach((g) => { g.hidden = !g.querySelector("li:not([hidden])"); });
     none.hidden = shown > 0;
   });
   return screen({ title: `Movimientos de ${monthLabel(month, { year: false })}`, back: `#/?mes=${month}` },

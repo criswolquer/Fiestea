@@ -1,0 +1,109 @@
+/* Pasada visual: tipografía de cifras, inicio, listas agrupadas, barra con botón central. Solo tokens. */
+
+/* Tipografía con carácter para cifras y títulos */
+.ring-value, .ring-value-sm, .big-number, .detail-amount, .story-title, .welcome-title, .section-title, .month-label,
+.kpi-value, .tile-body, .big-title, .plan-price, .pot-amount, .cat-amount, .code, .topbar-title, .sheet-title, .tx-amount, .day-total {
+  font-family: var(--font-display);
+}
+.ring-value { font-weight: 700; letter-spacing: -.035em; font-variation-settings: "opsz" 96;
+  font-size: min(var(--text-display), calc(var(--ring-size) * .155)); line-height: 1.1; }
+.section-title { font-weight: 700; letter-spacing: -.01em; }
+.welcome-title, .big-title, .big-number, .story-title { letter-spacing: -.03em; font-weight: 750; }
+.month-label { font-weight: 700; font-size: var(--text-base); white-space: nowrap; min-width: 0; }
+
+/* Inicio: tarjeta principal con brillo suave detrás del anillo */
+.hero-card {
+  position: relative; overflow: hidden; display: grid; justify-items: center; gap: var(--space-4);
+  padding: var(--space-6) var(--space-4) var(--space-4); border-radius: var(--radius-lg);
+  background: var(--surface); isolation: isolate;
+}
+.hero-card::before {
+  content: ""; position: absolute; z-index: -1; left: 50%; top: -20%; width: 120%; aspect-ratio: 1; transform: translateX(-50%);
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%);
+}
+.hero-ring { display: grid; place-items: center; }
+.hero-note { font-size: var(--text-sm); color: var(--text-muted); margin-top: calc(-1 * var(--space-2)); }
+.kpis-grid { grid-template-columns: 1fr 1fr; gap: var(--space-2); width: 100%; }
+.kpis-grid .kpi {
+  text-align: left; padding: var(--space-3); border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface-2) 70%, transparent); gap: var(--space-1);
+}
+.kpis-grid .kpi-label { display: flex; align-items: center; gap: var(--space-2); font-weight: 600; }
+.kpis-grid .kpi-label::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.kpis-grid .kpi-income .kpi-label::before { background: var(--income); }
+.kpis-grid .kpi-expense .kpi-label::before { background: var(--expense); }
+.kpis-grid .kpi-savings .kpi-label::before { background: var(--savings); }
+.kpis-grid .kpi-investment .kpi-label::before { background: var(--investment); }
+.kpis-grid .kpi-value { font-size: var(--text-lg); line-height: var(--leading-lg); color: var(--text); }
+
+/* Atajos: tira de píldoras */
+.quick { display: flex; grid-template-columns: none; gap: var(--space-2); overflow-x: auto; scrollbar-width: none; margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); }
+.quick::-webkit-scrollbar { display: none; }
+.quick-link { display: inline-flex; flex: none; align-items: center; gap: var(--space-2); min-height: 40px; padding: 0 var(--space-4) 0 var(--space-3);
+  border-radius: var(--radius-pill); font-size: var(--text-sm); border: 1px solid var(--border); background: var(--surface); }
+.quick-icon { display: inline-flex; }
+
+/* Tarjetas del inicio */
+.tile { gap: var(--space-2); border: 0; }
+.tile-icon { display: grid; place-content: center; width: 32px; height: 32px; border-radius: 10px; background: color-mix(in srgb, currentColor 14%, transparent); }
+.tile-title { letter-spacing: .06em; }
+.tile-body { font-weight: 700; letter-spacing: -.01em; }
+.steps-card { border-width: 1px; background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+
+/* Movimientos agrupados por día */
+.day-groups { display: grid; gap: var(--space-4); }
+.day-group { display: grid; gap: var(--space-2); }
+.day-head { display: flex; justify-content: space-between; align-items: baseline; padding: 0 var(--space-1); font-size: var(--text-sm); font-weight: 600; color: var(--text-muted); }
+.day-head > span:first-child::first-letter { text-transform: uppercase; }
+.day-total { font-size: var(--text-sm); }
+.day-group .list { gap: 0; background: var(--surface); border-radius: var(--radius-lg); overflow: hidden; }
+.day-group .list > li + li { border-top: 1px solid var(--border); }
+.day-group .tx-row { border-radius: 0; background: transparent; padding: var(--space-3) var(--space-4); }
+.tx-row { transition: background var(--motion-fast) var(--motion-ease); }
+.tx-row:hover, .tx-row:active { background: color-mix(in srgb, var(--surface-2) 60%, transparent); }
+.tx-thumb { border-radius: 14px; }
+.tx-thumb-icon { display: grid; place-content: center; width: 44px; height: 44px; flex: none; color: var(--cat); background: color-mix(in srgb, var(--cat) 16%, transparent); }
+.tx-thumb-photo { position: relative; width: 44px; height: 44px; flex: none; }
+.tx-thumb-photo img { width: 100%; height: 100%; object-fit: cover; border-radius: 14px; display: block; }
+.tx-badge { position: absolute; right: -4px; bottom: -4px; display: grid; place-content: center; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--cat); color: var(--bg); border: 2px solid var(--surface); }
+.tx-amount { font-weight: 700; letter-spacing: -.01em; }
+.tx-amount.expense { color: var(--text); }
+.tx-title { font-weight: 600; }
+
+/* Iconos de categoría en listas y selector */
+.cat-icon { display: grid; place-content: center; width: 32px; height: 32px; flex: none; border-radius: 10px; color: var(--cat); background: color-mix(in srgb, var(--cat) 16%, transparent); }
+.chip-cat::before { display: none; }
+.chip-cat .icon { color: var(--chip); }
+.seg-input:checked + .chip-cat .icon { color: var(--on-accent); }
+.icon-chip { width: 44px; height: 44px; justify-content: center; padding: 0; }
+.icon-chip::before { display: none; }
+
+/* Barra inferior con botón central para apuntar */
+.tabbar { grid-template-columns: repeat(5, 1fr); align-items: center; }
+.tab-fab {
+  justify-self: center; display: grid; place-content: center; width: 56px; height: 56px; margin-top: calc(-1 * var(--space-6));
+  border-radius: 50%; background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow-fab);
+  transition: transform var(--motion-fast) var(--motion-ease);
+}
+.tab-fab:active { transform: scale(.94); }
+.tab-fab:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 50%; }
+.tab { position: relative; }
+.tab.is-active::after { content: ""; position: absolute; top: 6px; width: 4px; height: 4px; border-radius: 50%; background: var(--accent); }
+.has-tabs .composer-fixed { bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom)); }
+
+/* Al entrar en una pantalla: aparece y el anillo se dibuja */
+.enter .page { animation: page-in var(--motion-base) var(--motion-ease); }
+.enter .ring-arc { animation: ring-draw 900ms var(--motion-ease); }
+@keyframes page-in { from { opacity: 0; transform: translateY(6px); } }
+@keyframes ring-draw { from { stroke-dasharray: 0 10000; } }
+
+/* Detalle y formularios */
+.detail-amount { letter-spacing: -.03em; }
+.detail-amount.expense { color: var(--text); }
+.input-big { font-family: var(--font-display); font-size: var(--text-display); min-height: 76px; letter-spacing: -.02em; }
+.facts { gap: var(--space-3) var(--space-4); }
+
+/* Gráficos y listas por categoría */
+.cat-row, .plain-row { min-height: 56px; }
+.donut .ring-value-sm { font-size: var(--text-xl); }

@@ -23,6 +23,7 @@ const css = `/* GENERADO por scripts/tokens.mjs desde replica/design/tokens.json
 :root {
   color-scheme: dark light;
   --font-sans: ${t.font.sans};
+  --font-display: ${t.font.display};
 ${lines.join("\n")}
 ${colorVars(t.color)}
 }

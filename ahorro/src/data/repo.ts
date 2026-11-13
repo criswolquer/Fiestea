@@ -68,7 +68,7 @@ export async function upsertCategory(c: Partial<Category> & { name: string; type
   const prev = c.id ? all.find((x) => x.id === c.id) : undefined;
   const v: Category = {
     id: c.id ?? uuid(), name: c.name.trim(), type: c.type, kind: c.type === "expense" ? (c.kind ?? prev?.kind ?? "discrecional") : undefined,
-    color: c.color ?? prev?.color ?? `chart-${(all.length % 6) + 1}`, monthlyLimitCents: c.monthlyLimitCents ?? prev?.monthlyLimitCents ?? null,
+    color: c.color ?? prev?.color ?? `chart-${(all.length % 6) + 1}`, icon: c.icon ?? prev?.icon, monthlyLimitCents: c.monthlyLimitCents ?? prev?.monthlyLimitCents ?? null,
     sortOrder: c.sortOrder ?? prev?.sortOrder ?? all.length, archived: c.archived ?? prev?.archived ?? false, updatedAt: nowIso(),
   };
   await db.put("categories", v);

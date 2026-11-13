@@ -75,7 +75,7 @@ export async function assistantScreen(): Promise<HTMLElement> {
 
   const chips = keyOk && !history.length ? h("div", { class: "row suggestions" }, ...SUGGESTIONS.map((s) => button(s, { variant: "secondary", size: "sm", onClick: () => askQ(s) }))) : null;
 
-  return screen({ title: "Asistente", back: "#/", actions: history.length ? [button("Borrar conversación", { variant: "ghost", iconOnly: true, icon: Trash2, onClick: async () => {
+  return screen({ title: "Asistente", tab: "asistente", actions: history.length ? [button("Borrar conversación", { variant: "ghost", iconOnly: true, icon: Trash2, onClick: async () => {
     if (await confirmDialog("¿Borrar toda la conversación?", { ok: "Borrar", danger: true })) { await clearMessages(); refresh(); }
   } })] : [] },
     keyOk ? null : banner("El saludo de arriba se calcula en tu móvil. Para hacer preguntas, añade tu clave de la API de Claude en Ajustes (cada pregunta tiene un pequeño coste en tu cuenta de Anthropic).", "info",
