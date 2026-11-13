@@ -170,7 +170,8 @@
   ],
   "font": {
     "sans": "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
-    "numeric": "font-variant-numeric: tabular-nums"
+    "numeric": "font-variant-numeric: tabular-nums",
+    "display": "'Bricolage Grotesque Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
   },
   "type": {
     "xs": {
@@ -223,7 +224,8 @@
   },
   "shadow": {
     "card": "0 1px 2px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.12)",
-    "pop": "0 16px 40px rgba(0,0,0,.35)"
+    "pop": "0 16px 40px rgba(0,0,0,.35)",
+    "fab": "0 6px 20px rgba(0,0,0,.28)"
   },
   "motion": {
     "fast": "120ms",
