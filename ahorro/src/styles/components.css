@@ -134,6 +134,7 @@ button.tile { cursor: pointer; }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; padding: var(--space-1) 0 var(--space-3); }
 .sheet-title { font-size: var(--text-lg); line-height: var(--leading-lg); }
 .sheet-body { display: grid; gap: var(--space-4); }
+.sheet { scroll-padding-bottom: 96px; }
 .sheet-foot { position: sticky; bottom: 0; z-index: 1; padding: var(--space-3) 0 calc(var(--space-2) + env(safe-area-inset-bottom)); background: var(--surface); }
 
 /* Foto */
