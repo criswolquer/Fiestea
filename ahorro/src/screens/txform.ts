@@ -31,6 +31,18 @@ export async function txFormScreen(params: string[], q: Query): Promise<HTMLElem
     h("label", { class: "field-label", for: "tx-note" }, "Nota"),
     h("textarea", { id: "tx-note", name: "note", class: "input textarea", rows: 2, maxlength: 1000, placeholder: "Opcional" }, existing?.note ?? ""));
   const catBox = h("div");
+  const accBox = h("div");
+  const renderAccounts = () => {
+    // Al cambiar gasto/ingreso se repinta, pero se mantiene la cuenta elegida.
+    const chosen = (accBox.querySelector('input[name="account"]:checked') as HTMLInputElement | null)?.value;
+    accBox.replaceChildren(h("fieldset", { class: "chips" },
+    h("legend", { class: "field-label" }, type === "income" ? "¿A qué cuenta entra?" : "¿De qué cuenta sale?"),
+    ...accounts.map((a, i) => h("span", { class: "chip-opt" },
+      h("input", { type: "radio", name: "account", value: a.id, id: `acc-${a.id}`, class: "seg-input",
+        checked: chosen ? chosen === a.id : existing ? (existing.accountId ?? accounts[0].id) === a.id : a.id === lastAccount || (!lastAccount && i === 0) }),
+      h("label", { for: `acc-${a.id}`, class: "chip", style: `--chip:var(--${a.color})` }, a.name))),
+    h("a", { class: "chip chip-link", href: `#/cuentas?volver=${encodeURIComponent(location.hash)}` }, accounts.length > 1 ? "Editar cuentas" : "Añadir otra cuenta")));
+  };
 
   const renderCats = () => {
     const cats = allCats.filter((c) => c.type === type);
@@ -49,15 +61,14 @@ export async function txFormScreen(params: string[], q: Query): Promise<HTMLElem
       h("label", { for: iid, class: "chip chip-cat", style: `--chip:var(--${color})` }, icon(categoryIcon(id ? allCats.find((c) => c.id === id) : null), { size: 16 }), name));
   };
   renderCats();
+  renderAccounts();
 
   const saveBtn = button(existing ? "Guardar cambios" : "Guardar", { block: true, size: "lg", type: "submit" });
   const form = h("form", { class: "stack", novalidate: true },
-    segmented("Tipo de movimiento", ["Gasto", "Ingreso"], type === "expense" ? 0 : 1, (i) => { type = i === 0 ? "expense" : "income"; renderCats(); }),
+    segmented("Tipo de movimiento", ["Gasto", "Ingreso"], type === "expense" ? 0 : 1, (i) => { type = i === 0 ? "expense" : "income"; renderCats(); renderAccounts(); }),
     amount, catBox, title, dateF,
-    accounts.length > 1 ? h("fieldset", { class: "chips" }, h("legend", { class: "field-label" }, "Cuenta"),
-      ...accounts.map((a, i) => h("span", { class: "chip-opt" },
-        h("input", { type: "radio", name: "account", value: a.id, id: `acc-${a.id}`, class: "seg-input", checked: existing ? (existing.accountId ?? accounts[0].id) === a.id : a.id === lastAccount || (!lastAccount && i === 0) }),
-        h("label", { for: `acc-${a.id}`, class: "chip", style: `--chip:var(--${a.color})` }, a.name)))) : null,
+    // Siempre se ve a qué cuenta va (aunque solo haya una), con acceso a crear otra.
+    accBox,
     note,
     h("div", { class: "field" }, h("span", { class: "field-label" }, "Foto del momento"),
       photoPicker({ initialUrl: existing?.hasPhoto ? await photoUrl(existing.id) : undefined, onChange: (f) => { photo = f; } })),
@@ -84,7 +95,8 @@ export async function txFormScreen(params: string[], q: Query): Promise<HTMLElem
         await addTransaction(input, blob);
         if (input.accountId) await saveSettings({ lastAccountId: input.accountId });
         await markFirstStep("primer-movimiento");
-        toast(firstTime ? "¡Listo! Ya tienes tu mes en marcha." : type === "expense" ? "Gasto apuntado" : "Ingreso apuntado", firstTime ? "success" : "info");
+        const accName = accounts.find((a) => a.id === (input.accountId ?? accounts[0]?.id))?.name;
+        toast(firstTime ? "¡Listo! Ya tienes tu mes en marcha." : `${type === "expense" ? "Gasto apuntado" : "Ingreso apuntado"}${accName ? ` en ${accName}` : ""}`, firstTime ? "success" : "info");
         if (type === "expense" && input.categoryId) {
           const lim = (await monthSummary(d.slice(0, 7))).limits.find((l) => l.category.id === input.categoryId);
           if (lim && lim.spentCents > lim.limitCents) toast(`Te has pasado del límite de ${lim.category.name}`, "danger");
