@@ -39,7 +39,7 @@ export async function txDetailScreen([id]: string[]): Promise<HTMLElement> {
     h("dl", { class: "facts" },
       h("dt", {}, "Categoría"), h("dd", {}, cat ? h("a", { href: `#/categoria/${cat.id}?mes=${t.occurredOn.slice(0, 7)}` }, cat.name) : "Sin categoría"),
       h("dt", {}, "Fecha"), h("dd", {}, longDay(t.occurredOn)),
-      accounts.length > 1 ? h("dt", {}, "Cuenta") : null, accounts.length > 1 ? h("dd", {}, (accounts.find((a) => a.id === t.accountId) ?? accounts[0]).name) : null,
+      h("dt", {}, "Cuenta"), h("dd", {}, (accounts.find((a) => a.id === t.accountId) ?? accounts[0])?.name ?? "Cuenta principal"),
       t.note ? h("dt", {}, "Nota") : null, t.note ? h("dd", { class: "pre" }, t.note) : null),
     h("div", { class: "row" },
       h("a", { class: "btn btn-secondary btn-md", href: `#/movimiento/${t.id}/editar` }, icon(Pencil), h("span", {}, "Editar")),

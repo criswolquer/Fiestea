@@ -40,6 +40,18 @@ test("todas las pantallas abren sin errores ni desbordes con datos de ejemplo", 
   expect(errs).toEqual([]);
 });
 
+test("al apuntar se elige la cuenta y el saldo de esa cuenta sube", async ({ page }) => {
+  await loadDemo(page);
+  await page.goto("/#/nuevo?tipo=ingreso");
+  await expect(page.getByText("¿A qué cuenta entra?")).toBeVisible();
+  await page.getByLabel("Importe").fill("20");
+  await page.locator("label.chip", { hasText: "Efectivo" }).click();
+  await page.getByRole("button", { name: "Guardar", exact: true }).click();
+  await expect(page.getByText("Ingreso apuntado en Efectivo")).toBeVisible();
+  await page.goto("/#/cuentas"); await page.reload();
+  await expect(page.locator(".account", { hasText: "Efectivo" }).locator(".pot-amount")).toHaveText(/73,00\s€/);
+});
+
 test("invertir no cuenta como gasto y «puedes gastar al día» aparece", async ({ page }) => {
   await loadDemo(page);
   await expect(page.locator(".safe-pill")).toContainText("al día");
